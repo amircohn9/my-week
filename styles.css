@@ -1,0 +1,186 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f7f4;
+  color: #2d2d2d;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+header {
+  margin-bottom: 32px;
+}
+
+header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.subtitle {
+  color: #888;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.card h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1a1a1a;
+}
+
+/* Intentions */
+.intentions {
+  border-left: 4px solid #6c9bcf;
+}
+
+.intentions ul {
+  list-style: none;
+  padding: 0;
+}
+
+.intentions li {
+  padding: 6px 0;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.intentions li::before {
+  content: "→ ";
+  color: #6c9bcf;
+  font-weight: 600;
+}
+
+/* Completed items */
+.accomplished {
+  border-left: 4px solid #7db87d;
+}
+
+.completed-list .completed-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 0.95rem;
+}
+
+.completed-item .checkmark {
+  color: #7db87d;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.completed-item .category-tag {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+
+.tag-home { background: #fef3c7; color: #92400e; }
+.tag-family { background: #fce7f3; color: #9d174d; }
+.tag-self { background: #dbeafe; color: #1e40af; }
+.tag-career { background: #d1fae5; color: #065f46; }
+
+/* Chart */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 700px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-container {
+  position: relative;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+/* Day by day */
+.day-list .day-entry {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.day-list .day-entry:last-child {
+  border-bottom: none;
+}
+
+.day-entry .day-date {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.day-entry .day-items {
+  font-size: 0.9rem;
+  color: #444;
+}
+
+/* Mood */
+.mood {
+  border-left: 4px solid #c4a8e0;
+}
+
+.mood-list .mood-entry {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.mood-list .mood-entry:last-child {
+  border-bottom: none;
+}
+
+.mood-entry .mood-date {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.mood-entry .mood-text {
+  font-size: 0.9rem;
+  color: #555;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Empty states */
+.empty-state {
+  color: #bbb;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  margin-top: 40px;
+  color: #bbb;
+  font-size: 0.85rem;
+}
