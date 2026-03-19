@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Week</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <title>Stay Focused — Keep Moving</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
@@ -12,41 +11,79 @@
 <body>
   <div class="container">
     <header>
-      <h1>My Week</h1>
+      <h1>Stay Focused — Keep Moving</h1>
       <p class="subtitle" id="dateRange"></p>
+      <div class="momentum-dots" id="momentumDots"></div>
+      <p class="encouragement" id="encouragement"></p>
     </header>
 
+    <section class="card daily-focus">
+      <h2>My Focus Today</h2>
+      <p id="dailyFocusText" class="focus-text"></p>
+      <p class="empty-state" id="focusEmpty">No focus set for today.</p>
+    </section>
+
+    <section class="card yesterday-card">
+      <h2>Notes from Yesterday</h2>
+      <p id="yesterdayText" class="yesterday-text"></p>
+      <p class="empty-state" id="yesterdayEmpty">Nothing from yesterday.</p>
+    </section>
+
     <section class="card intentions">
-      <h2>What I'm Focused On</h2>
-      <ul id="intentionsList"></ul>
+      <h2>Weekly Focus</h2>
+      <ul id="focusList"></ul>
     </section>
 
     <section class="card accomplished">
-      <h2>What I Got Done</h2>
+      <div class="section-header-with-toggle">
+        <h2>Wins & Time</h2>
+        <div class="toggle-group" id="mainToggle">
+          <button class="toggle-btn" data-range="today">Today</button>
+          <button class="toggle-btn active" data-range="week">This Week</button>
+          <button class="toggle-btn" data-range="all">All Time</button>
+        </div>
+      </div>
+      <div id="categoryBars" class="category-bars"></div>
+      <p class="empty-state" id="chartEmpty">No data yet — do your first check-in.</p>
       <div id="completedList" class="completed-list"></div>
       <p class="empty-state" id="completedEmpty">Check in to start tracking wins.</p>
     </section>
 
-    <div class="two-col">
-      <section class="card">
-        <h2>Where My Time Went</h2>
-        <div class="chart-container">
-          <canvas id="categoryChart"></canvas>
-        </div>
-        <p class="empty-state" id="chartEmpty">No data yet — do your first check-in.</p>
-      </section>
+    <section class="card">
+      <h2>This Week Day by Day</h2>
+      <div id="dayByDay" class="day-list"></div>
+      <p class="empty-state" id="daysEmpty">Check-ins will show up here.</p>
+    </section>
 
-      <section class="card">
-        <h2>This Week Day by Day</h2>
-        <div id="dayByDay" class="day-list"></div>
-        <p class="empty-state" id="daysEmpty">Check-ins will show up here.</p>
-      </section>
-    </div>
+    <section class="card diet-card">
+      <h2>Diet & Weight</h2>
+      <div id="dietSection"></div>
+      <p class="empty-state" id="dietEmpty">Log how you're eating during your daily check-in.</p>
+    </section>
 
-    <section class="card mood">
-      <h2>How I've Been Feeling</h2>
-      <div id="moodList" class="mood-list"></div>
-      <p class="empty-state" id="moodEmpty">Mood reflections will appear after check-ins.</p>
+    <section class="card task-list-card">
+      <div class="section-header-with-toggle">
+        <h2>My Task List</h2>
+        <button class="sync-btn" id="syncBtn" style="display:none;">
+          <span id="syncCount">0</span> changes — Sync
+        </button>
+      </div>
+      <div id="taskList"></div>
+    </section>
+
+    <section class="card dyk-card">
+      <h2>Did You Know?</h2>
+      <p id="dykText" class="dyk-text"></p>
+    </section>
+
+    <section class="card notes-card">
+      <h2>Notes for Claude</h2>
+      <p class="notes-desc">Changes, ideas, or feedback — I'll pick these up next time we talk.</p>
+      <div id="savedNotes" class="saved-notes"></div>
+      <div class="notes-input-row">
+        <textarea id="notesInput" class="notes-input" placeholder="Type a note and hit Save..." rows="2"></textarea>
+        <button id="saveNoteBtn" class="save-note-btn">Save</button>
+      </div>
     </section>
 
     <footer>

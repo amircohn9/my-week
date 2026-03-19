@@ -1,28 +1,154 @@
 {
-  "weeklyIntentions": [
-    "Get the time management system up and running",
-    "Stay on track with daily routines"
+  "dailyFocus": "Get the time management dashboard working end-to-end",
+  "weeklyFocus": ["Learn CC", "Severance", "TBD"],
+  "categories": ["Career", "Self", "Home Duties", "Family"],
+  "startDate": "2026-03-16",
+  "yesterdayNotes": "Keep pushing on the time management dashboard — it's coming together. RBC meeting went well, follow up on account decisions.",
+  "didYouKnow": [
+    "Walt Disney was fired from a newspaper for 'lacking imagination.' He went bankrupt before Mickey Mouse.",
+    "Steven Spielberg was rejected from USC film school three times. He eventually got an honorary degree from them.",
+    "J.K. Rowling was a single mother on welfare when she wrote Harry Potter. Twelve publishers rejected it.",
+    "Reid Hoffman launched LinkedIn from his living room after multiple failed startups. He says 'an entrepreneur is someone who jumps off a cliff and builds a plane on the way down.'",
+    "Sara Blakely spent two years getting rejected by every hosiery manufacturer before Spanx took off. She had zero fashion industry experience.",
+    "James Dyson built 5,127 failed prototypes before his vacuum worked. It took him 15 years.",
+    "Arianna Huffington's second book was rejected by 36 publishers. She went on to build The Huffington Post.",
+    "Howard Schultz was turned down by 242 investors when trying to fund Starbucks.",
+    "Oprah was fired from her first TV job and told she was 'unfit for television.'",
+    "Steve Jobs was fired from Apple — the company he founded. He called it 'the best thing that could have ever happened to me.'"
   ],
-  "categories": ["Home Duties", "Family", "Self", "Career"],
+  "diet": {
+    "entries": [],
+    "weights": []
+  },
+  "notes": [],
   "checkins": [
+    {
+      "date": "2026-03-16",
+      "activities": [
+        { "category": "Career", "text": "Networking — met Kate Hoffmayer", "hours": 2 },
+        { "category": "Career", "text": "Completed Claude Code course (Carl's open course)", "hours": 3 },
+        { "category": "Self", "text": "Psychologist session", "hours": 1 },
+        { "category": "Career", "text": "Severance package negotiation", "hours": 4 }
+      ],
+      "mood": "",
+      "obstacles": "",
+      "wins": "Finished the CC course, moved severance forward",
+      "summary": "Heavy Career day — finished Carl's Claude Code course, 2-hour networking catch-up with Kate Hoffmayer, and a long push on severance negotiation. Also kept the psychologist appointment."
+    },
+    {
+      "date": "2026-03-17",
+      "activities": [
+        { "category": "Self", "text": "Workout with trainer", "hours": 1 },
+        { "category": "Career", "text": "LinkedIn post", "hours": 3 },
+        { "category": "Career", "text": "Reading — B2B Content Marketing Strategy", "hours": 1.5 }
+      ],
+      "mood": "",
+      "obstacles": "",
+      "wins": "LinkedIn post done, making progress on the B2B book",
+      "summary": "Focused Career day — wrote and published a LinkedIn post (3 hrs) and read 1.5 hours of B2B Content Marketing Strategy. Started the day with a workout."
+    },
+    {
+      "date": "2026-03-18",
+      "activities": [
+        { "category": "Family", "text": "Full day with Arielle", "hours": 8 }
+      ],
+      "mood": "",
+      "obstacles": "",
+      "wins": "Quality full day with Arielle",
+      "summary": "Dedicated the whole day to Arielle — 8 hours of quality time together."
+    },
     {
       "date": "2026-03-19",
       "activities": [
-        { "category": "Family", "text": "Hebrew day with Alma", "hours": 3 },
-        { "category": "Family", "text": "Day with Arielle", "hours": 4 },
-        { "category": "Self", "text": "Workout 1", "hours": 1 },
-        { "category": "Self", "text": "Workout 2", "hours": 1 },
-        { "category": "Career", "text": "Time management project (Claude Code)", "hours": 2 }
+        { "category": "Self", "text": "Workout with trainer", "hours": 1 },
+        { "category": "Home Duties", "text": "Meeting with RBC — wealth & financial planning", "hours": 1 },
+        { "category": "Career", "text": "Set up software on computer", "hours": 1.5 },
+        { "category": "Career", "text": "Learning Claude Code — Project #1: Time management system", "hours": 4 }
       ],
-      "mood": "Productive — getting things moving",
-      "obstacles": "none",
-      "wins": "Got the time management dashboard live"
+      "mood": "",
+      "obstacles": "",
+      "wins": "Time management dashboard taking shape, RBC meeting done",
+      "summary": "Productive Thursday — 4 hours building the time management dashboard in Claude Code, RBC financial planning meeting, set up dev software, and a morning workout."
     }
   ],
   "completedItems": [
-    { "category": "Family", "text": "Hebrew day with Alma (this week)", "date": "2026-03-19" },
-    { "category": "Family", "text": "Day with Arielle", "date": "2026-03-19" },
-    { "category": "Self", "text": "2 workouts this week", "date": "2026-03-19" },
-    { "category": "Career", "text": "Time management dashboard — built and deployed", "date": "2026-03-19" }
-  ]
+    { "category": "Career", "text": "Completed Claude Code course (Carl's)", "hours": 3, "date": "2026-03-16" },
+    { "category": "Career", "text": "Severance package negotiation session", "hours": 4, "date": "2026-03-16" },
+    { "category": "Career", "text": "LinkedIn post published", "hours": 3, "date": "2026-03-17" },
+    { "category": "Family", "text": "Full day with Arielle", "hours": 8, "date": "2026-03-18" },
+    { "category": "Home Duties", "text": "RBC wealth & financial planning meeting", "hours": 1, "date": "2026-03-19" },
+    { "category": "Career", "text": "Learning Claude Code — Project #1: Time management system", "hours": 4, "date": "2026-03-19" }
+  ],
+  "tasks": {
+    "Home Duties": {
+      "description": "Use the opportunity to do important things in the house I never get the chance to do.",
+      "items": [
+        { "text": "Taxes 2026", "done": false },
+        { "text": "Spring clean up (put items on Facebook)", "done": false },
+        { "text": "RBC — make a decision how to handle", "done": false, "subtasks": [
+          { "text": "Move the suggested accounts", "done": false },
+          { "text": "Share Schwab statement", "done": false },
+          { "text": "Switch to pre-tax contributions", "done": false },
+          { "text": "Sell ZI stock?", "done": false },
+          { "text": "Sell GoDaddy stock", "done": false }
+        ]},
+        { "text": "Naturalization", "done": false },
+        { "text": "Unemployment", "done": false },
+        { "text": "A&A Cohn/Blattner Family Review", "done": false, "link": "https://docs.google.com/document/d/1E3n3Ri_3blDTBzHQphO8UhPLVoHcy4TLXdeRDrgvVYI/edit?tab=t.238u26fz3cmu#heading=h.log9ua9nydve" }
+      ]
+    },
+    "Family": {
+      "description": "Use this unique time to spend precious time with the kids and Arielle.",
+      "items": [
+        { "text": "Hebrew day with Alma", "done": false, "recurring": "weekly", "sessions": [
+          { "date": "2026-03-16", "note": "" }
+        ]},
+        { "text": "Special time with Carmeli", "done": false, "recurring": "weekly", "sessions": [] },
+        { "text": "Day with Arielle", "done": false, "recurring": "weekly", "sessions": [
+          { "date": "2026-03-18", "note": "Full day together" }
+        ]},
+        { "text": "Schedule time in NYC", "done": false },
+        { "text": "Possibly extend time in", "done": false },
+        { "text": "Buy tickets to Netherlands", "done": false }
+      ]
+    },
+    "Self": {
+      "description": "Use the time to get resilient, process the time at ZoomInfo and get stronger for the next time.",
+      "items": [
+        { "text": "Piano — 60 min/week (Simply Piano)", "done": false, "recurring": "weekly", "sessions": [] },
+        { "text": "Psychologist", "done": false, "recurring": "weekly", "sessions": [
+          { "date": "2026-03-16", "note": "" }
+        ]},
+        { "text": "Workout with trainer (2x/week)", "done": false, "recurring": "weekly", "sessions": [
+          { "date": "2026-03-17", "note": "" },
+          { "date": "2026-03-19", "note": "" }
+        ]},
+        { "text": "Stay on track with intermittent fasting", "done": false },
+        { "text": "Aim to get to 190 lbs", "done": false }
+      ]
+    },
+    "Career": {
+      "description": "Get ready for my next role.",
+      "items": [
+        { "text": "Complete severance package", "done": false },
+        { "text": "Get ready to apply for next role", "done": false, "subtasks": [
+          { "text": "2 CV options — Content/Creative Director (design & video)", "done": false }
+        ]},
+        { "text": "Post 2 LinkedIn posts a week", "done": false, "recurring": "weekly", "sessions": [
+          { "date": "2026-03-17", "note": "Published post" }
+        ]},
+        { "text": "Get really good at Claude Code", "done": false, "subtasks": [
+          { "text": "Time management project", "done": false },
+          { "text": "House expenses", "done": false },
+          { "text": "Case study video", "done": false }
+        ]},
+        { "text": "Learn content strategy", "done": false, "subtasks": [
+          { "text": "B2B Content Marketing Strategy book", "done": false }
+        ]},
+        { "text": "Learn brand building (for Creative Director role)", "done": false, "subtasks": [
+          { "text": "Book", "done": false }
+        ]}
+      ]
+    }
+  }
 }

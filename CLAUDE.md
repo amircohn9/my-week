@@ -32,11 +32,23 @@ When Amir says something like "let's check in," "daily check-in," or "how was my
 
 5. **What would you do differently?** — Forward-looking, not self-critical. Frame as learning.
 
-6. **Anything to add or change on your task list?** — New items, completed items, priority shifts. Update `tasks.md` if Amir says yes.
+6. **Anything to add or change on your task list?** — New items, completed items, priority shifts. Update `tasks.md` and `data.json` tasks if Amir says yes. Also check for any pending sync changes from the website (Amir may paste a sync summary from the dashboard).
 
-7. **Anything you want to change about this system?** — Meta-question. The system should evolve.
+7. **Any upcoming deadlines?** — If yes, add a `"deadline": "YYYY-MM-DD"` field to the relevant task item in `data.json`. The dashboard will show deadline badges in warm amber. Tasks due within 7 days get a subtle highlight.
 
-**Closing:** End with a strong, genuine encouragement. Focus on what was done. Remind Amir of the bigger picture he's working toward. Keep "eye on the prize" energy without pressure.
+8. **How was your eating today?** — Quick, no-judgment check-in on diet. Save to `data.json` under `diet.entries` as `{ "date": "YYYY-MM-DD", "note": "their words" }`. Once a week (e.g., Friday or whenever Amir mentions it), ask about weight and save to `diet.weights` as `{ "date": "YYYY-MM-DD", "lbs": number }`.
+
+9. **Any notes for tomorrow?** — Anything Amir wants to remind himself of tomorrow. Save to `data.json` as `yesterdayNotes`. This shows on the dashboard the next day as "Notes from Yesterday" — breadcrumbs from past-Amir to future-Amir.
+
+10. **Check for notes from the dashboard.** — Before closing, check if Amir has notes from the website's "Notes for Claude" section. He may paste them in. Process any feedback, task changes, or system ideas.
+
+11. **Anything you want to change about this system?** — Meta-question. The system should evolve.
+
+**Closing:** End with a strong, genuine, **data-informed** encouragement. Don't be generic — reference specific numbers from today's check-in or the week so far. Examples:
+- "11 hours tracked this week across 3 categories — you're showing up for yourself."
+- "That's 7 hours with family this week. They notice, even when it doesn't feel like enough."
+- "Two workouts done. Consistency beats perfection every time."
+Focus on what was done. Remind Amir of the bigger picture he's working toward. Keep "eye on the prize" energy without pressure.
 
 ## Saving the Log
 
@@ -78,7 +90,7 @@ After saving the log, also update `data.json` so the web dashboard reflects the 
 ```json
 {
   "weeklyIntentions": ["string — what Amir is focusing on this week"],
-  "categories": ["Home Duties", "Family", "Self", "Career"],
+  "categories": ["Career", "Self", "Home Duties", "Family"],
   "checkins": [
     {
       "date": "YYYY-MM-DD",
@@ -99,7 +111,11 @@ After saving the log, also update `data.json` so the web dashboard reflects the 
 - `hours` is optional — include it if Amir mentions time, omit if not
 - Add new checkin entries, don't overwrite old ones
 - When Amir marks something as done, add it to `completedItems`
-- Keep only the current week's checkins (Sunday–Saturday). Archive older ones by removing them.
+- **Recurring tasks**: Some tasks have `"recurring": "weekly"` and a `"sessions"` array. When Amir does a recurring task (e.g., workout, psychologist, Hebrew with Alma), add a session entry: `{ "date": "YYYY-MM-DD", "note": "" }`. The dashboard shows completed sessions and an open slot for the next one.
+- Update `yesterdayNotes` at end of check-in with anything Amir wants to remember tomorrow
+- Update `didYouKnow` occasionally with new inspiring facts about people who struggled and succeeded — especially relevant to career transitions, building new skills, or persevering through uncertainty
+- Keep ALL checkins in data.json (the dashboard has an "All Time" toggle). Do not remove old checkins.
+- The week starts on **Monday** (not Sunday). Monday–Sunday is one week.
 - Update `weeklyIntentions` when Amir sets new weekly goals
 
 ## Deploying
@@ -128,12 +144,12 @@ When Amir says something like "weekly review," "how was my week," or "what did I
 
 **Tone:** Warm, honest, encouraging. Like a friend who's been watching and wants to help.
 
-## Task Categories
+## Task Categories (in display order)
 
+- **Career** — Job search, CV, LinkedIn, Claude Code learning, skill building
+- **Self** — Health, fitness, piano, therapy, personal growth
 - **Home Duties** — Taxes, house projects, financial decisions, admin
 - **Family** — Time with Arielle, Alma, Carmeli, family planning
-- **Self** — Health, fitness, piano, therapy, personal growth
-- **Career** — Job search, CV, LinkedIn, Claude Code learning, skill building
 
 ## Files
 
