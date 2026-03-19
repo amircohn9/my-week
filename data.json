@@ -4,6 +4,25 @@
     "Stay on track with daily routines"
   ],
   "categories": ["Home Duties", "Family", "Self", "Career"],
-  "checkins": [],
-  "completedItems": []
+  "checkins": [
+    {
+      "date": "2026-03-19",
+      "activities": [
+        { "category": "Family", "text": "Hebrew day with Alma", "hours": 3 },
+        { "category": "Family", "text": "Day with Arielle", "hours": 4 },
+        { "category": "Self", "text": "Workout 1", "hours": 1 },
+        { "category": "Self", "text": "Workout 2", "hours": 1 },
+        { "category": "Career", "text": "Time management project (Claude Code)", "hours": 2 }
+      ],
+      "mood": "Productive — getting things moving",
+      "obstacles": "none",
+      "wins": "Got the time management dashboard live"
+    }
+  ],
+  "completedItems": [
+    { "category": "Family", "text": "Hebrew day with Alma (this week)", "date": "2026-03-19" },
+    { "category": "Family", "text": "Day with Arielle", "date": "2026-03-19" },
+    { "category": "Self", "text": "2 workouts this week", "date": "2026-03-19" },
+    { "category": "Career", "text": "Time management dashboard — built and deployed", "date": "2026-03-19" }
+  ]
 }
