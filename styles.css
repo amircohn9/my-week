@@ -654,6 +654,33 @@ header h1 {
   font-style: italic;
 }
 
+/* Collapsible sections */
+.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.collapsible-header:hover {
+  opacity: 0.7;
+}
+
+.section-collapsed > *:not(h2):not(.section-header-with-toggle):not(.collapsible-header) {
+  display: none;
+}
+
+/* Inline task editing */
+.task-edit-input {
+  border: 1px solid #6c9bcf;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: inherit;
+  font-family: inherit;
+  color: #333;
+  outline: none;
+  width: 100%;
+  max-width: 400px;
+}
+
 /* Footer */
 footer {
   text-align: center;

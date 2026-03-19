@@ -1,5 +1,6 @@
 let appData = null;
 const CATEGORY_ORDER = ['Career', 'Self', 'Home Duties', 'Family'];
+const NOTES_EMAIL = 'amircohn9@gmail.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
   appData = await fetch('data.json').then(r => r.json());
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderDidYouKnow(appData.didYouKnow);
   renderNotes();
   setupToggle();
+  setupCollapsibleSections();
   updateSyncButton();
 });
 
@@ -37,13 +39,41 @@ function getWeekRange() {
 
 function getTodayStr() {
   const d = new Date();
-  return d.getFullYear() + '-' +
-    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-    String(d.getDate()).padStart(2, '0');
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 function categoryTagClass(category) {
   return { 'Home Duties': 'tag-home', 'Family': 'tag-family', 'Self': 'tag-self', 'Career': 'tag-career' }[category] || '';
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// --- Collapsible sections ---
+
+function setupCollapsibleSections() {
+  document.querySelectorAll('.card > h2, .card > .section-header-with-toggle > h2').forEach(h2 => {
+    const card = h2.closest('.card');
+    // Skip task list (has its own collapse) and notes (needs to stay open)
+    if (card.classList.contains('task-list-card') || card.classList.contains('notes-card')) return;
+
+    h2.classList.add('collapsible-header');
+    h2.addEventListener('click', () => {
+      card.classList.toggle('section-collapsed');
+      // Save state
+      const key = 'collapse-' + (card.id || h2.textContent.trim());
+      localStorage.setItem(key, card.classList.contains('section-collapsed'));
+    });
+
+    // Restore state
+    const key = 'collapse-' + (card.id || h2.textContent.trim());
+    if (localStorage.getItem(key) === 'true') {
+      card.classList.add('section-collapsed');
+    }
+  });
 }
 
 // --- Header ---
@@ -80,10 +110,7 @@ function renderEncouragement(data) {
     return d >= weekStart && d <= weekEnd;
   });
 
-  if (weekCheckins.length === 0) {
-    el.textContent = 'Start your first check-in to see your week come alive.';
-    return;
-  }
+  if (weekCheckins.length === 0) { el.textContent = 'Start your first check-in to see your week come alive.'; return; }
 
   const hours = {};
   let totalHours = 0;
@@ -95,9 +122,7 @@ function renderEncouragement(data) {
   }
 
   let topCat = null, topHours = 0;
-  for (const [cat, h] of Object.entries(hours)) {
-    if (h > topHours) { topCat = cat; topHours = h; }
-  }
+  for (const [cat, h] of Object.entries(hours)) { if (h > topHours) { topCat = cat; topHours = h; } }
 
   const msgs = [];
   if (weekCheckins.length >= 3) msgs.push(`${weekCheckins.length} check-ins this week — you're building a rhythm.`);
@@ -105,7 +130,6 @@ function renderEncouragement(data) {
   if (topCat === 'Career' && topHours >= 2) msgs.push(`${topHours} hours invested in Career — future you will thank you.`);
   if (topCat === 'Self' && topHours >= 2) msgs.push(`${topHours} hours on Self this week — you're taking care of yourself.`);
   if (totalHours > 0 && msgs.length === 0) msgs.push(`${totalHours} hours tracked across ${Object.keys(hours).length} categories — you're showing up.`);
-
   el.textContent = msgs[0] || `${weekCheckins.length} check-in${weekCheckins.length > 1 ? 's' : ''} this week — keep the momentum.`;
 }
 
@@ -115,18 +139,14 @@ function renderDailyFocus(focus) {
   const text = document.getElementById('dailyFocusText');
   const empty = document.getElementById('focusEmpty');
   if (!focus) { text.style.display = 'none'; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  text.style.display = 'block';
-  text.textContent = focus;
+  empty.style.display = 'none'; text.style.display = 'block'; text.textContent = focus;
 }
 
 function renderYesterdayNotes(notes) {
   const text = document.getElementById('yesterdayText');
   const empty = document.getElementById('yesterdayEmpty');
   if (!notes) { text.style.display = 'none'; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  text.style.display = 'block';
-  text.textContent = notes;
+  empty.style.display = 'none'; text.style.display = 'block'; text.textContent = notes;
 }
 
 function renderWeeklyFocus(items) {
@@ -139,78 +159,44 @@ function renderWeeklyFocus(items) {
 // --- Wins & Time (merged) ---
 
 function renderWinsAndTime(data, range) {
-  // Bars
   const barsContainer = document.getElementById('categoryBars');
   const chartEmpty = document.getElementById('chartEmpty');
   const counts = {};
   for (const cat of CATEGORY_ORDER) counts[cat] = 0;
-
   const { weekStart, weekEnd } = getWeekRange();
   const today = getTodayStr();
 
   for (const checkin of data.checkins) {
-    if (range === 'week') {
-      const d = new Date(checkin.date + 'T12:00:00');
-      if (d < weekStart || d > weekEnd) continue;
-    } else if (range === 'today') {
-      if (checkin.date !== today) continue;
-    }
-    if (checkin.activities) {
-      for (const act of checkin.activities) {
-        if (counts[act.category] !== undefined) counts[act.category] += act.hours || 0;
-      }
-    }
+    if (range === 'week') { const d = new Date(checkin.date + 'T12:00:00'); if (d < weekStart || d > weekEnd) continue; }
+    else if (range === 'today') { if (checkin.date !== today) continue; }
+    if (checkin.activities) { for (const act of checkin.activities) { if (counts[act.category] !== undefined) counts[act.category] += act.hours || 0; } }
   }
 
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
-  if (total === 0) {
-    barsContainer.style.display = 'none';
-    chartEmpty.style.display = 'block';
-  } else {
-    chartEmpty.style.display = 'none';
-    barsContainer.style.display = 'flex';
+  if (total === 0) { barsContainer.style.display = 'none'; chartEmpty.style.display = 'block'; }
+  else {
+    chartEmpty.style.display = 'none'; barsContainer.style.display = 'flex';
     const maxHours = Math.max(...Object.values(counts), 1);
     const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
     barsContainer.innerHTML = CATEGORY_ORDER.map(cat => {
-      const hours = counts[cat];
-      const pct = (hours / maxHours) * 100;
-      return `<div class="bar-row">
-        <div class="bar-label">${cat}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[cat]||'#ccc'};"></div></div>
-        <div class="bar-value">${hours}h</div>
-      </div>`;
+      const hours = counts[cat], pct = (hours / maxHours) * 100;
+      return `<div class="bar-row"><div class="bar-label">${cat}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[cat]||'#ccc'};"></div></div><div class="bar-value">${hours}h</div></div>`;
     }).join('');
   }
 
-  // Wins
   const container = document.getElementById('completedList');
   const empty = document.getElementById('completedEmpty');
   let items = data.completedItems || [];
+  if (range === 'today') items = items.filter(i => i.date === today);
+  else if (range === 'week') items = items.filter(i => { const d = new Date(i.date + 'T12:00:00'); return d >= weekStart && d <= weekEnd; });
 
-  if (range === 'today') {
-    items = items.filter(i => i.date === today);
-  } else if (range === 'week') {
-    items = items.filter(i => {
-      const d = new Date(i.date + 'T12:00:00');
-      return d >= weekStart && d <= weekEnd;
-    });
-  }
-
-  if (items.length === 0) {
-    container.style.display = 'none';
-    empty.style.display = 'block';
-    empty.textContent = range === 'today' ? 'Nothing logged today yet.' : 'Check in to start tracking wins.';
-  } else {
-    empty.style.display = 'none';
-    container.style.display = 'block';
+  if (items.length === 0) { container.style.display = 'none'; empty.style.display = 'block'; empty.textContent = range === 'today' ? 'Nothing logged today yet.' : 'Check in to start tracking wins.'; }
+  else {
+    empty.style.display = 'none'; container.style.display = 'block';
     container.innerHTML = items.map(item => {
       const tagClass = categoryTagClass(item.category);
       const hours = item.hours ? `<span class="hours">${item.hours}h</span>` : '';
-      return `<div class="completed-item">
-        <span class="checkmark">✓</span>
-        <span class="category-tag ${tagClass}">${item.category}</span>
-        <span>${item.text}</span>${hours}
-      </div>`;
+      return `<div class="completed-item"><span class="checkmark">✓</span><span class="category-tag ${tagClass}">${item.category}</span><span>${escapeHtml(item.text)}</span>${hours}</div>`;
     }).join('');
   }
 }
@@ -231,24 +217,16 @@ function renderDayByDay(checkins) {
   const container = document.getElementById('dayByDay');
   const empty = document.getElementById('daysEmpty');
   if (!checkins || checkins.length === 0) { container.style.display = 'none'; empty.style.display = 'block'; return; }
-
   const { weekStart, weekEnd } = getWeekRange();
-  const weekCheckins = checkins.filter(c => {
-    const d = new Date(c.date + 'T12:00:00');
-    return d >= weekStart && d <= weekEnd;
-  });
-
+  const weekCheckins = checkins.filter(c => { const d = new Date(c.date + 'T12:00:00'); return d >= weekStart && d <= weekEnd; });
   if (weekCheckins.length === 0) { container.style.display = 'none'; empty.style.display = 'block'; return; }
-
-  empty.style.display = 'none';
-  container.style.display = 'block';
+  empty.style.display = 'none'; container.style.display = 'block';
   const sorted = [...weekCheckins].sort((a, b) => b.date.localeCompare(a.date));
-
   container.innerHTML = sorted.map(day => {
     const d = new Date(day.date + 'T12:00:00');
     const dayName = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
     const summary = day.summary || (day.activities || []).map(a => a.text).join(', ') || 'No activities logged';
-    return `<div class="day-entry"><div class="day-date">${dayName}</div><div class="day-items">${summary}</div></div>`;
+    return `<div class="day-entry"><div class="day-date">${dayName}</div><div class="day-items">${escapeHtml(summary)}</div></div>`;
   }).join('');
 }
 
@@ -258,25 +236,20 @@ function renderDiet(diet) {
   const container = document.getElementById('dietSection');
   const empty = document.getElementById('dietEmpty');
   if (!diet || (!diet.entries.length && !diet.weights.length)) { container.style.display = 'none'; empty.style.display = 'block'; return; }
-
-  empty.style.display = 'none';
-  container.style.display = 'block';
+  empty.style.display = 'none'; container.style.display = 'block';
   let html = '';
-
   if (diet.weights && diet.weights.length > 0) {
     const latest = diet.weights[diet.weights.length - 1];
     html += `<div class="diet-weight">Current: <strong>${latest.lbs} lbs</strong> (${latest.date}) — Target: 190 lbs</div>`;
   }
-
   if (diet.entries && diet.entries.length > 0) {
     const recent = [...diet.entries].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
     html += '<div class="diet-entries">' + recent.map(e => {
       const d = new Date(e.date + 'T12:00:00');
       const dayName = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      return `<div class="diet-entry"><span class="diet-date">${dayName}</span><span class="diet-note">${e.note}</span></div>`;
+      return `<div class="diet-entry"><span class="diet-date">${dayName}</span><span class="diet-note">${escapeHtml(e.note)}</span></div>`;
     }).join('') + '</div>';
   }
-
   container.innerHTML = html;
 }
 
@@ -285,17 +258,17 @@ function renderDiet(diet) {
 function renderDidYouKnow(facts) {
   const el = document.getElementById('dykText');
   if (!facts || facts.length === 0) { el.textContent = ''; return; }
-  // Pick one based on the day so it changes daily but is consistent
   const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % facts.length;
   el.textContent = facts[dayIndex];
 }
 
 // --- Task list ---
 
-function getTaskState() {
-  try { return JSON.parse(localStorage.getItem('myweek-tasks')) || {}; } catch { return {}; }
-}
+function getTaskState() { try { return JSON.parse(localStorage.getItem('myweek-tasks')) || {}; } catch { return {}; } }
 function saveTaskState(state) { localStorage.setItem('myweek-tasks', JSON.stringify(state)); }
+
+function getTaskEdits() { try { return JSON.parse(localStorage.getItem('myweek-task-edits')) || {}; } catch { return {}; } }
+function saveTaskEdits(edits) { localStorage.setItem('myweek-task-edits', JSON.stringify(edits)); }
 
 function countSyncChanges() {
   const state = getTaskState();
@@ -303,6 +276,8 @@ function countSyncChanges() {
   for (const key of Object.keys(state)) { if (key !== '_added' && key !== '_synced') count++; }
   const added = state._added || {};
   for (const cat of Object.keys(added)) count += added[cat].length;
+  const edits = getTaskEdits();
+  count += Object.keys(edits).length;
   return count;
 }
 
@@ -316,11 +291,16 @@ function updateSyncButton() {
 
 function generateSyncSummary() {
   const state = getTaskState();
+  const edits = getTaskEdits();
   const lines = ['Task list changes to sync:\n'];
   for (const [key, val] of Object.entries(state)) {
     if (key === '_added' || key === '_synced') continue;
     const parts = key.split('::');
     lines.push(`${val ? '[x]' : '[ ]'} ${parts[0]}: ${parts[parts.length - 1]}`);
+  }
+  for (const [key, val] of Object.entries(edits)) {
+    const parts = key.split('::');
+    lines.push(`[EDIT] ${parts[0]}: "${parts[parts.length - 1]}" → "${val}"`);
   }
   const added = state._added || {};
   for (const [cat, items] of Object.entries(added)) {
@@ -335,28 +315,26 @@ function renderTasks(tasks) {
 
   const state = getTaskState();
   const addedTasks = state._added || {};
+  const edits = getTaskEdits();
   const { weekStart, weekEnd } = getWeekRange();
 
   container.innerHTML = CATEGORY_ORDER.map(cat => {
     const group = tasks[cat];
     if (!group) return '';
-
     const tagClass = categoryTagClass(cat);
-    const desc = group.description ? `<p class="task-group-desc">${group.description}</p>` : '';
+    const desc = group.description ? `<p class="task-group-desc">${escapeHtml(group.description)}</p>` : '';
     const allItems = group.items || [];
     const extraItems = addedTasks[cat] || [];
     const totalCount = allItems.length + extraItems.length;
-
-    const itemsHtml = allItems.map((item, i) => renderTaskItem(item, cat, i, state, weekStart, weekEnd)).join('');
-    const extraHtml = extraItems.map((item, i) => renderTaskItem(item, cat, `added-${i}`, state, weekStart, weekEnd)).join('');
+    const itemsHtml = allItems.map((item, i) => renderTaskItem(item, cat, i, state, edits, weekStart, weekEnd)).join('');
+    const extraHtml = extraItems.map((item, i) => renderTaskItem(item, cat, `added-${i}`, state, edits, weekStart, weekEnd)).join('');
 
     return `<div class="task-group collapsed">
       <div class="task-group-header" data-cat="${cat}">
         <span class="task-group-arrow">&#9656;</span>
         <span class="category-tag ${tagClass} task-cat-title">${cat}</span>
         <span class="task-count">${totalCount}</span>
-      </div>
-      ${desc}
+      </div>${desc}
       <div class="task-group-items" data-cat="${cat}">
         ${itemsHtml}${extraHtml}
         <div class="add-task-row"><input type="text" class="add-task-input" data-cat="${cat}" placeholder="Add a task..."></div>
@@ -381,6 +359,47 @@ function renderTasks(tasks) {
       saveTaskState(st);
       e.target.closest('.task-item').classList.toggle('task-done', e.target.checked);
       updateSyncButton();
+    });
+  });
+
+  // Double-click to edit task text
+  container.querySelectorAll('.task-text[data-editable]').forEach(span => {
+    span.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      const key = span.dataset.editKey;
+      const current = span.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = current;
+      input.className = 'task-edit-input';
+      span.replaceWith(input);
+      input.focus();
+      input.select();
+
+      const save = () => {
+        const newVal = input.value.trim();
+        const newSpan = document.createElement('span');
+        newSpan.className = 'task-text';
+        newSpan.dataset.editable = 'true';
+        newSpan.dataset.editKey = key;
+        newSpan.textContent = newVal || current;
+        input.replaceWith(newSpan);
+        // Re-attach dblclick
+        newSpan.addEventListener('dblclick', span.ondblclick);
+
+        if (newVal && newVal !== current) {
+          const ed = getTaskEdits();
+          ed[key] = newVal;
+          saveTaskEdits(ed);
+          updateSyncButton();
+        }
+      };
+
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = current; input.blur(); }
+      });
     });
   });
 
@@ -413,16 +432,21 @@ function renderTasks(tasks) {
   };
 }
 
-function renderTaskItem(item, cat, index, state, weekStart, weekEnd) {
+function renderTaskItem(item, cat, index, state, edits, weekStart, weekEnd) {
   const key = `${cat}::${index}::${item.text}`;
   const checked = state[key] || item.done;
   const doneClass = checked ? 'task-done' : '';
 
-  const textHtml = item.link
-    ? `<a href="${item.link}" target="_blank" class="task-link">${item.text}</a>`
-    : item.text;
+  // Check for edited text
+  const displayText = edits[key] || item.text;
 
-  // Deadline badge
+  let textHtml;
+  if (item.link) {
+    textHtml = `<span class="task-text" data-editable="true" data-edit-key="${key}"><a href="${item.link}" target="_blank" class="task-link">${escapeHtml(displayText)}</a></span>`;
+  } else {
+    textHtml = `<span class="task-text" data-editable="true" data-edit-key="${key}">${escapeHtml(displayText)}</span>`;
+  }
+
   let deadlineBadge = '';
   if (item.deadline) {
     const dl = new Date(item.deadline + 'T12:00:00');
@@ -431,52 +455,48 @@ function renderTaskItem(item, cat, index, state, weekStart, weekEnd) {
     deadlineBadge = `<span class="deadline-badge ${soonClass}">${dl.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
   }
 
-  // Recurring sessions
   let sessionsHtml = '';
   if (item.recurring && item.sessions) {
-    const thisWeek = item.sessions.filter(s => {
-      const d = new Date(s.date + 'T12:00:00');
-      return d >= weekStart && d <= weekEnd;
-    });
-    // Next open session
+    const thisWeek = item.sessions.filter(s => { const d = new Date(s.date + 'T12:00:00'); return d >= weekStart && d <= weekEnd; });
     const nextOpen = `<div class="session-item session-open"><span class="session-dot">○</span> Next session — open</div>`;
-
-    if (thisWeek.length > 0 || true) {
-      const sessionItems = thisWeek.map(s => {
-        const d = new Date(s.date + 'T12:00:00');
-        const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        const note = s.note ? ` — ${s.note}` : '';
-        return `<div class="session-item"><span class="session-dot">●</span> ${label}${note}</div>`;
-      }).join('');
-      sessionsHtml = `<div class="sessions-list">${sessionItems}${nextOpen}</div>`;
-    }
+    const sessionItems = thisWeek.map(s => {
+      const d = new Date(s.date + 'T12:00:00');
+      const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const note = s.note ? ` — ${escapeHtml(s.note)}` : '';
+      return `<div class="session-item"><span class="session-dot">●</span> ${label}${note}</div>`;
+    }).join('');
+    sessionsHtml = `<div class="sessions-list">${sessionItems}${nextOpen}</div>`;
   }
 
-  // Subtasks
   let subtasksHtml = '';
   if (item.subtasks && item.subtasks.length > 0) {
     subtasksHtml = '<div class="subtask-list">' + item.subtasks.map((sub, si) => {
       const subKey = `${cat}::${index}::sub-${si}::${sub.text}`;
       const subChecked = state[subKey] || sub.done;
+      const subDisplay = edits[subKey] || sub.text;
       return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
         <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
-        <span class="task-text">${sub.text}</span>
+        <span class="task-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(subDisplay)}</span>
       </div>`;
     }).join('') + '</div>';
   }
 
   return `<div class="task-item ${doneClass}">
     <input type="checkbox" class="task-checkbox" data-key="${key}" ${checked ? 'checked' : ''}>
-    <span class="task-text">${textHtml}</span>${deadlineBadge}
+    ${textHtml}${deadlineBadge}
   </div>${sessionsHtml}${subtasksHtml}`;
 }
 
-// --- Notes for Claude ---
+// --- Notes for Claude (via Gmail) ---
 
-function getNotes() {
-  try { return JSON.parse(localStorage.getItem('myweek-notes')) || []; } catch { return []; }
-}
+function getNotes() { try { return JSON.parse(localStorage.getItem('myweek-notes')) || []; } catch { return []; } }
 function saveNotes(notes) { localStorage.setItem('myweek-notes', JSON.stringify(notes)); }
+
+function sendNoteViaGmail(text) {
+  const subject = encodeURIComponent('Notes for Claude — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+  const body = encodeURIComponent(text);
+  window.open(`https://mail.google.com/mail/?view=cm&to=${NOTES_EMAIL}&su=${subject}&body=${body}`, '_blank');
+}
 
 function renderNotes() {
   const container = document.getElementById('savedNotes');
@@ -484,7 +504,7 @@ function renderNotes() {
 
   container.innerHTML = notes.length === 0 ? '' : notes.map((n, i) => `
     <div class="note-item">
-      <span class="note-text">${n.text}</span>
+      <span class="note-text">${escapeHtml(n.text)}</span>
       <span class="note-date">${new Date(n.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
       <button class="note-delete" data-index="${i}">&times;</button>
     </div>
@@ -503,9 +523,15 @@ function renderNotes() {
     const input = document.getElementById('notesInput');
     const text = input.value.trim();
     if (!text) return;
+
+    // Save locally
     const ns = getNotes();
     ns.push({ text, timestamp: Date.now() });
     saveNotes(ns);
+
+    // Open Gmail compose with the note
+    sendNoteViaGmail(text);
+
     input.value = '';
     renderNotes();
   };
