@@ -902,11 +902,13 @@ function renderTasks(tasks) {
       saveTaskEdits({});
       saveTaskMoves({});
       localStorage.removeItem('myweek-weight-updates');
-      updateSyncButton();
       const btn = document.getElementById('syncBtn');
       btn.innerHTML = 'Synced!';
       btn.classList.add('sync-copied');
-      setTimeout(() => { btn.style.display = 'none'; btn.classList.remove('sync-copied'); }, 2000);
+      setTimeout(() => {
+        btn.classList.remove('sync-copied');
+        updateSyncButton();
+      }, 2000);
     } catch { prompt('Copy this and paste in Claude Code:', summary); }
   };
 }
