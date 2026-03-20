@@ -8,9 +8,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderDateRange();
   renderMomentumDots(appData.checkins);
   renderEncouragement(appData);
+  renderLastUpdated(appData);
+  renderKPIStrip(appData);
   renderDailyFocus(appData);
-  renderYesterdayNotes(appData.yesterdayNotes);
-  renderWeeklyFocus(appData.weeklyFocus);
+  renderWeeklyFocus(appData.weeklyFocus, appData);
   renderWinsAndTime(appData, 'today');
   renderDayByDay(appData.checkins);
   renderDiet(appData.diet);
@@ -133,6 +134,76 @@ function renderEncouragement(data) {
   el.textContent = msgs[0] || `${weekCheckins.length} check-in${weekCheckins.length > 1 ? 's' : ''} this week — keep the momentum.`;
 }
 
+// --- Last Updated ---
+
+function renderLastUpdated(data) {
+  const el = document.getElementById('lastUpdated');
+  const checkins = data.checkins || [];
+  if (checkins.length === 0) { el.textContent = ''; return; }
+  const lastDate = checkins.map(c => c.date).sort().pop();
+  const d = new Date(lastDate + 'T12:00:00');
+  const label = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  el.textContent = `Last check-in: ${label}`;
+}
+
+// --- KPI Strip ---
+
+function renderKPIStrip(data) {
+  const container = document.getElementById('kpiStrip');
+  const { weekStart, weekEnd } = getWeekRange();
+  const weekCheckins = (data.checkins || []).filter(c => {
+    const d = new Date(c.date + 'T12:00:00');
+    return d >= weekStart && d <= weekEnd;
+  });
+
+  // Days active
+  const daysActive = weekCheckins.length;
+
+  // Total hours
+  let totalHours = 0;
+  for (const c of weekCheckins) {
+    for (const a of (c.activities || [])) totalHours += a.hours || 0;
+  }
+
+  // Weight with trend
+  let weightHtml = '';
+  const diet = data.diet;
+  if (diet && diet.weights && diet.weights.length > 0) {
+    // Merge localStorage weights
+    const localWeights = JSON.parse(localStorage.getItem('myweek-weight-updates') || '[]');
+    const allWeights = [...diet.weights];
+    for (const lw of localWeights) {
+      if (!allWeights.find(w => w.date === lw.date && w.lbs === lw.lbs)) allWeights.push(lw);
+    }
+    allWeights.sort((a, b) => a.date.localeCompare(b.date));
+    const latest = allWeights[allWeights.length - 1];
+    const remaining = latest.lbs - (diet.goalWeight || 190);
+    const arrow = remaining > 0 ? '↓' : '✓';
+    weightHtml = `<div class="kpi-card"><div class="kpi-value">${latest.lbs}<span class="kpi-unit">lbs</span></div><div class="kpi-label">${remaining > 0 ? remaining + ' to goal' : 'At goal!'} ${arrow}</div></div>`;
+  }
+
+  // Streak (consecutive days with checkins ending today or yesterday)
+  let streak = 0;
+  const sortedDates = (data.checkins || []).map(c => c.date).sort().reverse();
+  const today = getTodayStr();
+  const yesterday = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })();
+  if (sortedDates.length > 0 && (sortedDates[0] === today || sortedDates[0] === yesterday)) {
+    let checkDate = new Date(sortedDates[0] + 'T12:00:00');
+    const dateSet = new Set(sortedDates);
+    while (dateSet.has(checkDate.getFullYear() + '-' + String(checkDate.getMonth() + 1).padStart(2, '0') + '-' + String(checkDate.getDate()).padStart(2, '0'))) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+  }
+
+  container.innerHTML = `
+    <div class="kpi-card"><div class="kpi-value">${daysActive}</div><div class="kpi-label">days active</div></div>
+    <div class="kpi-card"><div class="kpi-value">${totalHours}<span class="kpi-unit">h</span></div><div class="kpi-label">tracked</div></div>
+    ${weightHtml}
+    <div class="kpi-card"><div class="kpi-value">${streak}</div><div class="kpi-label">day streak</div></div>
+  `;
+}
+
 // --- Focus & Yesterday ---
 
 function getTomorrowStr() {
@@ -161,6 +232,15 @@ function renderDailyFocus(data, dayMode) {
     text.style.display = 'none';
     empty.style.display = 'block';
     empty.textContent = isToday ? 'No focus set for today.' : 'No focus set for tomorrow yet.';
+  }
+
+  // Yesterday breadcrumb (only in today view)
+  const breadcrumb = document.getElementById('yesterdayBreadcrumb');
+  if (isToday && data.yesterdayNotes) {
+    breadcrumb.innerHTML = `<div class="yesterday-inline"><span class="yesterday-label">From yesterday:</span> ${escapeHtml(data.yesterdayNotes)}</div>`;
+    breadcrumb.style.display = 'block';
+  } else {
+    breadcrumb.style.display = 'none';
   }
 
   // Calendar events
@@ -193,18 +273,40 @@ function renderDailyFocus(data, dayMode) {
   }
 }
 
-function renderYesterdayNotes(notes) {
-  const text = document.getElementById('yesterdayText');
-  const empty = document.getElementById('yesterdayEmpty');
-  if (!notes) { text.style.display = 'none'; empty.style.display = 'block'; return; }
-  empty.style.display = 'none'; text.style.display = 'block'; text.textContent = notes;
-}
-
-function renderWeeklyFocus(items) {
+function renderWeeklyFocus(items, data) {
   const list = document.getElementById('focusList');
   if (!items || items.length === 0) { list.innerHTML = '<li>No focus set yet.</li>'; return; }
   const slots = [items[0] || 'TBD', items[1] || 'TBD', items[2] || 'TBD'];
-  list.innerHTML = slots.map(i => `<li>${i}</li>`).join('');
+
+  // Count week's activity for each focus area
+  const { weekStart, weekEnd } = getWeekRange();
+  const weekCheckins = (data && data.checkins || []).filter(c => {
+    const d = new Date(c.date + 'T12:00:00');
+    return d >= weekStart && d <= weekEnd;
+  });
+
+  function countForFocus(focusText) {
+    const lower = focusText.toLowerCase();
+    let sessions = 0, hours = 0;
+    for (const c of weekCheckins) {
+      for (const a of (c.activities || [])) {
+        if (a.text.toLowerCase().includes(lower) || lower.includes(a.category.toLowerCase())) {
+          sessions++;
+          hours += a.hours || 0;
+        }
+      }
+    }
+    return { sessions, hours };
+  }
+
+  list.innerHTML = slots.map(label => {
+    if (label === 'TBD') return `<li>${label}</li>`;
+    const { sessions, hours } = countForFocus(label);
+    const badge = sessions > 0
+      ? `<span class="focus-progress">${sessions} session${sessions > 1 ? 's' : ''}${hours > 0 ? ' · ' + hours + 'h' : ''}</span>`
+      : `<span class="focus-progress focus-no-activity">not yet</span>`;
+    return `<li>${escapeHtml(label)} ${badge}</li>`;
+  }).join('');
 }
 
 // --- Wins & Time (merged) ---
@@ -227,11 +329,19 @@ function renderWinsAndTime(data, range) {
   if (total === 0) { barsContainer.style.display = 'none'; chartEmpty.style.display = 'block'; }
   else {
     chartEmpty.style.display = 'none'; barsContainer.style.display = 'flex';
-    const maxHours = Math.max(...Object.values(counts), 1);
+    // Weekly target hours per category (reasonable weekly goals)
+    const weeklyTargets = { 'Career': 20, 'Self': 5, 'Home Duties': 5, 'Family': 10 };
+    // Scale targets based on range
+    const targetScale = range === 'today' ? 1/5 : range === 'week' ? 1 : null;
     const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
+    const maxTarget = targetScale ? Math.max(...CATEGORY_ORDER.map(c => weeklyTargets[c] * targetScale)) : 0;
+    const maxHours = Math.max(...Object.values(counts), maxTarget, 1);
     barsContainer.innerHTML = CATEGORY_ORDER.map(cat => {
       const hours = counts[cat], pct = (hours / maxHours) * 100;
-      return `<div class="bar-row"><div class="bar-label">${cat}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[cat]||'#ccc'};"></div></div><div class="bar-value">${hours}h</div></div>`;
+      const target = targetScale ? weeklyTargets[cat] * targetScale : 0;
+      const targetPct = target ? (target / maxHours) * 100 : 0;
+      const targetMarker = targetPct > 0 ? `<div class="bar-target" style="left:${targetPct}%" title="${Math.round(target)}h target"></div>` : '';
+      return `<div class="bar-row"><div class="bar-label">${cat}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${colors[cat]||'#ccc'};"></div>${targetMarker}</div><div class="bar-value">${hours}h</div></div>`;
     }).join('');
   }
 
@@ -943,4 +1053,28 @@ function renderNotes() {
       document.getElementById('saveNoteBtn').click();
     }
   });
+
+  // FAB panel toggle
+  const fab = document.getElementById('notesFab');
+  const panel = document.getElementById('notesPanel');
+  const overlay = document.getElementById('notesOverlay');
+  const closeBtn = document.getElementById('notesPanelClose');
+
+  function openNotes() { panel.classList.add('open'); overlay.classList.add('open'); fab.style.display = 'none'; }
+  function closeNotes() { panel.classList.remove('open'); overlay.classList.remove('open'); fab.style.display = 'flex'; }
+
+  if (!fab._bound) {
+    fab._bound = true;
+    fab.addEventListener('click', openNotes);
+    overlay.addEventListener('click', closeNotes);
+    closeBtn.addEventListener('click', closeNotes);
+  }
+
+  // Show badge on FAB if there are notes
+  const noteCount = getNotes().length;
+  if (noteCount > 0) {
+    fab.setAttribute('data-count', noteCount);
+  } else {
+    fab.removeAttribute('data-count');
+  }
 }

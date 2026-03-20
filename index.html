@@ -15,7 +15,10 @@
       <p class="subtitle" id="dateRange"></p>
       <div class="momentum-dots" id="momentumDots"></div>
       <p class="encouragement" id="encouragement"></p>
+      <p class="last-updated" id="lastUpdated"></p>
     </header>
+
+    <div class="kpi-strip" id="kpiStrip"></div>
 
     <section class="card daily-focus">
       <div class="section-header-with-toggle">
@@ -27,14 +30,11 @@
       </div>
       <p id="dailyFocusText" class="focus-text"></p>
       <p class="empty-state" id="focusEmpty">No focus set for today.</p>
+      <div id="yesterdayBreadcrumb" class="yesterday-breadcrumb"></div>
       <div id="calendarEvents" class="calendar-events"></div>
     </section>
 
-    <section class="card yesterday-card">
-      <h2>Notes from Yesterday</h2>
-      <p id="yesterdayText" class="yesterday-text"></p>
-      <p class="empty-state" id="yesterdayEmpty">Nothing from yesterday.</p>
-    </section>
+    <!-- Yesterday notes merged into Daily Focus card above -->
 
     <section class="card intentions">
       <h2>Weekly Focus</h2>
@@ -72,20 +72,21 @@
       <div id="taskList"></div>
     </section>
 
-    <section class="card dyk-card">
-      <h2>Did You Know?</h2>
-      <p id="dykText" class="dyk-text"></p>
-    </section>
-
-    <section class="card notes-card">
-      <h2>Notes for Claude</h2>
+    <!-- Notes for Claude: floating panel -->
+    <div class="notes-fab" id="notesFab" title="Notes for Claude">&#9998;</div>
+    <div class="notes-overlay" id="notesOverlay"></div>
+    <div class="notes-panel" id="notesPanel">
+      <div class="notes-panel-header">
+        <h3>Notes for Claude</h3>
+        <button class="notes-panel-close" id="notesPanelClose">&times;</button>
+      </div>
       <p class="notes-desc">Changes, ideas, or feedback — Save sends an email so Claude picks it up next check-in.</p>
       <div id="savedNotes" class="saved-notes"></div>
       <div class="notes-input-row">
         <textarea id="notesInput" class="notes-input" placeholder="Type a note and hit Save..." rows="2"></textarea>
         <button id="saveNoteBtn" class="save-note-btn">Save</button>
       </div>
-    </section>
+    </div>
 
     <section class="card">
       <h2>This Week Day by Day</h2>
@@ -94,6 +95,7 @@
     </section>
 
     <footer>
+      <p class="dyk-footer" id="dykText"></p>
       <p>Built with care. One day at a time.</p>
     </footer>
   </div>
