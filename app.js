@@ -153,12 +153,14 @@ function renderDailyFocus(data, dayMode) {
   const dayLabel = isToday ? 'Today' : 'Tomorrow';
   title.textContent = `My Focus ${dayLabel}`;
 
-  if (isToday && data.dailyFocus) {
-    empty.style.display = 'none'; text.style.display = 'block'; text.textContent = data.dailyFocus;
+  // Today shows dailyFocus; tomorrow shows yesterdayNotes (breadcrumbs for next day)
+  const focusContent = isToday ? data.dailyFocus : data.yesterdayNotes;
+  if (focusContent) {
+    empty.style.display = 'none'; text.style.display = 'block'; text.textContent = focusContent;
   } else {
     text.style.display = 'none';
-    empty.style.display = isToday ? 'block' : 'none';
-    empty.textContent = 'No focus set for today.';
+    empty.style.display = 'block';
+    empty.textContent = isToday ? 'No focus set for today.' : 'No focus set for tomorrow yet.';
   }
 
   // Calendar events
@@ -307,21 +309,40 @@ function renderDiet(diet) {
     const latestDate = new Date(latest.date + 'T12:00:00');
     const dateLabel = latestDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-    // Calculate avg daily calorie deficit (~3500 cal per lb)
+    // Calculate avg daily calorie deficit from diet entries
+    // TDEE for 40yo active man ≈ 2300 cal/day
+    const TDEE = 2300;
     let deficitHtml = '';
-    if (lost > 0) {
-      const startDate = new Date('2025-12-20T12:00:00');
-      const latestDateObj = new Date(latest.date + 'T12:00:00');
-      const daysSoFar = Math.max(1, (latestDateObj - startDate) / (1000 * 60 * 60 * 24));
-      const totalDeficit = lost * 3500;
-      const avgDailyDeficit = Math.round(totalDeficit / daysSoFar);
-      const lbsPerDay = lost / daysSoFar;
-      const remaining = latest.lbs - goalWeight;
-      const daysToGo = Math.ceil(remaining / lbsPerDay);
-      const estDate = new Date(latestDateObj);
-      estDate.setDate(estDate.getDate() + daysToGo);
-      const estLabel = estDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      deficitHtml = `<div class="weight-estimate">Avg daily deficit of ~<strong>${avgDailyDeficit} cal</strong>. At this pace, you'll hit ${goalWeight} lbs around <strong>${estLabel}</strong></div>`;
+    if (diet.entries && diet.entries.length > 0) {
+      const entriesWithCals = diet.entries.filter(e => e.calories);
+      if (entriesWithCals.length > 0) {
+        let totalIntake = 0;
+        for (const e of entriesWithCals) {
+          // Parse ranges like "1600-1900" → average
+          const cal = String(e.calories);
+          if (cal.includes('-')) {
+            const [lo, hi] = cal.split('-').map(Number);
+            totalIntake += (lo + hi) / 2;
+          } else {
+            totalIntake += parseFloat(cal) || 0;
+          }
+        }
+        const avgIntake = Math.round(totalIntake / entriesWithCals.length);
+        const avgDeficit = TDEE - avgIntake;
+
+        if (avgDeficit > 0 && lost > 0) {
+          // Estimate goal date based on deficit (3500 cal ≈ 1 lb)
+          const lbsPerDay = avgDeficit / 3500;
+          const remaining = latest.lbs - goalWeight;
+          const daysToGo = Math.ceil(remaining / lbsPerDay);
+          const estDate = new Date();
+          estDate.setDate(estDate.getDate() + daysToGo);
+          const estLabel = estDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          deficitHtml = `<div class="weight-estimate">Avg intake ~<strong>${avgIntake} cal</strong> vs. ~${TDEE} burn = ~<strong>${avgDeficit} cal/day deficit</strong>. At this pace, ${goalWeight} lbs around <strong>${estLabel}</strong></div>`;
+        } else if (avgDeficit > 0) {
+          deficitHtml = `<div class="weight-estimate">Avg intake ~<strong>${avgIntake} cal</strong> vs. ~${TDEE} burn = ~<strong>${avgDeficit} cal/day deficit</strong></div>`;
+        }
+      }
     }
 
     html += `<div class="weight-tracker">
