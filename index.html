@@ -18,9 +18,16 @@
     </header>
 
     <section class="card daily-focus">
-      <h2>My Focus Today</h2>
+      <div class="section-header-with-toggle">
+        <h2 id="focusTitle">My Focus Today</h2>
+        <div class="toggle-group" id="dayToggle">
+          <button class="toggle-btn active" data-day="today">Today</button>
+          <button class="toggle-btn" data-day="tomorrow">Tomorrow</button>
+        </div>
+      </div>
       <p id="dailyFocusText" class="focus-text"></p>
       <p class="empty-state" id="focusEmpty">No focus set for today.</p>
+      <div id="calendarEvents" class="calendar-events"></div>
     </section>
 
     <section class="card yesterday-card">
@@ -38,8 +45,8 @@
       <div class="section-header-with-toggle">
         <h2>Wins & Time</h2>
         <div class="toggle-group" id="mainToggle">
-          <button class="toggle-btn" data-range="today">Today</button>
-          <button class="toggle-btn active" data-range="week">This Week</button>
+          <button class="toggle-btn active" data-range="today">Today</button>
+          <button class="toggle-btn" data-range="week">This Week</button>
           <button class="toggle-btn" data-range="all">All Time</button>
         </div>
       </div>

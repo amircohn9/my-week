@@ -8,10 +8,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderDateRange();
   renderMomentumDots(appData.checkins);
   renderEncouragement(appData);
-  renderDailyFocus(appData.dailyFocus);
+  renderDailyFocus(appData);
   renderYesterdayNotes(appData.yesterdayNotes);
   renderWeeklyFocus(appData.weeklyFocus);
-  renderWinsAndTime(appData, 'week');
+  renderWinsAndTime(appData, 'today');
   renderDayByDay(appData.checkins);
   renderDiet(appData.diet);
   renderTasks(appData.tasks);
@@ -135,11 +135,57 @@ function renderEncouragement(data) {
 
 // --- Focus & Yesterday ---
 
-function renderDailyFocus(focus) {
+function getTomorrowStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function renderDailyFocus(data, dayMode) {
+  dayMode = dayMode || 'today';
   const text = document.getElementById('dailyFocusText');
   const empty = document.getElementById('focusEmpty');
-  if (!focus) { text.style.display = 'none'; empty.style.display = 'block'; return; }
-  empty.style.display = 'none'; text.style.display = 'block'; text.textContent = focus;
+  const title = document.getElementById('focusTitle');
+  const calContainer = document.getElementById('calendarEvents');
+
+  const isToday = dayMode === 'today';
+  const dateStr = isToday ? getTodayStr() : getTomorrowStr();
+  const dayLabel = isToday ? 'Today' : 'Tomorrow';
+  title.textContent = `My Focus ${dayLabel}`;
+
+  if (isToday && data.dailyFocus) {
+    empty.style.display = 'none'; text.style.display = 'block'; text.textContent = data.dailyFocus;
+  } else {
+    text.style.display = 'none';
+    empty.style.display = isToday ? 'block' : 'none';
+    empty.textContent = 'No focus set for today.';
+  }
+
+  // Calendar events
+  const events = (data.calendarEvents && data.calendarEvents[dateStr]) || [];
+  if (events.length > 0) {
+    const d = new Date(dateStr + 'T12:00:00');
+    const dateLabel = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    calContainer.innerHTML = `<div class="cal-header">${dateLabel}</div>` +
+      events.map(e => `<div class="cal-event"><span class="cal-time">${e.time}</span><span class="cal-summary">${escapeHtml(e.summary)}</span></div>`).join('');
+    calContainer.style.display = 'block';
+  } else {
+    calContainer.innerHTML = `<p class="empty-state">No calendar events for ${dayLabel.toLowerCase()}.</p>`;
+    calContainer.style.display = 'block';
+  }
+
+  // Setup toggle (only once)
+  const dayToggle = document.getElementById('dayToggle');
+  if (!dayToggle._bound) {
+    dayToggle._bound = true;
+    dayToggle.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('.toggle-btn');
+      if (!btn) return;
+      ev.currentTarget.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderDailyFocus(data, btn.dataset.day);
+    });
+  }
 }
 
 function renderYesterdayNotes(notes) {
@@ -263,6 +309,26 @@ function renderDiet(diet) {
         </div>
       </div>
       ${lost > 0 ? `<div class="weight-progress">${lost} lbs down, ${latest.lbs - goalWeight} to go</div>` : ''}
+      ${(() => {
+        // Estimate goal date based on rate of loss
+        if (diet.weights.length >= 1 && lost > 0) {
+          const startDate = new Date('2025-12-20T12:00:00');
+          const latestDateObj = new Date(latest.date + 'T12:00:00');
+          const daysSoFar = (latestDateObj - startDate) / (1000 * 60 * 60 * 24);
+          const lbsPerDay = lost / daysSoFar;
+          const remaining = latest.lbs - goalWeight;
+          const daysToGo = Math.ceil(remaining / lbsPerDay);
+          const estDate = new Date(latestDateObj);
+          estDate.setDate(estDate.getDate() + daysToGo);
+          const estLabel = estDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          return `<div class="weight-estimate">At this pace, you'll hit ${goalWeight} lbs around <strong>${estLabel}</strong></div>`;
+        }
+        return '';
+      })()}
+      <div class="weight-input-row">
+        <input type="number" id="weightInput" class="weight-input" placeholder="New weight..." step="0.1" min="100" max="300">
+        <button id="weightSaveBtn" class="weight-save-btn">Update</button>
+      </div>
     </div>`;
   }
   if (diet.entries && diet.entries.length > 0) {
@@ -285,6 +351,25 @@ function renderDiet(diet) {
     }).join('') + '</div>';
   }
   container.innerHTML = html;
+
+  // Weight save — stores in localStorage for sync
+  const weightBtn = document.getElementById('weightSaveBtn');
+  const weightInput = document.getElementById('weightInput');
+  if (weightBtn && weightInput) {
+    weightBtn.addEventListener('click', () => {
+      const val = parseFloat(weightInput.value);
+      if (!val || val < 100 || val > 300) return;
+      const weights = JSON.parse(localStorage.getItem('myweek-weight-updates') || '[]');
+      weights.push({ date: getTodayStr(), lbs: val });
+      localStorage.setItem('myweek-weight-updates', JSON.stringify(weights));
+      // Update display immediately
+      diet.weights.push({ date: getTodayStr(), lbs: val });
+      renderDiet(diet);
+    });
+    weightInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') weightBtn.click();
+    });
+  }
 }
 
 // --- Did You Know ---
@@ -306,6 +391,9 @@ function saveTaskEdits(edits) { localStorage.setItem('myweek-task-edits', JSON.s
 
 function getTaskMoves() { try { return JSON.parse(localStorage.getItem('myweek-task-moves')) || {}; } catch { return {}; } }
 function saveTaskMoves(moves) { localStorage.setItem('myweek-task-moves', JSON.stringify(moves)); }
+
+function getHiddenRecurring() { try { return JSON.parse(localStorage.getItem('myweek-hidden-recurring')) || {}; } catch { return {}; } }
+function saveHiddenRecurring(hidden) { localStorage.setItem('myweek-hidden-recurring', JSON.stringify(hidden)); }
 
 function countSyncChanges() {
   const state = getTaskState();
@@ -371,23 +459,37 @@ function renderTasks(tasks) {
     const desc = group.description ? `<p class="task-group-desc">${escapeHtml(group.description)}</p>` : '';
     const isCollapsed = collapseState[cat];
 
-    // Recurring items
-    const recurring = group.recurring || [];
-    const recurringHtml = recurring.length > 0 ? recurring.map((item, i) => {
+    // Recurring items — filter hidden
+    const hiddenRecurring = getHiddenRecurring();
+    const recurring = (group.recurring || []).filter((item, i) => !hiddenRecurring[`${cat}::${i}::${item.text}`]);
+    const allRecurring = group.recurring || [];
+    const recurringHtml = recurring.length > 0 ? recurring.map((item) => {
+      const i = allRecurring.indexOf(item);
       const key = `${cat}::recurring::${i}::${item.text}`;
+      const hideKey = `${cat}::${i}::${item.text}`;
       const displayText = edits[key] || item.text;
 
       let sessionsHtml = '';
       if (item.sessions) {
         const thisWeek = item.sessions.filter(s => { const d = new Date(s.date + 'T12:00:00'); return d >= weekStart && d <= weekEnd; });
         let nextDateValue = item.nextSession || getTodayStr();
-        const nextD = new Date(nextDateValue + 'T12:00:00');
-        const nextLabel = nextD.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        const nextOpen = `<div class="session-item session-open">
-          <input type="checkbox" class="session-checkbox" data-key="${cat}::session::${i}::next">
-          <span>Next: ${nextLabel}</span>
-          <input type="date" class="session-date-picker" data-key="${cat}::session-date::${i}" value="${nextDateValue}">
-        </div>`;
+        let nextHtml = '';
+        if (item.nextSession) {
+          const nextD = new Date(nextDateValue + 'T12:00:00');
+          const nextLabel = nextD.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          nextHtml = `<div class="session-item session-open">
+            <input type="checkbox" class="session-checkbox" data-key="${cat}::session::${i}::next">
+            <span>Next: ${nextLabel}</span>
+            <input type="date" class="session-date-picker session-date-hidden" data-key="${cat}::session-date::${i}" value="${nextDateValue}">
+          </div>`;
+        } else {
+          nextHtml = `<div class="session-item session-open">
+            <input type="checkbox" class="session-checkbox" data-key="${cat}::session::${i}::next">
+            <span>Next session</span>
+            <input type="date" class="session-date-picker session-date-hidden" data-key="${cat}::session-date::${i}" value="${nextDateValue}">
+          </div>`;
+        }
+        const nextOpen = nextHtml;
         const sessionItems = thisWeek.map((s, si) => {
           const d = new Date(s.date + 'T12:00:00');
           const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -400,8 +502,9 @@ function renderTasks(tasks) {
         sessionsHtml = `<div class="sessions-list">${sessionItems}${nextOpen}</div>`;
       }
 
-      return `<div class="task-item">
+      return `<div class="task-item recurring-item">
         <span class="task-text" data-editable="true" data-edit-key="${key}">${escapeHtml(displayText)}</span>
+        <button class="hide-recurring-btn" data-hide-key="${hideKey}" title="Hide">&times;</button>
       </div>${sessionsHtml}`;
     }).join('') : '';
 
@@ -445,7 +548,7 @@ function renderTasks(tasks) {
     }
 
     const columnsHtml = (hasRecurring && hasProjects)
-      ? `<div class="task-columns">${projectsCol}${recurringCol}</div>`
+      ? `<div class="task-sections-stacked">${projectsCol}${recurringCol}</div>`
       : (hasRecurring ? recurringCol : projectsCol);
 
     const totalCount = recurring.length + nowItems.length + backlogItems.length;
@@ -552,7 +655,17 @@ function renderTasks(tasks) {
     });
   });
 
-  // Add subtask
+  // Add subtask — trigger shows input
+  container.querySelectorAll('.add-subtask-trigger').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      const row = trigger.closest('.add-subtask-row');
+      const input = row.querySelector('.add-subtask-input');
+      trigger.style.display = 'none';
+      input.classList.remove('add-subtask-hidden');
+      input.focus();
+    });
+  });
+
   container.querySelectorAll('.add-subtask-input').forEach(input => {
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && input.value.trim()) {
@@ -564,6 +677,17 @@ function renderTasks(tasks) {
         saveTaskState(st);
         renderTasks(tasks);
         updateSyncButton();
+      }
+      if (e.key === 'Escape') {
+        input.classList.add('add-subtask-hidden');
+        input.closest('.add-subtask-row').querySelector('.add-subtask-trigger').style.display = '';
+      }
+    });
+    input.addEventListener('blur', () => {
+      if (!input.value.trim()) {
+        input.classList.add('add-subtask-hidden');
+        const trigger = input.closest('.add-subtask-row').querySelector('.add-subtask-trigger');
+        if (trigger) trigger.style.display = '';
       }
     });
   });
@@ -597,6 +721,18 @@ function renderTasks(tasks) {
         renderTasks(tasks);
         updateSyncButton();
       }
+    });
+  });
+
+  // Hide recurring
+  container.querySelectorAll('.hide-recurring-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const hidden = getHiddenRecurring();
+      hidden[btn.dataset.hideKey] = true;
+      saveHiddenRecurring(hidden);
+      renderTasks(tasks);
+      updateSyncButton();
     });
   });
 
@@ -679,7 +815,8 @@ function renderTaskItem(item, cat, index, state, edits, moveTarget) {
   subtasksHtml = `<div class="subtask-list">
     ${subItems}${addedSubItems}
     <div class="add-subtask-row">
-      <input type="text" class="add-subtask-input" data-parent="${key}" placeholder="+ Add subtask...">
+      <span class="add-subtask-trigger" data-parent="${key}">+ subtask</span>
+      <input type="text" class="add-subtask-input add-subtask-hidden" data-parent="${key}" placeholder="Add subtask and press Enter...">
     </div>
   </div>`;
 
