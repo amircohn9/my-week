@@ -3,7 +3,7 @@
   "weeklyFocus": ["Learn CC", "Severance", "TBD"],
   "categories": ["Career", "Self", "Home Duties", "Family"],
   "startDate": "2026-03-16",
-  "yesterdayNotes": "Keep pushing on the time management dashboard — it's coming together. RBC meeting went well, follow up on account decisions.",
+  "yesterdayNotes": "Create one resume based on a specific job to have a template to work with.",
   "didYouKnow": [
     "Walt Disney was fired from a newspaper for 'lacking imagination.' He went bankrupt before Mickey Mouse.",
     "Steven Spielberg was rejected from USC film school three times. He eventually got an honorary degree from them.",
@@ -17,7 +17,9 @@
     "Steve Jobs was fired from Apple — the company he founded. He called it 'the best thing that could have ever happened to me.'"
   ],
   "diet": {
-    "entries": [],
+    "entries": [
+      { "date": "2026-03-19", "note": "Green salad + 3 hard boiled eggs + tofu coconut curry, 0% yogurt with protein powder, hamburger 80/20, strawberries and blueberries. Clean and intentional.", "calories": "1600-1900", "protein": "120-140g", "carbs": "80-100g", "fat": "80-95g", "sodium": "1800-2200mg", "fiber": "18-22g" }
+    ],
     "weights": []
   },
   "notes": [],
@@ -60,15 +62,15 @@
     {
       "date": "2026-03-19",
       "activities": [
-        { "category": "Self", "text": "Workout with trainer", "hours": 1 },
-        { "category": "Home Duties", "text": "Meeting with RBC — wealth & financial planning", "hours": 1 },
-        { "category": "Career", "text": "Set up software on computer", "hours": 1.5 },
-        { "category": "Career", "text": "Learning Claude Code — Project #1: Time management system", "hours": 4 }
+        { "category": "Self", "text": "1 hour gym workout", "hours": 1 },
+        { "category": "Home Duties", "text": "RBC meeting", "hours": 1 },
+        { "category": "Career", "text": "Claude Code time management project", "hours": 4 },
+        { "category": "Career", "text": "Networking — walk with Travis (former colleague)", "hours": 0.5 }
       ],
-      "mood": "",
-      "obstacles": "",
-      "wins": "Time management dashboard taking shape, RBC meeting done",
-      "summary": "Productive Thursday — 4 hours building the time management dashboard in Claude Code, RBC financial planning meeting, set up dev software, and a morning workout."
+      "mood": "Pretty good. Energized by the Travis conversation and getting started on Claude Code. Conscious of not wanting to over-optimize how he spends his time.",
+      "obstacles": "Slow transition from gym to work — initiation drag",
+      "wins": "Started something new. Second gym session this week. First Claude Code session.",
+      "summary": "5.5 hours tracked — second gym session this week, RBC meeting, 4 hours building the time management project in Claude Code, and a networking walk with Travis."
     }
   ],
   "completedItems": [
@@ -76,22 +78,71 @@
     { "category": "Career", "text": "Severance package negotiation session", "hours": 4, "date": "2026-03-16" },
     { "category": "Career", "text": "LinkedIn post published", "hours": 3, "date": "2026-03-17" },
     { "category": "Family", "text": "Full day with Arielle", "hours": 8, "date": "2026-03-18" },
-    { "category": "Home Duties", "text": "RBC wealth & financial planning meeting", "hours": 1, "date": "2026-03-19" },
-    { "category": "Career", "text": "Learning Claude Code — Project #1: Time management system", "hours": 4, "date": "2026-03-19" }
+    { "category": "Self", "text": "1 hour gym workout", "hours": 1, "date": "2026-03-19" },
+    { "category": "Home Duties", "text": "RBC meeting", "hours": 1, "date": "2026-03-19" },
+    { "category": "Career", "text": "Claude Code time management project", "hours": 4, "date": "2026-03-19" },
+    { "category": "Career", "text": "Networking — walk with Travis (former colleague)", "hours": 0.5, "date": "2026-03-19" }
   ],
   "tasks": {
+    "Career": {
+      "description": "Get ready for my next role.",
+      "recurring": [
+        { "text": "Post 2 LinkedIn posts a week", "recurring": "weekly", "sessions": [
+          { "date": "2026-03-17", "note": "Published post" }
+        ]}
+      ],
+      "now": [
+        { "text": "Complete severance package", "done": false, "deadline": "2026-03-30" },
+        { "text": "Get really good at Claude Code", "done": false, "subtasks": [
+          { "text": "Time management project", "done": false },
+          { "text": "House expenses", "done": false },
+          { "text": "Case study video", "done": false }
+        ]},
+        { "text": "Get ready to apply for next role", "done": false, "subtasks": [
+          { "text": "2 CV options — Content/Creative Director (design & video)", "done": false }
+        ]}
+      ],
+      "backlog": [
+        { "text": "Learn content strategy", "done": false, "subtasks": [
+          { "text": "B2B Content Marketing Strategy book", "done": false }
+        ]},
+        { "text": "Learn brand building (for Creative Director role)", "done": false, "subtasks": [
+          { "text": "Book", "done": false }
+        ]}
+      ]
+    },
+    "Self": {
+      "description": "Use the time to get resilient, process the time at ZoomInfo and get stronger for the next time.",
+      "recurring": [
+        { "text": "Workout with trainer (2x/week)", "recurring": "weekly", "sessions": [
+          { "date": "2026-03-17", "note": "" },
+          { "date": "2026-03-19", "note": "" }
+        ]},
+        { "text": "Psychologist", "recurring": "weekly", "sessions": [
+          { "date": "2026-03-16", "note": "" }
+        ]},
+        { "text": "Piano — 60 min/week (Simply Piano)", "recurring": "weekly", "sessions": [] },
+        { "text": "Stay on track with intermittent fasting", "recurring": "ongoing" },
+        { "text": "Aim to get to 190 lbs", "recurring": "ongoing" }
+      ],
+      "now": [],
+      "backlog": []
+    },
     "Home Duties": {
       "description": "Use the opportunity to do important things in the house I never get the chance to do.",
-      "items": [
-        { "text": "Taxes 2026", "done": false },
-        { "text": "Spring clean up (put items on Facebook)", "done": false },
+      "recurring": [],
+      "now": [
+        { "text": "Taxes 2026", "done": false, "deadline": "2026-03-28" },
         { "text": "RBC — make a decision how to handle", "done": false, "subtasks": [
           { "text": "Move the suggested accounts", "done": false },
           { "text": "Share Schwab statement", "done": false },
           { "text": "Switch to pre-tax contributions", "done": false },
           { "text": "Sell ZI stock?", "done": false },
           { "text": "Sell GoDaddy stock", "done": false }
-        ]},
+        ]}
+      ],
+      "backlog": [
+        { "text": "Spring clean up (put items on Facebook)", "done": false },
         { "text": "Naturalization", "done": false },
         { "text": "Unemployment", "done": false },
         { "text": "A&A Cohn/Blattner Family Review", "done": false, "link": "https://docs.google.com/document/d/1E3n3Ri_3blDTBzHQphO8UhPLVoHcy4TLXdeRDrgvVYI/edit?tab=t.238u26fz3cmu#heading=h.log9ua9nydve" }
@@ -99,55 +150,20 @@
     },
     "Family": {
       "description": "Use this unique time to spend precious time with the kids and Arielle.",
-      "items": [
-        { "text": "Hebrew day with Alma", "done": false, "recurring": "weekly", "sessions": [
+      "recurring": [
+        { "text": "Hebrew day with Alma", "recurring": "weekly", "sessions": [
           { "date": "2026-03-16", "note": "" }
         ]},
-        { "text": "Special time with Carmeli", "done": false, "recurring": "weekly", "sessions": [] },
-        { "text": "Day with Arielle", "done": false, "recurring": "weekly", "sessions": [
+        { "text": "Special time with Carmeli", "recurring": "weekly", "sessions": [] },
+        { "text": "Day with Arielle", "recurring": "weekly", "sessions": [
           { "date": "2026-03-18", "note": "Full day together" }
-        ]},
+        ]}
+      ],
+      "now": [],
+      "backlog": [
         { "text": "Schedule time in NYC", "done": false },
         { "text": "Possibly extend time in", "done": false },
         { "text": "Buy tickets to Netherlands", "done": false }
-      ]
-    },
-    "Self": {
-      "description": "Use the time to get resilient, process the time at ZoomInfo and get stronger for the next time.",
-      "items": [
-        { "text": "Piano — 60 min/week (Simply Piano)", "done": false, "recurring": "weekly", "sessions": [] },
-        { "text": "Psychologist", "done": false, "recurring": "weekly", "sessions": [
-          { "date": "2026-03-16", "note": "" }
-        ]},
-        { "text": "Workout with trainer (2x/week)", "done": false, "recurring": "weekly", "sessions": [
-          { "date": "2026-03-17", "note": "" },
-          { "date": "2026-03-19", "note": "" }
-        ]},
-        { "text": "Stay on track with intermittent fasting", "done": false },
-        { "text": "Aim to get to 190 lbs", "done": false }
-      ]
-    },
-    "Career": {
-      "description": "Get ready for my next role.",
-      "items": [
-        { "text": "Complete severance package", "done": false },
-        { "text": "Get ready to apply for next role", "done": false, "subtasks": [
-          { "text": "2 CV options — Content/Creative Director (design & video)", "done": false }
-        ]},
-        { "text": "Post 2 LinkedIn posts a week", "done": false, "recurring": "weekly", "sessions": [
-          { "date": "2026-03-17", "note": "Published post" }
-        ]},
-        { "text": "Get really good at Claude Code", "done": false, "subtasks": [
-          { "text": "Time management project", "done": false },
-          { "text": "House expenses", "done": false },
-          { "text": "Case study video", "done": false }
-        ]},
-        { "text": "Learn content strategy", "done": false, "subtasks": [
-          { "text": "B2B Content Marketing Strategy book", "done": false }
-        ]},
-        { "text": "Learn brand building (for Creative Director role)", "done": false, "subtasks": [
-          { "text": "Book", "done": false }
-        ]}
       ]
     }
   }

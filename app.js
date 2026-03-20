@@ -247,7 +247,18 @@ function renderDiet(diet) {
     html += '<div class="diet-entries">' + recent.map(e => {
       const d = new Date(e.date + 'T12:00:00');
       const dayName = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      return `<div class="diet-entry"><span class="diet-date">${dayName}</span><span class="diet-note">${escapeHtml(e.note)}</span></div>`;
+      let macrosHtml = '';
+      if (e.calories) {
+        macrosHtml = `<div class="diet-macros">
+          <span class="macro">~${e.calories} cal</span>
+          ${e.protein ? `<span class="macro">P: ${e.protein}</span>` : ''}
+          ${e.carbs ? `<span class="macro">C: ${e.carbs}</span>` : ''}
+          ${e.fat ? `<span class="macro">F: ${e.fat}</span>` : ''}
+          ${e.sodium ? `<span class="macro">Na: ${e.sodium}</span>` : ''}
+          ${e.fiber ? `<span class="macro">Fib: ${e.fiber}</span>` : ''}
+        </div>`;
+      }
+      return `<div class="diet-entry"><span class="diet-date">${dayName}</span><div><span class="diet-note">${escapeHtml(e.note)}</span>${macrosHtml}</div></div>`;
     }).join('') + '</div>';
   }
   container.innerHTML = html;
@@ -270,6 +281,9 @@ function saveTaskState(state) { localStorage.setItem('myweek-tasks', JSON.string
 function getTaskEdits() { try { return JSON.parse(localStorage.getItem('myweek-task-edits')) || {}; } catch { return {}; } }
 function saveTaskEdits(edits) { localStorage.setItem('myweek-task-edits', JSON.stringify(edits)); }
 
+function getTaskMoves() { try { return JSON.parse(localStorage.getItem('myweek-task-moves')) || {}; } catch { return {}; } }
+function saveTaskMoves(moves) { localStorage.setItem('myweek-task-moves', JSON.stringify(moves)); }
+
 function countSyncChanges() {
   const state = getTaskState();
   let count = 0;
@@ -278,6 +292,8 @@ function countSyncChanges() {
   for (const cat of Object.keys(added)) count += added[cat].length;
   const edits = getTaskEdits();
   count += Object.keys(edits).length;
+  const moves = getTaskMoves();
+  for (const cat of Object.keys(moves)) count += Object.keys(moves[cat]).length;
   return count;
 }
 
@@ -314,40 +330,121 @@ function renderTasks(tasks) {
   if (!tasks) { container.innerHTML = '<p class="empty-state">No tasks loaded.</p>'; return; }
 
   const state = getTaskState();
-  const addedTasks = state._added || {};
   const edits = getTaskEdits();
+  const moves = getTaskMoves();
   const { weekStart, weekEnd } = getWeekRange();
+
+  // Read collapse state from localStorage
+  const collapseState = {};
+  CATEGORY_ORDER.forEach(cat => {
+    const stored = localStorage.getItem('task-collapse-' + cat);
+    collapseState[cat] = stored === null ? true : stored === 'true'; // default collapsed
+  });
 
   container.innerHTML = CATEGORY_ORDER.map(cat => {
     const group = tasks[cat];
     if (!group) return '';
     const tagClass = categoryTagClass(cat);
     const desc = group.description ? `<p class="task-group-desc">${escapeHtml(group.description)}</p>` : '';
-    const allItems = group.items || [];
-    const extraItems = addedTasks[cat] || [];
-    const totalCount = allItems.length + extraItems.length;
-    const itemsHtml = allItems.map((item, i) => renderTaskItem(item, cat, i, state, edits, weekStart, weekEnd)).join('');
-    const extraHtml = extraItems.map((item, i) => renderTaskItem(item, cat, `added-${i}`, state, edits, weekStart, weekEnd)).join('');
+    const isCollapsed = collapseState[cat];
 
-    return `<div class="task-group collapsed">
+    // Recurring items
+    const recurring = group.recurring || [];
+    const recurringHtml = recurring.length > 0 ? recurring.map((item, i) => {
+      const key = `${cat}::recurring::${i}::${item.text}`;
+      const displayText = edits[key] || item.text;
+
+      let sessionsHtml = '';
+      if (item.sessions) {
+        const thisWeek = item.sessions.filter(s => { const d = new Date(s.date + 'T12:00:00'); return d >= weekStart && d <= weekEnd; });
+        const nextOpen = `<div class="session-item session-open">
+          <input type="checkbox" class="session-checkbox" data-key="${cat}::session::${i}::next">
+          <span>Next session</span>
+          <input type="date" class="session-date-picker" data-key="${cat}::session-date::${i}" value="${getTodayStr()}">
+        </div>`;
+        const sessionItems = thisWeek.map((s, si) => {
+          const d = new Date(s.date + 'T12:00:00');
+          const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          const note = s.note ? ` — ${escapeHtml(s.note)}` : '';
+          return `<div class="session-item session-done">
+            <input type="checkbox" class="session-checkbox" data-key="${cat}::session::${i}::${si}" checked disabled>
+            <span class="session-done-text">${label}${note}</span>
+          </div>`;
+        }).join('');
+        sessionsHtml = `<div class="sessions-list">${sessionItems}${nextOpen}</div>`;
+      }
+
+      return `<div class="task-item">
+        <span class="task-text" data-editable="true" data-edit-key="${key}">${escapeHtml(displayText)}</span>
+      </div>${sessionsHtml}`;
+    }).join('') : '';
+
+    // Projects — apply moves from localStorage
+    let nowItems = [...(group.now || [])];
+    let backlogItems = [...(group.backlog || [])];
+    const catMoves = moves[cat] || {};
+    for (const [itemText, target] of Object.entries(catMoves)) {
+      if (target === 'backlog') {
+        const idx = nowItems.findIndex(it => it.text === itemText);
+        if (idx >= 0) { backlogItems.unshift(nowItems.splice(idx, 1)[0]); }
+      } else if (target === 'now') {
+        const idx = backlogItems.findIndex(it => it.text === itemText);
+        if (idx >= 0) { nowItems.push(backlogItems.splice(idx, 1)[0]); }
+      }
+    }
+
+    const nowHtml = nowItems.map((item, i) => renderTaskItem(item, cat, `now-${i}`, state, edits, 'backlog')).join('');
+    const backlogHtml = backlogItems.map((item, i) => renderTaskItem(item, cat, `backlog-${i}`, state, edits, 'now')).join('');
+
+    const hasRecurring = recurring.length > 0;
+    const hasNow = nowItems.length > 0;
+    const hasBacklog = backlogItems.length > 0;
+    const hasProjects = hasNow || hasBacklog;
+
+    let projectsCol = '';
+    if (hasProjects) {
+      projectsCol = `<div class="task-column">
+        <h4 class="task-column-subtitle">Projects</h4>
+        ${hasNow ? `<div class="project-section"><h4 class="project-section-title now-title">Working on Now</h4>${nowHtml}</div>` : ''}
+        ${hasBacklog ? `<div class="project-section"><h4 class="project-section-title backlog-title">Backlog</h4>${backlogHtml}</div>` : ''}
+      </div>`;
+    }
+
+    let recurringCol = '';
+    if (hasRecurring) {
+      recurringCol = `<div class="task-column">
+        <h4 class="task-column-subtitle">Recurring</h4>
+        ${recurringHtml}
+      </div>`;
+    }
+
+    const columnsHtml = (hasRecurring && hasProjects)
+      ? `<div class="task-columns">${recurringCol}${projectsCol}</div>`
+      : (hasRecurring ? recurringCol : projectsCol);
+
+    const totalCount = recurring.length + nowItems.length + backlogItems.length;
+
+    return `<div class="task-group ${isCollapsed ? 'collapsed' : ''}" data-cat="${cat}">
       <div class="task-group-header" data-cat="${cat}">
-        <span class="task-group-arrow">&#9656;</span>
+        <span class="task-group-arrow">${isCollapsed ? '&#9656;' : '&#9662;'}</span>
         <span class="category-tag ${tagClass} task-cat-title">${cat}</span>
         <span class="task-count">${totalCount}</span>
       </div>${desc}
       <div class="task-group-items" data-cat="${cat}">
-        ${itemsHtml}${extraHtml}
-        <div class="add-task-row"><input type="text" class="add-task-input" data-cat="${cat}" placeholder="Add a task..."></div>
+        ${columnsHtml}
       </div>
     </div>`;
   }).join('');
 
-  // Collapse toggle
+  // Collapse toggle — persist state
   container.querySelectorAll('.task-group-header').forEach(header => {
     header.addEventListener('click', () => {
       const group = header.closest('.task-group');
+      const cat = group.dataset.cat;
       group.classList.toggle('collapsed');
-      header.querySelector('.task-group-arrow').innerHTML = group.classList.contains('collapsed') ? '&#9656;' : '&#9662;';
+      const collapsed = group.classList.contains('collapsed');
+      header.querySelector('.task-group-arrow').innerHTML = collapsed ? '&#9656;' : '&#9662;';
+      localStorage.setItem('task-collapse-' + cat, collapsed);
     });
   });
 
@@ -358,6 +455,34 @@ function renderTasks(tasks) {
       st[e.target.dataset.key] = e.target.checked;
       saveTaskState(st);
       e.target.closest('.task-item').classList.toggle('task-done', e.target.checked);
+      updateSyncButton();
+    });
+  });
+
+  // Session checkboxes — also capture date
+  container.querySelectorAll('.session-checkbox:not([disabled])').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const st = getTaskState();
+      const dateInput = e.target.closest('.session-item').querySelector('.session-date-picker');
+      const dateVal = dateInput ? dateInput.value : getTodayStr();
+      st[e.target.dataset.key] = e.target.checked ? dateVal : false;
+      saveTaskState(st);
+      updateSyncButton();
+    });
+  });
+
+  // Move buttons
+  container.querySelectorAll('.move-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const mv = getTaskMoves();
+      const cat = btn.dataset.cat;
+      const text = btn.dataset.text;
+      const target = btn.dataset.moveTo;
+      if (!mv[cat]) mv[cat] = {};
+      mv[cat][text] = target;
+      saveTaskMoves(mv);
+      renderTasks(tasks);
       updateSyncButton();
     });
   });
@@ -384,8 +509,6 @@ function renderTasks(tasks) {
         newSpan.dataset.editKey = key;
         newSpan.textContent = newVal || current;
         input.replaceWith(newSpan);
-        // Re-attach dblclick
-        newSpan.addEventListener('dblclick', span.ondblclick);
 
         if (newVal && newVal !== current) {
           const ed = getTaskEdits();
@@ -403,14 +526,47 @@ function renderTasks(tasks) {
     });
   });
 
-  // Add task
-  container.querySelectorAll('.add-task-input').forEach(input => {
+  // Add subtask
+  container.querySelectorAll('.add-subtask-input').forEach(input => {
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && input.value.trim()) {
         const st = getTaskState();
-        if (!st._added) st._added = {};
-        if (!st._added[input.dataset.cat]) st._added[input.dataset.cat] = [];
-        st._added[input.dataset.cat].push({ text: input.value.trim(), done: false });
+        if (!st._addedSubs) st._addedSubs = {};
+        const parentKey = input.dataset.parent;
+        if (!st._addedSubs[parentKey]) st._addedSubs[parentKey] = [];
+        st._addedSubs[parentKey].push({ text: input.value.trim() });
+        saveTaskState(st);
+        renderTasks(tasks);
+        updateSyncButton();
+      }
+    });
+  });
+
+  // Delete original subtask
+  container.querySelectorAll('.delete-sub-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const st = getTaskState();
+      if (!st._deletedSubs) st._deletedSubs = {};
+      const parentKey = btn.dataset.parent;
+      const subIdx = parseInt(btn.dataset.subIndex);
+      if (!st._deletedSubs[parentKey]) st._deletedSubs[parentKey] = [];
+      if (!st._deletedSubs[parentKey].includes(subIdx)) st._deletedSubs[parentKey].push(subIdx);
+      saveTaskState(st);
+      renderTasks(tasks);
+      updateSyncButton();
+    });
+  });
+
+  // Delete added subtask
+  container.querySelectorAll('.delete-added-sub-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const st = getTaskState();
+      const parentKey = btn.dataset.parent;
+      const subIdx = parseInt(btn.dataset.subIndex);
+      if (st._addedSubs && st._addedSubs[parentKey]) {
+        st._addedSubs[parentKey].splice(subIdx, 1);
         saveTaskState(st);
         renderTasks(tasks);
         updateSyncButton();
@@ -432,12 +588,11 @@ function renderTasks(tasks) {
   };
 }
 
-function renderTaskItem(item, cat, index, state, edits, weekStart, weekEnd) {
+function renderTaskItem(item, cat, index, state, edits, moveTarget) {
   const key = `${cat}::${index}::${item.text}`;
   const checked = state[key] || item.done;
   const doneClass = checked ? 'task-done' : '';
 
-  // Check for edited text
   const displayText = edits[key] || item.text;
 
   let textHtml;
@@ -447,44 +602,65 @@ function renderTaskItem(item, cat, index, state, edits, weekStart, weekEnd) {
     textHtml = `<span class="task-text" data-editable="true" data-edit-key="${key}">${escapeHtml(displayText)}</span>`;
   }
 
-  let deadlineBadge = '';
+  let deadlineHtml = '';
   if (item.deadline) {
     const dl = new Date(item.deadline + 'T12:00:00');
     const daysUntil = Math.ceil((dl - new Date()) / (1000 * 60 * 60 * 24));
-    const soonClass = daysUntil <= 7 ? 'deadline-soon' : '';
-    deadlineBadge = `<span class="deadline-badge ${soonClass}">${dl.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
+    const dlLabel = dl.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (daysUntil <= 3) {
+      deadlineHtml = `<span class="deadline-urgent">due ${dlLabel}</span>`;
+    } else if (daysUntil <= 7) {
+      deadlineHtml = `<span class="deadline-soon">due ${dlLabel}</span>`;
+    } else {
+      deadlineHtml = `<span class="deadline-later">due ${dlLabel}</span>`;
+    }
   }
 
-  let sessionsHtml = '';
-  if (item.recurring && item.sessions) {
-    const thisWeek = item.sessions.filter(s => { const d = new Date(s.date + 'T12:00:00'); return d >= weekStart && d <= weekEnd; });
-    const nextOpen = `<div class="session-item session-open"><span class="session-dot">○</span> Next session — open</div>`;
-    const sessionItems = thisWeek.map(s => {
-      const d = new Date(s.date + 'T12:00:00');
-      const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      const note = s.note ? ` — ${escapeHtml(s.note)}` : '';
-      return `<div class="session-item"><span class="session-dot">●</span> ${label}${note}</div>`;
-    }).join('');
-    sessionsHtml = `<div class="sessions-list">${sessionItems}${nextOpen}</div>`;
-  }
+  const moveLabel = moveTarget === 'now' ? '↑' : '↓';
+  const moveTitle = moveTarget === 'now' ? 'Move to Working on Now' : 'Move to Backlog';
+  const moveBtn = `<button class="move-btn" data-cat="${cat}" data-text="${escapeHtml(item.text)}" data-move-to="${moveTarget}" title="${moveTitle}">${moveLabel}</button>`;
+
+  // Subtasks + add input
+  const addedSubs = getTaskState()._addedSubs || {};
+  const addedForThis = addedSubs[key] || [];
+  const deletedSubs = getTaskState()._deletedSubs || {};
+  const deletedForThis = deletedSubs[key] || [];
 
   let subtasksHtml = '';
-  if (item.subtasks && item.subtasks.length > 0) {
-    subtasksHtml = '<div class="subtask-list">' + item.subtasks.map((sub, si) => {
-      const subKey = `${cat}::${index}::sub-${si}::${sub.text}`;
-      const subChecked = state[subKey] || sub.done;
-      const subDisplay = edits[subKey] || sub.text;
-      return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
-        <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
-        <span class="task-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(subDisplay)}</span>
-      </div>`;
-    }).join('') + '</div>';
-  }
+  const allSubs = [...(item.subtasks || [])];
+  const subItems = allSubs.map((sub, si) => {
+    const subKey = `${cat}::${index}::sub-${si}::${sub.text}`;
+    if (deletedForThis.includes(si)) return '';
+    const subChecked = state[subKey] || sub.done;
+    const subDisplay = edits[subKey] || sub.text;
+    return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
+      <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
+      <span class="task-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(subDisplay)}</span>
+      <button class="delete-sub-btn" data-parent="${key}" data-sub-index="${si}" title="Remove">&times;</button>
+    </div>`;
+  }).join('');
+
+  const addedSubItems = addedForThis.map((sub, si) => {
+    const subKey = `${cat}::${index}::addedsub-${si}::${sub.text}`;
+    const subChecked = state[subKey] || false;
+    return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
+      <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
+      <span class="task-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(sub.text)}</span>
+      <button class="delete-added-sub-btn" data-parent="${key}" data-sub-index="${si}" title="Remove">&times;</button>
+    </div>`;
+  }).join('');
+
+  subtasksHtml = `<div class="subtask-list">
+    ${subItems}${addedSubItems}
+    <div class="add-subtask-row">
+      <input type="text" class="add-subtask-input" data-parent="${key}" placeholder="+ Add subtask...">
+    </div>
+  </div>`;
 
   return `<div class="task-item ${doneClass}">
     <input type="checkbox" class="task-checkbox" data-key="${key}" ${checked ? 'checked' : ''}>
-    ${textHtml}${deadlineBadge}
-  </div>${sessionsHtml}${subtasksHtml}`;
+    ${textHtml}${deadlineHtml}${moveBtn}
+  </div>${subtasksHtml}`;
 }
 
 // --- Notes for Claude (via Gmail) ---

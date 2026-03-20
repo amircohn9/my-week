@@ -312,9 +312,9 @@ header h1 {
 }
 
 .task-group-arrow {
-  font-size: 0.85rem;
-  color: #999;
-  width: 14px;
+  font-size: 1.2rem;
+  color: #888;
+  width: 18px;
   flex-shrink: 0;
 }
 
@@ -353,11 +353,16 @@ header h1 {
   gap: 8px;
   padding: 4px 0;
   font-size: 0.9rem;
+  color: #333;
 }
 
 .task-item.task-done .task-text {
   text-decoration: line-through;
   color: #bbb;
+}
+
+.subtask .task-text {
+  color: #555;
 }
 
 .task-checkbox {
@@ -370,10 +375,6 @@ header h1 {
 
 .subtask-list {
   padding-left: 24px;
-}
-
-.subtask .task-text {
-  color: #666;
 }
 
 /* Recurring sessions */
@@ -405,22 +406,72 @@ header h1 {
   font-style: italic;
 }
 
-/* Deadline badges */
-.deadline-badge {
-  font-size: 0.72rem;
-  font-weight: 500;
-  padding: 1px 8px;
-  border-radius: 99px;
-  background: #fef3c7;
-  color: #92400e;
-  margin-left: auto;
-  flex-shrink: 0;
+/* Deadlines — inline, elegant */
+.deadline-later {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-left: 8px;
+  font-style: italic;
 }
 
 .deadline-soon {
-  background: #fde68a;
-  color: #78350f;
+  font-size: 0.75rem;
+  color: #b45309;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+.deadline-urgent {
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin-left: 8px;
   font-weight: 600;
+}
+
+/* Subtask delete button */
+.delete-sub-btn,
+.delete-added-sub-btn {
+  border: none;
+  background: none;
+  color: #ddd;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.delete-sub-btn:hover,
+.delete-added-sub-btn:hover {
+  color: #e74c3c;
+}
+
+/* Add subtask input */
+.add-subtask-row {
+  padding: 2px 0;
+}
+
+.add-subtask-input {
+  border: none;
+  border-bottom: 1px dashed #e0e0e0;
+  padding: 3px 0;
+  font-size: 0.82rem;
+  font-family: inherit;
+  width: 100%;
+  color: #666;
+  background: transparent;
+  outline: none;
+}
+
+.add-subtask-input:focus {
+  border-bottom-color: #999;
+  border-bottom-style: solid;
+}
+
+.add-subtask-input::placeholder {
+  color: #ccc;
+  font-size: 0.8rem;
 }
 
 /* Add task */
@@ -679,6 +730,126 @@ header h1 {
   outline: none;
   width: 100%;
   max-width: 400px;
+}
+
+/* Task columns — recurring left, projects right */
+.task-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 700px) {
+  .task-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.task-column-subtitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+}
+
+.project-section {
+  margin-bottom: 16px;
+}
+
+.project-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 12px 0 8px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.now-title {
+  color: #1e40af;
+  background: #dbeafe;
+}
+
+.backlog-title {
+  color: #78350f;
+  background: #fef3c7;
+}
+
+/* Session checkboxes */
+.session-checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: #7db87d;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.session-done-text {
+  text-decoration: line-through;
+  color: #bbb;
+}
+
+.session-date-picker {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 0.75rem;
+  font-family: inherit;
+  color: #888;
+  background: #fafafa;
+  outline: none;
+  margin-left: 4px;
+}
+
+.session-date-picker:focus {
+  border-color: #999;
+}
+
+/* Move button */
+.move-btn {
+  border: 1px solid #e0e0e0;
+  background: #fafafa;
+  color: #999;
+  font-size: 0.75rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.move-btn:hover {
+  border-color: #999;
+  color: #555;
+  background: #f0f0f0;
+}
+
+/* Diet macros */
+.diet-macros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.macro {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #888;
+  background: #f5f5f5;
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 /* Footer */
