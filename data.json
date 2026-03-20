@@ -20,7 +20,11 @@
     "entries": [
       { "date": "2026-03-19", "note": "Green salad + 3 hard boiled eggs + tofu coconut curry, 0% yogurt with protein powder, hamburger 80/20, strawberries and blueberries. Clean and intentional.", "calories": "1600-1900", "protein": "120-140g", "carbs": "80-100g", "fat": "80-95g", "sodium": "1800-2200mg", "fiber": "18-22g" }
     ],
-    "weights": []
+    "weights": [
+      { "date": "2025-12-20", "lbs": 214 }
+    ],
+    "goalWeight": 190,
+    "startWeight": 214
   },
   "notes": [],
   "checkins": [
@@ -114,11 +118,11 @@
     "Self": {
       "description": "Use the time to get resilient, process the time at ZoomInfo and get stronger for the next time.",
       "recurring": [
-        { "text": "Workout with trainer (2x/week)", "recurring": "weekly", "sessions": [
+        { "text": "Workout with trainer (2x/week)", "recurring": "weekly", "nextSession": "2026-03-24", "sessions": [
           { "date": "2026-03-17", "note": "" },
           { "date": "2026-03-19", "note": "" }
         ]},
-        { "text": "Psychologist", "recurring": "weekly", "sessions": [
+        { "text": "Psychologist", "recurring": "weekly", "nextSession": "2026-03-25", "sessions": [
           { "date": "2026-03-16", "note": "" }
         ]},
         { "text": "Piano — 60 min/week (Simply Piano)", "recurring": "weekly", "sessions": [] },
@@ -151,7 +155,7 @@
     "Family": {
       "description": "Use this unique time to spend precious time with the kids and Arielle.",
       "recurring": [
-        { "text": "Hebrew day with Alma", "recurring": "weekly", "sessions": [
+        { "text": "Hebrew day with Alma", "recurring": "weekly", "nextSession": "2026-03-26", "sessions": [
           { "date": "2026-03-16", "note": "" }
         ]},
         { "text": "Special time with Carmeli", "recurring": "weekly", "sessions": [] },

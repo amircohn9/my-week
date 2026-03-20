@@ -402,8 +402,8 @@ header h1 {
 }
 
 .session-open {
-  color: #bbb;
-  font-style: italic;
+  color: #666;
+  font-style: normal;
 }
 
 /* Deadlines — inline, elegant */
@@ -580,6 +580,84 @@ header h1 {
 
 .diet-note {
   color: #555;
+}
+
+/* Weight tracker */
+.weight-tracker {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.weight-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.weight-current {
+  font-size: 1.3rem;
+  color: #333;
+}
+
+.weight-current strong {
+  font-weight: 700;
+}
+
+.weight-date {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.weight-bar-container {
+  margin-bottom: 6px;
+}
+
+.weight-bar-track {
+  height: 10px;
+  background: #f0f0f0;
+  border-radius: 99px;
+  position: relative;
+  overflow: visible;
+}
+
+.weight-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #a78bfa, #7db87d);
+  transition: width 0.6s ease;
+}
+
+.weight-bar-marker {
+  position: absolute;
+  top: -3px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border: 3px solid #7db87d;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.weight-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+.weight-goal-label {
+  font-weight: 500;
+  color: #7db87d;
+}
+
+.weight-progress {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 4px;
 }
 
 /* Tomorrow */
@@ -796,19 +874,27 @@ header h1 {
 }
 
 .session-date-picker {
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 1px 4px;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 1px 2px;
   font-size: 0.75rem;
   font-family: inherit;
-  color: #888;
-  background: #fafafa;
+  color: #999;
+  background: transparent;
   outline: none;
   margin-left: 4px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.session-date-picker:hover {
+  border-bottom-color: #ccc;
+  color: #666;
 }
 
 .session-date-picker:focus {
-  border-color: #999;
+  border-bottom-color: #999;
+  color: #555;
 }
 
 /* Move button */

@@ -238,9 +238,32 @@ function renderDiet(diet) {
   if (!diet || (!diet.entries.length && !diet.weights.length)) { container.style.display = 'none'; empty.style.display = 'block'; return; }
   empty.style.display = 'none'; container.style.display = 'block';
   let html = '';
+  const goalWeight = diet.goalWeight || 190;
+  const startWeight = diet.startWeight || 214;
   if (diet.weights && diet.weights.length > 0) {
     const latest = diet.weights[diet.weights.length - 1];
-    html += `<div class="diet-weight">Current: <strong>${latest.lbs} lbs</strong> (${latest.date}) — Target: 190 lbs</div>`;
+    const totalToLose = startWeight - goalWeight;
+    const lost = startWeight - latest.lbs;
+    const pct = Math.max(0, Math.min(100, (lost / totalToLose) * 100));
+    const latestDate = new Date(latest.date + 'T12:00:00');
+    const dateLabel = latestDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    html += `<div class="weight-tracker">
+      <div class="weight-header">
+        <span class="weight-current"><strong>${latest.lbs}</strong> lbs</span>
+        <span class="weight-date">${dateLabel}</span>
+      </div>
+      <div class="weight-bar-container">
+        <div class="weight-bar-track">
+          <div class="weight-bar-fill" style="width: ${pct}%"></div>
+          <div class="weight-bar-marker" style="left: ${pct}%"></div>
+        </div>
+        <div class="weight-bar-labels">
+          <span>${startWeight}</span>
+          <span class="weight-goal-label">Goal: ${goalWeight} lbs</span>
+        </div>
+      </div>
+      ${lost > 0 ? `<div class="weight-progress">${lost} lbs down, ${latest.lbs - goalWeight} to go</div>` : ''}
+    </div>`;
   }
   if (diet.entries && diet.entries.length > 0) {
     const recent = [...diet.entries].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
@@ -357,10 +380,13 @@ function renderTasks(tasks) {
       let sessionsHtml = '';
       if (item.sessions) {
         const thisWeek = item.sessions.filter(s => { const d = new Date(s.date + 'T12:00:00'); return d >= weekStart && d <= weekEnd; });
+        let nextDateValue = item.nextSession || getTodayStr();
+        const nextD = new Date(nextDateValue + 'T12:00:00');
+        const nextLabel = nextD.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         const nextOpen = `<div class="session-item session-open">
           <input type="checkbox" class="session-checkbox" data-key="${cat}::session::${i}::next">
-          <span>Next session</span>
-          <input type="date" class="session-date-picker" data-key="${cat}::session-date::${i}" value="${getTodayStr()}">
+          <span>Next: ${nextLabel}</span>
+          <input type="date" class="session-date-picker" data-key="${cat}::session-date::${i}" value="${nextDateValue}">
         </div>`;
         const sessionItems = thisWeek.map((s, si) => {
           const d = new Date(s.date + 'T12:00:00');
@@ -419,7 +445,7 @@ function renderTasks(tasks) {
     }
 
     const columnsHtml = (hasRecurring && hasProjects)
-      ? `<div class="task-columns">${recurringCol}${projectsCol}</div>`
+      ? `<div class="task-columns">${projectsCol}${recurringCol}</div>`
       : (hasRecurring ? recurringCol : projectsCol);
 
     const totalCount = recurring.length + nowItems.length + backlogItems.length;
