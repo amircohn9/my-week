@@ -12,7 +12,7 @@ body {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 40px 24px;
 }
@@ -331,12 +331,7 @@ header h1 {
   margin-left: auto;
 }
 
-.task-group-desc {
-  font-size: 0.85rem;
-  color: #999;
-  font-style: italic;
-  margin: 4px 0 8px 22px;
-}
+/* task-group-desc removed — description is inline now */
 
 .task-group.collapsed .task-group-items,
 .task-group.collapsed .task-group-desc {
@@ -810,11 +805,17 @@ header h1 {
   max-width: 400px;
 }
 
-/* Task sections — stacked layout */
-.task-sections-stacked {
-  display: flex;
-  flex-direction: column;
+/* Task list 2x2 grid */
+#taskList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+
+@media (max-width: 700px) {
+  #taskList {
+    grid-template-columns: 1fr;
+  }
 }
 
 .task-column-subtitle {
@@ -849,8 +850,13 @@ header h1 {
 }
 
 .backlog-title {
-  color: #78350f;
-  background: #fef3c7;
+  color: #4a5568;
+  background: #e2e8f0;
+}
+
+.recurring-title {
+  color: #5b21b6;
+  background: #ede9fe;
 }
 
 /* Session checkboxes */
@@ -958,8 +964,8 @@ header h1 {
 
 .cal-event {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
   padding: 3px 0;
   font-size: 0.9rem;
 }
@@ -1046,6 +1052,59 @@ header h1 {
 
 .hide-recurring-btn:hover {
   color: #999;
+}
+
+/* Category description inline */
+.task-cat-desc {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: #aaa;
+  font-style: italic;
+}
+
+/* Subtask toggle button */
+.subtask-toggle-btn {
+  border: 1px solid #e0e0e0;
+  background: #fafafa;
+  color: #999;
+  font-size: 0.7rem;
+  font-family: inherit;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  padding: 0 5px;
+}
+
+.subtask-toggle-btn:hover {
+  border-color: #999;
+  color: #555;
+  background: #f0f0f0;
+}
+
+/* Subtask list collapsed */
+.subtask-collapsed {
+  display: none;
+}
+
+/* Calendar dot */
+.cal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+/* Recurring section */
+.recurring-section {
+  margin-top: 8px;
 }
 
 /* Add subtask trigger */

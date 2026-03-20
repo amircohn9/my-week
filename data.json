@@ -28,27 +28,27 @@
   },
   "calendarEvents": {
     "2026-03-19": [
-      { "time": "8:00 AM", "summary": "Kids dropoff" },
-      { "time": "8:15 AM", "summary": "Workout — Katie Duca" },
-      { "time": "9:30 AM", "summary": "Career block" },
-      { "time": "11:00 AM", "summary": "RBC Financial Planning Follow-Up" },
-      { "time": "11:30 AM", "summary": "Lunch" },
-      { "time": "1:00 PM", "summary": "Time management micro site project" },
-      { "time": "3:30 PM", "summary": "Pick up clay + Book from library" },
-      { "time": "4:00 PM", "summary": "Pick up laptop from Travis" },
-      { "time": "4:45 PM", "summary": "Kids pickup" }
+      { "time": "8:00 AM", "summary": "Kids dropoff", "color": "#7986CB" },
+      { "time": "8:15 AM", "summary": "Workout — Katie Duca", "color": "#039BE5" },
+      { "time": "9:30 AM", "summary": "Career block", "color": "#3F51B5" },
+      { "time": "11:00 AM", "summary": "RBC Financial Planning Follow-Up", "color": "#039BE5" },
+      { "time": "11:30 AM", "summary": "Lunch", "color": "#33B679" },
+      { "time": "1:00 PM", "summary": "Time management micro site project", "color": "#616161" },
+      { "time": "3:30 PM", "summary": "Pick up clay + Book from library", "color": "#616161" },
+      { "time": "4:00 PM", "summary": "Pick up laptop from Travis", "color": "#039BE5" },
+      { "time": "4:45 PM", "summary": "Kids pickup", "color": "#7986CB" }
     ],
     "2026-03-20": [
-      { "time": "8:00 AM", "summary": "Kids dropoff" },
-      { "time": "9:00 AM", "summary": "Amir/Omri" },
-      { "time": "10:00 AM", "summary": "Naturalization — Saravia Law" },
-      { "time": "10:30 AM", "summary": "Elaine Boyer" },
-      { "time": "11:30 AM", "summary": "Lunch" },
-      { "time": "1:00 PM", "summary": "Justin Levy catch-up" },
-      { "time": "2:00 PM", "summary": "Dermatology associates Concord" },
-      { "time": "3:00 PM", "summary": "Email/tasks" },
-      { "time": "4:45 PM", "summary": "Kids pickup" },
-      { "time": "5:00 PM", "summary": "BDPS + Temple Emunah Kabbalat Shabbat" }
+      { "time": "8:00 AM", "summary": "Kids dropoff", "color": "#7986CB" },
+      { "time": "9:00 AM", "summary": "Amir/Omri", "color": "#039BE5" },
+      { "time": "10:00 AM", "summary": "Naturalization — Saravia Law", "color": "#039BE5" },
+      { "time": "10:30 AM", "summary": "Elaine Boyer", "color": "#039BE5" },
+      { "time": "11:30 AM", "summary": "Lunch", "color": "#33B679" },
+      { "time": "1:00 PM", "summary": "Justin Levy catch-up", "color": "#039BE5" },
+      { "time": "2:00 PM", "summary": "Dermatology associates Concord", "color": "#039BE5" },
+      { "time": "3:00 PM", "summary": "Email/tasks", "color": "#616161" },
+      { "time": "4:45 PM", "summary": "Kids pickup", "color": "#7986CB" },
+      { "time": "5:00 PM", "summary": "BDPS + Temple Emunah Kabbalat Shabbat", "color": "#039BE5" }
     ]
   },
   "notes": [],

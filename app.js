@@ -167,7 +167,10 @@ function renderDailyFocus(data, dayMode) {
     const d = new Date(dateStr + 'T12:00:00');
     const dateLabel = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
     calContainer.innerHTML = `<div class="cal-header">${dateLabel}</div>` +
-      events.map(e => `<div class="cal-event"><span class="cal-time">${e.time}</span><span class="cal-summary">${escapeHtml(e.summary)}</span></div>`).join('');
+      events.map(e => {
+        const dot = e.color ? `<span class="cal-dot" style="background:${e.color}"></span>` : '';
+        return `<div class="cal-event">${dot}<span class="cal-time">${e.time}</span><span class="cal-summary">${escapeHtml(e.summary)}</span></div>`;
+      }).join('');
     calContainer.style.display = 'block';
   } else {
     calContainer.innerHTML = `<p class="empty-state">No calendar events for ${dayLabel.toLowerCase()}.</p>`;
@@ -283,6 +286,16 @@ function renderDiet(diet) {
   const empty = document.getElementById('dietEmpty');
   if (!diet || (!diet.entries.length && !diet.weights.length)) { container.style.display = 'none'; empty.style.display = 'block'; return; }
   empty.style.display = 'none'; container.style.display = 'block';
+
+  // Merge localStorage weight updates into diet.weights (persist across refresh)
+  const localWeights = JSON.parse(localStorage.getItem('myweek-weight-updates') || '[]');
+  for (const lw of localWeights) {
+    if (!diet.weights.find(w => w.date === lw.date && w.lbs === lw.lbs)) {
+      diet.weights.push(lw);
+    }
+  }
+  diet.weights.sort((a, b) => a.date.localeCompare(b.date));
+
   let html = '';
   const goalWeight = diet.goalWeight || 190;
   const startWeight = diet.startWeight || 214;
@@ -293,6 +306,24 @@ function renderDiet(diet) {
     const pct = Math.max(0, Math.min(100, (lost / totalToLose) * 100));
     const latestDate = new Date(latest.date + 'T12:00:00');
     const dateLabel = latestDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    // Calculate avg daily calorie deficit (~3500 cal per lb)
+    let deficitHtml = '';
+    if (lost > 0) {
+      const startDate = new Date('2025-12-20T12:00:00');
+      const latestDateObj = new Date(latest.date + 'T12:00:00');
+      const daysSoFar = Math.max(1, (latestDateObj - startDate) / (1000 * 60 * 60 * 24));
+      const totalDeficit = lost * 3500;
+      const avgDailyDeficit = Math.round(totalDeficit / daysSoFar);
+      const lbsPerDay = lost / daysSoFar;
+      const remaining = latest.lbs - goalWeight;
+      const daysToGo = Math.ceil(remaining / lbsPerDay);
+      const estDate = new Date(latestDateObj);
+      estDate.setDate(estDate.getDate() + daysToGo);
+      const estLabel = estDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      deficitHtml = `<div class="weight-estimate">Avg daily deficit of ~<strong>${avgDailyDeficit} cal</strong>. At this pace, you'll hit ${goalWeight} lbs around <strong>${estLabel}</strong></div>`;
+    }
+
     html += `<div class="weight-tracker">
       <div class="weight-header">
         <span class="weight-current"><strong>${latest.lbs}</strong> lbs</span>
@@ -309,22 +340,7 @@ function renderDiet(diet) {
         </div>
       </div>
       ${lost > 0 ? `<div class="weight-progress">${lost} lbs down, ${latest.lbs - goalWeight} to go</div>` : ''}
-      ${(() => {
-        // Estimate goal date based on rate of loss
-        if (diet.weights.length >= 1 && lost > 0) {
-          const startDate = new Date('2025-12-20T12:00:00');
-          const latestDateObj = new Date(latest.date + 'T12:00:00');
-          const daysSoFar = (latestDateObj - startDate) / (1000 * 60 * 60 * 24);
-          const lbsPerDay = lost / daysSoFar;
-          const remaining = latest.lbs - goalWeight;
-          const daysToGo = Math.ceil(remaining / lbsPerDay);
-          const estDate = new Date(latestDateObj);
-          estDate.setDate(estDate.getDate() + daysToGo);
-          const estLabel = estDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-          return `<div class="weight-estimate">At this pace, you'll hit ${goalWeight} lbs around <strong>${estLabel}</strong></div>`;
-        }
-        return '';
-      })()}
+      ${deficitHtml}
       <div class="weight-input-row">
         <input type="number" id="weightInput" class="weight-input" placeholder="New weight..." step="0.1" min="100" max="300">
         <button id="weightSaveBtn" class="weight-save-btn">Update</button>
@@ -456,7 +472,6 @@ function renderTasks(tasks) {
     const group = tasks[cat];
     if (!group) return '';
     const tagClass = categoryTagClass(cat);
-    const desc = group.description ? `<p class="task-group-desc">${escapeHtml(group.description)}</p>` : '';
     const isCollapsed = collapseState[cat];
 
     // Recurring items — filter hidden
@@ -530,37 +545,31 @@ function renderTasks(tasks) {
     const hasBacklog = backlogItems.length > 0;
     const hasProjects = hasNow || hasBacklog;
 
-    let projectsCol = '';
+    let projectsHtml = '';
     if (hasProjects) {
-      projectsCol = `<div class="task-column">
-        <h4 class="task-column-subtitle">Projects</h4>
-        ${hasNow ? `<div class="project-section"><h4 class="project-section-title now-title">Working on Now</h4>${nowHtml}</div>` : ''}
-        ${hasBacklog ? `<div class="project-section"><h4 class="project-section-title backlog-title">Backlog</h4>${backlogHtml}</div>` : ''}
-      </div>`;
+      projectsHtml = `${hasNow ? `<div class="project-section"><h4 class="project-section-title now-title">Now</h4>${nowHtml}</div>` : ''}
+        ${hasBacklog ? `<div class="project-section"><h4 class="project-section-title backlog-title">Backlog</h4>${backlogHtml}</div>` : ''}`;
     }
 
-    let recurringCol = '';
+    let recurringHtmlBlock = '';
     if (hasRecurring) {
-      recurringCol = `<div class="task-column">
-        <h4 class="task-column-subtitle">Recurring</h4>
+      recurringHtmlBlock = `<div class="recurring-section">
+        <h4 class="project-section-title recurring-title">Recurring</h4>
         ${recurringHtml}
       </div>`;
     }
 
-    const columnsHtml = (hasRecurring && hasProjects)
-      ? `<div class="task-sections-stacked">${projectsCol}${recurringCol}</div>`
-      : (hasRecurring ? recurringCol : projectsCol);
-
     const totalCount = recurring.length + nowItems.length + backlogItems.length;
+    const descText = group.description ? ` <span class="task-cat-desc">(${escapeHtml(group.description)})</span>` : '';
 
     return `<div class="task-group ${isCollapsed ? 'collapsed' : ''}" data-cat="${cat}">
       <div class="task-group-header" data-cat="${cat}">
         <span class="task-group-arrow">${isCollapsed ? '&#9656;' : '&#9662;'}</span>
-        <span class="category-tag ${tagClass} task-cat-title">${cat}</span>
+        <span class="category-tag ${tagClass} task-cat-title">${cat}</span>${descText}
         <span class="task-count">${totalCount}</span>
-      </div>${desc}
+      </div>
       <div class="task-group-items" data-cat="${cat}">
-        ${columnsHtml}
+        ${projectsHtml}${recurringHtmlBlock}
       </div>
     </div>`;
   }).join('');
@@ -655,6 +664,16 @@ function renderTasks(tasks) {
     });
   });
 
+  // Subtask toggle
+  container.querySelectorAll('.subtask-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.subtaskKey;
+      const list = container.querySelector(`.subtask-list[data-subtask-key="${key}"]`);
+      if (list) list.classList.toggle('subtask-collapsed');
+    });
+  });
+
   // Add subtask — trigger shows input
   container.querySelectorAll('.add-subtask-trigger').forEach(trigger => {
     trigger.addEventListener('click', () => {
@@ -741,11 +760,22 @@ function renderTasks(tasks) {
     const summary = generateSyncSummary();
     try {
       await navigator.clipboard.writeText(summary);
+      // Clear all sync state
+      const st = getTaskState();
+      const keysToRemove = Object.keys(st).filter(k => k !== '_added' && k !== '_synced' && k !== '_addedSubs' && k !== '_deletedSubs');
+      keysToRemove.forEach(k => delete st[k]);
+      if (st._added) delete st._added;
+      if (st._addedSubs) delete st._addedSubs;
+      if (st._deletedSubs) delete st._deletedSubs;
+      saveTaskState(st);
+      saveTaskEdits({});
+      saveTaskMoves({});
+      localStorage.removeItem('myweek-weight-updates');
+      updateSyncButton();
       const btn = document.getElementById('syncBtn');
-      const orig = btn.innerHTML;
-      btn.innerHTML = 'Copied! Paste in Claude Code';
+      btn.innerHTML = 'Synced!';
       btn.classList.add('sync-copied');
-      setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('sync-copied'); }, 3000);
+      setTimeout(() => { btn.style.display = 'none'; btn.classList.remove('sync-copied'); }, 2000);
     } catch { prompt('Copy this and paste in Claude Code:', summary); }
   };
 }
@@ -782,7 +812,7 @@ function renderTaskItem(item, cat, index, state, edits, moveTarget) {
   const moveTitle = moveTarget === 'now' ? 'Move to Working on Now' : 'Move to Backlog';
   const moveBtn = `<button class="move-btn" data-cat="${cat}" data-text="${escapeHtml(item.text)}" data-move-to="${moveTarget}" title="${moveTitle}">${moveLabel}</button>`;
 
-  // Subtasks + add input
+  // Subtasks
   const addedSubs = getTaskState()._addedSubs || {};
   const addedForThis = addedSubs[key] || [];
   const deletedSubs = getTaskState()._deletedSubs || {};
@@ -790,40 +820,51 @@ function renderTaskItem(item, cat, index, state, edits, moveTarget) {
 
   let subtasksHtml = '';
   const allSubs = [...(item.subtasks || [])];
-  const subItems = allSubs.map((sub, si) => {
-    const subKey = `${cat}::${index}::sub-${si}::${sub.text}`;
-    if (deletedForThis.includes(si)) return '';
-    const subChecked = state[subKey] || sub.done;
-    const subDisplay = edits[subKey] || sub.text;
-    return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
-      <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
-      <span class="task-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(subDisplay)}</span>
-      <button class="delete-sub-btn" data-parent="${key}" data-sub-index="${si}" title="Remove">&times;</button>
-    </div>`;
-  }).join('');
+  const hasSubtasks = allSubs.some((s, si) => !deletedForThis.includes(si)) || addedForThis.length > 0;
 
-  const addedSubItems = addedForThis.map((sub, si) => {
-    const subKey = `${cat}::${index}::addedsub-${si}::${sub.text}`;
-    const subChecked = state[subKey] || false;
-    return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
-      <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
-      <span class="task-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(sub.text)}</span>
-      <button class="delete-added-sub-btn" data-parent="${key}" data-sub-index="${si}" title="Remove">&times;</button>
-    </div>`;
-  }).join('');
+  if (hasSubtasks || allSubs.length > 0) {
+    const subItems = allSubs.map((sub, si) => {
+      const subKey = `${cat}::${index}::sub-${si}::${sub.text}`;
+      if (deletedForThis.includes(si)) return '';
+      const subChecked = state[subKey] || sub.done;
+      const subDisplay = edits[subKey] || sub.text;
+      return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
+        <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
+        <span class="task-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(subDisplay)}</span>
+        <button class="delete-sub-btn" data-parent="${key}" data-sub-index="${si}" title="Remove">&times;</button>
+      </div>`;
+    }).join('');
 
-  subtasksHtml = `<div class="subtask-list">
-    ${subItems}${addedSubItems}
-    <div class="add-subtask-row">
-      <span class="add-subtask-trigger" data-parent="${key}">+ subtask</span>
-      <input type="text" class="add-subtask-input add-subtask-hidden" data-parent="${key}" placeholder="Add subtask and press Enter...">
-    </div>
-  </div>`;
+    const addedSubItems = addedForThis.map((sub, si) => {
+      const subKey = `${cat}::${index}::addedsub-${si}::${sub.text}`;
+      const subChecked = state[subKey] || false;
+      return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
+        <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
+        <span class="task-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(sub.text)}</span>
+        <button class="delete-added-sub-btn" data-parent="${key}" data-sub-index="${si}" title="Remove">&times;</button>
+      </div>`;
+    }).join('');
+
+    const subCount = allSubs.filter((s, si) => !deletedForThis.includes(si)).length + addedForThis.length;
+    subtasksHtml = `<div class="subtask-list subtask-collapsed" data-subtask-key="${key}">
+      ${subItems}${addedSubItems}
+      <div class="add-subtask-row">
+        <span class="add-subtask-trigger" data-parent="${key}">+ subtask</span>
+        <input type="text" class="add-subtask-input add-subtask-hidden" data-parent="${key}" placeholder="Add subtask and press Enter...">
+      </div>
+    </div>`;
+
+    const toggleBtn = `<button class="subtask-toggle-btn" data-subtask-key="${key}" title="Show subtasks">${subCount}</button>`;
+    return `<div class="task-item ${doneClass}">
+      <input type="checkbox" class="task-checkbox" data-key="${key}" ${checked ? 'checked' : ''}>
+      ${textHtml}${deadlineHtml}${toggleBtn}${moveBtn}
+    </div>${subtasksHtml}`;
+  }
 
   return `<div class="task-item ${doneClass}">
     <input type="checkbox" class="task-checkbox" data-key="${key}" ${checked ? 'checked' : ''}>
     ${textHtml}${deadlineHtml}${moveBtn}
-  </div>${subtasksHtml}`;
+  </div>`;
 }
 
 // --- Notes for Claude (via Gmail) ---
