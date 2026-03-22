@@ -22,27 +22,17 @@ When Amir says something like "let's check in," "daily check-in," or "how was my
 
 **The questions (in order):**
 
-1. **What did you do today?** — Get specifics. Categorize what you hear into: Home Duties, Family, Self, Career. If Amir gives vague answers, gently ask for a bit more detail. Note approximate time if he mentions it.
+1. **What did you do today?** — Get specifics. Categorize what you hear into: Career, Self, Home, Family. If Amir gives vague answers, gently ask for a bit more detail. Note approximate time if he mentions it.
 
-2. **How are you feeling about the day?** — Open-ended. Just listen and reflect.
+2. **How did the day go — any wins, blockers, or things you'd do differently?** — Covers mood, obstacles, and reflection in one open question. Listen and reflect back naturally.
 
-3. **Was there anything that got in the way?** — Obstacles, distractions, energy issues. No judgment.
+3. **How was your eating today?** — Quick, no-judgment check-in on diet. Save to `data.json` under `diet.entries` as `{ "date": "YYYY-MM-DD", "note": "their words" }`. Once a week (e.g., Friday or whenever Amir mentions it), ask about weight and save to `diet.weights` as `{ "date": "YYYY-MM-DD", "lbs": number }`.
 
-4. **What are you happy about today?** — Wins, even small ones. Celebrate them.
+4. **What's the most important task for tomorrow?** — One thing. Save to `data.json` as `yesterdayNotes` so it shows on the dashboard the next day as "Notes from Yesterday" — breadcrumbs from past-Amir to future-Amir.
 
-5. **What would you do differently?** — Forward-looking, not self-critical. Frame as learning.
+5. **Anything to add or change on the task list, or any upcoming deadlines?** — New items, completed items, priority shifts. Update `tasks.md` and `data.json` tasks if Amir says yes. If deadlines are mentioned, add a `"deadline": "YYYY-MM-DD"` field to the relevant task in `data.json`. The dashboard will show deadline badges in warm amber. Tasks due within 7 days get a subtle highlight. Also check for any pending sync changes from the website (Amir may paste a sync summary from the dashboard).
 
-6. **Anything to add or change on your task list?** — New items, completed items, priority shifts. Update `tasks.md` and `data.json` tasks if Amir says yes. Also check for any pending sync changes from the website (Amir may paste a sync summary from the dashboard).
-
-7. **Any upcoming deadlines?** — If yes, add a `"deadline": "YYYY-MM-DD"` field to the relevant task item in `data.json`. The dashboard will show deadline badges in warm amber. Tasks due within 7 days get a subtle highlight.
-
-8. **How was your eating today?** — Quick, no-judgment check-in on diet. Save to `data.json` under `diet.entries` as `{ "date": "YYYY-MM-DD", "note": "their words" }`. Once a week (e.g., Friday or whenever Amir mentions it), ask about weight and save to `diet.weights` as `{ "date": "YYYY-MM-DD", "lbs": number }`.
-
-9. **Any notes for tomorrow?** — Anything Amir wants to remind himself of tomorrow. Save to `data.json` as `yesterdayNotes`. This shows on the dashboard the next day as "Notes from Yesterday" — breadcrumbs from past-Amir to future-Amir.
-
-10. **Check for notes from the dashboard.** — Before closing, check if Amir has notes from the website's "Notes for Claude" section. He may paste them in. Process any feedback, task changes, or system ideas.
-
-11. **Anything you want to change about this system?** — Meta-question. The system should evolve.
+6. **Any notes for the system or dashboard?** — Meta-feedback, system ideas, or notes from the website's "Notes for Claude" section. He may paste them in. The system should evolve.
 
 **Closing:** End with a strong, genuine, **data-informed** encouragement. Don't be generic — reference specific numbers from today's check-in or the week so far. Examples:
 - "11 hours tracked this week across 3 categories — you're showing up for yourself."
@@ -61,20 +51,17 @@ After the check-in conversation is complete, save a log file to `logs/YYYY-MM-DD
 - [Category] Item (time if mentioned)
 - [Category] Item
 
-## How I'm feeling
-(Amir's words, summarized faithfully)
+## How the day went
+(wins, blockers, and/or what I'd do differently — Amir's words, summarized faithfully)
 
-## What got in the way
-(obstacles or "nothing major")
+## Eating
+(quick note on diet — or "not discussed")
 
-## Wins
-(what went well)
-
-## What I'd do differently
-(forward-looking notes)
+## Most important task for tomorrow
+(one thing)
 
 ## Task list updates
-(any additions, completions, or changes — or "no changes")
+(any additions, completions, changes, or deadlines — or "no changes")
 
 ## System notes
 (any meta-feedback about the system itself — or "none")
