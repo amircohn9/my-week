@@ -3,7 +3,7 @@
   "weeklyFocus": ["Learn CC", "Severance", "TBD"],
   "categories": ["Career", "Self", "Home Duties", "Family"],
   "startDate": "2026-03-16",
-  "yesterdayNotes": "Create one resume based on a specific job to have a template to work with.",
+  "yesterdayNotes": "Finish food log entry. Plan priorities for next week.",
   "didYouKnow": [
     "Walt Disney was fired from a newspaper for 'lacking imagination.' He went bankrupt before Mickey Mouse.",
     "Steven Spielberg was rejected from USC film school three times. He eventually got an honorary degree from them.",
@@ -18,7 +18,8 @@
   ],
   "diet": {
     "entries": [
-      { "date": "2026-03-19", "note": "Green salad + 3 hard boiled eggs + tofu coconut curry, 0% yogurt with protein powder, hamburger 80/20, strawberries and blueberries. Clean and intentional.", "calories": "1600-1900", "protein": "120-140g", "carbs": "80-100g", "fat": "80-95g", "sodium": "1800-2200mg", "fiber": "18-22g" }
+      { "date": "2026-03-19", "note": "Green salad + 3 hard boiled eggs + tofu coconut curry, 0% yogurt with protein powder, hamburger 80/20, strawberries and blueberries. Clean and intentional.", "calories": "1600-1900", "protein": "120-140g", "carbs": "80-100g", "fat": "80-95g", "sodium": "1800-2200mg", "fiber": "18-22g" },
+      { "date": "2026-03-20", "note": "3.5 TJ chicken sausages, TJ Greek salad, half box chicken liver, 3 cups 2% yogurt, chocolate protein shake, 2oz Brooklyn Biltong steak slices (~180cal, 32g protein), half sumo orange, Shabbat dinner ~800cal + 1.5 challah buns" }
     ],
     "weights": [
       { "date": "2025-12-20", "lbs": 214 }
@@ -100,6 +101,21 @@
       "obstacles": "Slow transition from gym to work — initiation drag",
       "wins": "Started something new. Second gym session this week. First Claude Code session.",
       "summary": "5.5 hours tracked — second gym session this week, RBC meeting, 4 hours building the time management project in Claude Code, and a networking walk with Travis."
+    },
+    {
+      "date": "2026-03-20",
+      "activities": [
+        { "category": "Career", "text": "LinkedIn post brainstorm with Omri Roth", "hours": 1 },
+        { "category": "Career", "text": "Claude Code — Facebook selling tool + taxes project", "hours": 3 },
+        { "category": "Home Duties", "text": "Organized Facebook items for sale", "hours": 1 },
+        { "category": "Home Duties", "text": "Attorney meeting re: naturalization", "hours": 0.5 },
+        { "category": "Self", "text": "Couple therapy", "hours": 1 },
+        { "category": "Family", "text": "Lunch, dog walk, kids to shul, Shabbat dinner", "hours": 2 }
+      ],
+      "mood": "Good overall",
+      "obstacles": "Argument with Arielle near the kids",
+      "wins": "Getting much more comfortable with Claude Code — staying focused, out of rabbit holes",
+      "summary": "8.5 hours tracked — LinkedIn brainstorm with Omri, 3 hours on Claude Code projects, organized items for Facebook sale, naturalization attorney meeting, couple therapy, and quality Shabbat family time."
     }
   ],
   "completedItems": [
@@ -110,7 +126,13 @@
     { "category": "Self", "text": "1 hour gym workout", "hours": 1, "date": "2026-03-19" },
     { "category": "Home Duties", "text": "RBC meeting", "hours": 1, "date": "2026-03-19" },
     { "category": "Career", "text": "Claude Code time management project", "hours": 4, "date": "2026-03-19" },
-    { "category": "Career", "text": "Networking — walk with Travis (former colleague)", "hours": 0.5, "date": "2026-03-19" }
+    { "category": "Career", "text": "Networking — walk with Travis (former colleague)", "hours": 0.5, "date": "2026-03-19" },
+    { "category": "Career", "text": "LinkedIn post brainstorm with Omri Roth", "hours": 1, "date": "2026-03-20" },
+    { "category": "Career", "text": "Claude Code — Facebook selling tool + taxes project", "hours": 3, "date": "2026-03-20" },
+    { "category": "Home Duties", "text": "Organized Facebook items for sale", "hours": 1, "date": "2026-03-20" },
+    { "category": "Home Duties", "text": "Attorney meeting re: naturalization", "hours": 0.5, "date": "2026-03-20" },
+    { "category": "Self", "text": "Couple therapy", "hours": 1, "date": "2026-03-20" },
+    { "category": "Family", "text": "Lunch, dog walk, kids to shul, Shabbat dinner", "hours": 2, "date": "2026-03-20" }
   ],
   "tasks": {
     "Career": {
