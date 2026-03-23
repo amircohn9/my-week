@@ -3,7 +3,18 @@
 let appData = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  appData = await fetch('data.json').then(r => r.json());
+  const [hotData, archiveData] = await Promise.all([
+    fetch('data.json').then(r => r.json()),
+    fetch('archive.json').then(r => r.json()).catch(() => ({ checkins: [], completedItems: [], diet: { entries: [], weights: [] } }))
+  ]);
+  appData = hotData;
+  // Merge archive into hot data so dashboard sees full history
+  appData.checkins = [...(archiveData.checkins || []), ...(appData.checkins || [])];
+  appData.completedItems = [...(archiveData.completedItems || []), ...(appData.completedItems || [])];
+  if (archiveData.diet) {
+    appData.diet.entries = [...(archiveData.diet.entries || []), ...(appData.diet.entries || [])];
+    appData.diet.weights = [...(archiveData.diet.weights || []), ...(appData.diet.weights || [])];
+  }
 
   // Render all sections
   renderDateRange();

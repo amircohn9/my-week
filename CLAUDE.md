@@ -102,7 +102,7 @@ After saving the log, also update `data.json` so the web dashboard reflects the 
 - **Recurring tasks**: Some tasks have `"recurring": "weekly"` and a `"sessions"` array. When Amir does a recurring task (e.g., workout, psychologist, Hebrew with Alma), add a session entry: `{ "date": "YYYY-MM-DD", "note": "" }`. The dashboard shows completed sessions and an open slot for the next one.
 - Update `yesterdayNotes` at end of check-in with anything Amir wants to remember tomorrow
 - Update `didYouKnow` occasionally with new inspiring facts about people who struggled and succeeded — especially relevant to career transitions, building new skills, or persevering through uncertainty
-- Keep ALL checkins in data.json (the dashboard has an "All Time" toggle). Do not remove old checkins.
+- Keep only the **last 14 days** of checkins in data.json. At the end of each check-in, move any checkins older than 14 days from data.json into archive.json (appending to its `checkins` array). Same rule for `completedItems` (move items older than 14 days to archive.json) and `diet.entries` (move entries older than 30 days to archive.json). The dashboard fetches both files and merges them, so historical data is never lost — Claude just doesn't need to read it.
 - The week starts on **Monday** (not Sunday). Monday–Sunday is one week.
 - Update `weeklyIntentions` when Amir sets new weekly goals
 
