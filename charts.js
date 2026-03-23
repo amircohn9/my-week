@@ -275,10 +275,20 @@ function renderWeeklyObjectives(tasks) {
       if (item.subtasks && item.subtasks.length > 0) {
         item.subtasks.forEach((sub, si) => {
           const subKey = `${cat}::now-${idx}::sub-${si}::${sub.text}`;
-          const twKey = subKey;
-          const isThisWeek = thisWeekState.hasOwnProperty(twKey) ? thisWeekState[twKey] : !!sub.thisWeek;
+          const isThisWeek = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : !!sub.thisWeek;
           if (!isThisWeek) return;
           const isDone = sub.done || state[subKey];
+          const edits = getTaskEdits();
+          objectives.push({ text: edits[subKey] || sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
+        });
+        // Also include added subtasks starred thisWeek
+        const parentKey = `${cat}::now-${idx}::${item.text}`;
+        const addedSubs = (state._addedSubs || {})[parentKey] || [];
+        addedSubs.forEach((sub, si) => {
+          const subKey = `${cat}::now-${idx}::addedsub-${si}::${sub.text}`;
+          const isThisWeek = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : false;
+          if (!isThisWeek) return;
+          const isDone = state[subKey] || false;
           objectives.push({ text: sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
         });
       } else {
@@ -700,9 +710,11 @@ function renderProjectsAgenda(tasks) {
       const isDone = sub.done || state[subKey];
       const twKey = subKey;
       const isTW = thisWeekState.hasOwnProperty(twKey) ? thisWeekState[twKey] : !!sub.thisWeek;
+      const edits = getTaskEdits();
+      const displayText = edits[subKey] || sub.text;
       return `<div class="proj-subtask ${isDone ? 'proj-subtask-done' : ''}">
         <input type="checkbox" class="proj-subtask-checkbox" data-key="${subKey}" ${isDone ? 'checked' : ''}>
-        <span class="proj-subtask-text">${escapeHtml(sub.text)}</span>
+        <span class="proj-subtask-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(displayText)}</span>
         <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${twKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
       </div>`;
     }).join('');
@@ -802,6 +814,42 @@ function renderProjectsAgenda(tasks) {
       updateSyncButton();
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
+    });
+  });
+
+  // Double-click to edit subtask text
+  container.querySelectorAll('.proj-subtask-text[data-editable]').forEach(span => {
+    span.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      const key = span.dataset.editKey;
+      const current = span.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = current;
+      input.className = 'task-edit-input';
+      span.replaceWith(input);
+      input.focus(); input.select();
+      const save = () => {
+        const newVal = input.value.trim();
+        const newSpan = document.createElement('span');
+        newSpan.className = 'proj-subtask-text';
+        newSpan.dataset.editable = 'true';
+        newSpan.dataset.editKey = key;
+        newSpan.textContent = newVal || current;
+        input.replaceWith(newSpan);
+        if (newVal && newVal !== current) {
+          const ed = getTaskEdits();
+          ed[key] = newVal;
+          saveTaskEdits(ed);
+          updateSyncButton();
+          renderWeeklyObjectives(tasks);
+        }
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = current; input.blur(); }
+      });
     });
   });
 
