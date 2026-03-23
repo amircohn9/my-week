@@ -9,6 +9,12 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="authOverlay" style="display:none;position:fixed;inset:0;background:#f9f9f7;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+    <div style="font-size:1.5rem;font-weight:700;color:#222;">Stay Focused — Keep Moving</div>
+    <input id="authInput" type="password" placeholder="Enter password" style="border:1px solid #ddd;border-radius:8px;padding:10px 16px;font-size:1rem;font-family:inherit;outline:none;width:240px;text-align:center;">
+    <div id="authError" style="color:#e74c3c;font-size:0.85rem;display:none;">Incorrect password</div>
+  </div>
+  <div id="mainApp" style="display:none;">
   <div class="container">
     <header>
       <h1>Stay Focused — Keep Moving</h1>
@@ -111,6 +117,31 @@
       <p>Built with care. One day at a time.</p>
     </footer>
   </div>
+  </div>
+
+  <script>
+    (function() {
+      const PW = 'amir1414';
+      const overlay = document.getElementById('authOverlay');
+      const app = document.getElementById('mainApp');
+      const input = document.getElementById('authInput');
+      const err = document.getElementById('authError');
+      if (localStorage.getItem('myweek-auth') === PW) {
+        overlay.style.display = 'none'; app.style.display = 'block';
+      } else {
+        overlay.style.display = 'flex'; app.style.display = 'none';
+      }
+      input.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        if (input.value === PW) {
+          localStorage.setItem('myweek-auth', PW);
+          overlay.style.display = 'none'; app.style.display = 'block';
+        } else {
+          err.style.display = 'block'; input.value = ''; input.focus();
+        }
+      });
+    })();
+  </script>
 
   <script src="utils.js"></script>
   <script src="charts.js"></script>
