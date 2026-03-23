@@ -1,7 +1,17 @@
 {
+  "schemaVersion": 1,
   "dailyFocus": "Get the time management dashboard working end-to-end",
-  "weeklyFocus": ["Learn CC", "Severance", "TBD"],
-  "categories": ["Career", "Self", "Home Duties", "Family"],
+  "weeklyFocus": [
+    "Learn CC",
+    "Severance",
+    "TBD"
+  ],
+  "categories": [
+    "Career",
+    "Self",
+    "Home Duties",
+    "Family"
+  ],
   "startDate": "2026-03-16",
   "yesterdayNotes": "Finish food log entry. Plan priorities for next week.",
   "didYouKnow": [
@@ -18,38 +28,222 @@
   ],
   "diet": {
     "entries": [
-      { "date": "2026-03-19", "note": "Green salad + 3 hard boiled eggs + tofu coconut curry, 0% yogurt with protein powder, hamburger 80/20, strawberries and blueberries. Clean and intentional.", "calories": "1600-1900", "protein": "120-140g", "carbs": "80-100g", "fat": "80-95g", "sodium": "1800-2200mg", "fiber": "18-22g" },
-      { "date": "2026-03-20", "note": "3.5 TJ chicken sausages, TJ Greek salad, half box chicken liver, 3 cups 2% yogurt, chocolate protein shake, 2oz Brooklyn Biltong steak slices (~180cal, 32g protein), half sumo orange, Shabbat dinner ~800cal + 1.5 challah buns" }
+      {
+        "date": "2026-03-19",
+        "note": "Green salad + 3 hard boiled eggs + tofu coconut curry, 0% yogurt with protein powder, hamburger 80/20, strawberries and blueberries. Clean and intentional.",
+        "calories": "1600-1900",
+        "protein": "120-140g",
+        "carbs": "80-100g",
+        "fat": "80-95g",
+        "sodium": "1800-2200mg",
+        "fiber": "18-22g"
+      },
+      {
+        "date": "2026-03-20",
+        "note": "3.5 TJ chicken sausages, TJ Greek salad, half box chicken liver, 3 cups 2% yogurt, chocolate protein shake, 2oz Brooklyn Biltong steak slices (~180cal, 32g protein), half sumo orange, Shabbat dinner ~800cal + 1.5 challah buns"
+      }
     ],
     "weights": [
-      { "date": "2025-12-20", "lbs": 214 }
+      {
+        "date": "2025-12-20",
+        "lbs": 214
+      }
     ],
     "goalWeight": 190,
     "startWeight": 214
   },
   "calendarEvents": {
-    "2026-03-19": [
-      { "time": "8:00 AM", "summary": "Kids dropoff", "color": "#7986CB" },
-      { "time": "8:15 AM", "summary": "Workout — Katie Duca", "color": "#039BE5" },
-      { "time": "9:30 AM", "summary": "Career block", "color": "#3F51B5" },
-      { "time": "11:00 AM", "summary": "RBC Financial Planning Follow-Up", "color": "#039BE5" },
-      { "time": "11:30 AM", "summary": "Lunch", "color": "#33B679" },
-      { "time": "1:00 PM", "summary": "Time management micro site project", "color": "#616161" },
-      { "time": "3:30 PM", "summary": "Pick up clay + Book from library", "color": "#616161" },
-      { "time": "4:00 PM", "summary": "Pick up laptop from Travis", "color": "#039BE5" },
-      { "time": "4:45 PM", "summary": "Kids pickup", "color": "#7986CB" }
+    "2026-03-23": [
+      {
+        "time": "8:00 AM",
+        "summary": "Kids dropoff",
+        "color": "#7986CB"
+      },
+      {
+        "time": "9:00 AM",
+        "summary": "Job search Claude project",
+        "color": "#616161"
+      },
+      {
+        "time": "11:30 AM",
+        "summary": "Lunch",
+        "color": "#33B679"
+      },
+      {
+        "time": "12:00 PM",
+        "summary": "Lili walk",
+        "color": "#33B679"
+      },
+      {
+        "time": "2:00 PM",
+        "summary": "House Stuff",
+        "color": "#616161"
+      },
+      {
+        "time": "4:00 PM",
+        "summary": "Lili walk",
+        "color": "#33B679"
+      },
+      {
+        "time": "4:45 PM",
+        "summary": "Kids pickup",
+        "color": "#7986CB"
+      }
     ],
-    "2026-03-20": [
-      { "time": "8:00 AM", "summary": "Kids dropoff", "color": "#7986CB" },
-      { "time": "9:00 AM", "summary": "Amir/Omri", "color": "#039BE5" },
-      { "time": "10:00 AM", "summary": "Naturalization — Saravia Law", "color": "#039BE5" },
-      { "time": "10:30 AM", "summary": "Elaine Boyer", "color": "#039BE5" },
-      { "time": "11:30 AM", "summary": "Lunch", "color": "#33B679" },
-      { "time": "1:00 PM", "summary": "Justin Levy catch-up", "color": "#039BE5" },
-      { "time": "2:00 PM", "summary": "Dermatology associates Concord", "color": "#039BE5" },
-      { "time": "3:00 PM", "summary": "Email/tasks", "color": "#616161" },
-      { "time": "4:45 PM", "summary": "Kids pickup", "color": "#7986CB" },
-      { "time": "5:00 PM", "summary": "BDPS + Temple Emunah Kabbalat Shabbat", "color": "#039BE5" }
+    "2026-03-24": [
+      {
+        "time": "8:00 AM",
+        "summary": "Kids dropoff",
+        "color": "#7986CB"
+      },
+      {
+        "time": "8:15 AM",
+        "summary": "Workout — Katie Duca",
+        "color": "#039BE5"
+      },
+      {
+        "time": "10:30 AM",
+        "summary": "SIRLEA",
+        "color": "#039BE5"
+      },
+      {
+        "time": "11:30 AM",
+        "summary": "Lunch",
+        "color": "#33B679"
+      },
+      {
+        "time": "12:00 PM",
+        "summary": "Lili walk",
+        "color": "#33B679"
+      },
+      {
+        "time": "2:00 PM",
+        "summary": "Zoominfo+Wistia Sync",
+        "color": "#039BE5"
+      },
+      {
+        "time": "4:00 PM",
+        "summary": "Lili walk",
+        "color": "#33B679"
+      },
+      {
+        "time": "4:45 PM",
+        "summary": "Kids pickup",
+        "color": "#7986CB"
+      }
+    ],
+    "2026-03-25": [
+      {
+        "time": "8:00 AM",
+        "summary": "Kids dropoff",
+        "color": "#7986CB"
+      },
+      {
+        "time": "10:00 AM",
+        "summary": "Psychologist — Melissa",
+        "color": "#039BE5"
+      },
+      {
+        "time": "11:30 AM",
+        "summary": "Lunch",
+        "color": "#33B679"
+      },
+      {
+        "time": "12:00 PM",
+        "summary": "Lili walk",
+        "color": "#33B679"
+      },
+      {
+        "time": "3:30 PM",
+        "summary": "Amir/Brian — Caffe Nero",
+        "color": "#039BE5"
+      },
+      {
+        "time": "4:00 PM",
+        "summary": "Lili walk",
+        "color": "#33B679"
+      },
+      {
+        "time": "4:45 PM",
+        "summary": "Kids pickup",
+        "color": "#7986CB"
+      }
+    ],
+    "2026-03-26": [
+      {
+        "time": "8:00 AM",
+        "summary": "Kids dropoff",
+        "color": "#7986CB"
+      },
+      {
+        "time": "8:15 AM",
+        "summary": "Workout — Katie Duca",
+        "color": "#039BE5"
+      },
+      {
+        "time": "11:30 AM",
+        "summary": "Lunch",
+        "color": "#33B679"
+      },
+      {
+        "time": "12:00 PM",
+        "summary": "Lili walk",
+        "color": "#33B679"
+      },
+      {
+        "time": "3:30 PM",
+        "summary": "Hebrew day",
+        "color": "#039BE5"
+      },
+      {
+        "time": "4:00 PM",
+        "summary": "Lili walk",
+        "color": "#33B679"
+      },
+      {
+        "time": "4:45 PM",
+        "summary": "Kids pickup",
+        "color": "#7986CB"
+      }
+    ],
+    "2026-03-27": [
+      {
+        "time": "8:00 AM",
+        "summary": "Kids dropoff",
+        "color": "#7986CB"
+      },
+      {
+        "time": "11:00 AM",
+        "summary": "Lunch",
+        "color": "#33B679"
+      },
+      {
+        "time": "11:30 AM",
+        "summary": "Elaine Boyer",
+        "color": "#039BE5"
+      },
+      {
+        "time": "12:30 PM",
+        "summary": "Lili walk",
+        "color": "#33B679"
+      },
+      {
+        "time": "4:00 PM",
+        "summary": "Lili walk",
+        "color": "#33B679"
+      },
+      {
+        "time": "4:45 PM",
+        "summary": "Kids pickup",
+        "color": "#7986CB"
+      }
+    ],
+    "2026-03-28": [
+      {
+        "time": "9:00 AM",
+        "summary": "Alma Pre-Ballet",
+        "color": "#039BE5"
+      }
     ]
   },
   "notes": [],
@@ -57,10 +251,26 @@
     {
       "date": "2026-03-16",
       "activities": [
-        { "category": "Career", "text": "Networking — met Kate Hoffmayer", "hours": 2 },
-        { "category": "Career", "text": "Completed Claude Code course (Carl's open course)", "hours": 3 },
-        { "category": "Self", "text": "Psychologist session", "hours": 1 },
-        { "category": "Career", "text": "Severance package negotiation", "hours": 4 }
+        {
+          "category": "Career",
+          "text": "Networking — met Kate Hoffmayer",
+          "hours": 2
+        },
+        {
+          "category": "Career",
+          "text": "Completed Claude Code course (Carl's open course)",
+          "hours": 3
+        },
+        {
+          "category": "Self",
+          "text": "Psychologist session",
+          "hours": 1
+        },
+        {
+          "category": "Career",
+          "text": "Severance package negotiation",
+          "hours": 4
+        }
       ],
       "mood": "",
       "obstacles": "",
@@ -70,9 +280,21 @@
     {
       "date": "2026-03-17",
       "activities": [
-        { "category": "Self", "text": "Workout with trainer", "hours": 1 },
-        { "category": "Career", "text": "LinkedIn post", "hours": 3 },
-        { "category": "Career", "text": "Reading — B2B Content Marketing Strategy", "hours": 1.5 }
+        {
+          "category": "Self",
+          "text": "Workout with trainer",
+          "hours": 1
+        },
+        {
+          "category": "Career",
+          "text": "LinkedIn post",
+          "hours": 3
+        },
+        {
+          "category": "Career",
+          "text": "Reading — B2B Content Marketing Strategy",
+          "hours": 1.5
+        }
       ],
       "mood": "",
       "obstacles": "",
@@ -82,7 +304,11 @@
     {
       "date": "2026-03-18",
       "activities": [
-        { "category": "Family", "text": "Full day with Arielle", "hours": 8 }
+        {
+          "category": "Family",
+          "text": "Full day with Arielle",
+          "hours": 8
+        }
       ],
       "mood": "",
       "obstacles": "",
@@ -92,10 +318,26 @@
     {
       "date": "2026-03-19",
       "activities": [
-        { "category": "Self", "text": "1 hour gym workout", "hours": 1 },
-        { "category": "Home Duties", "text": "RBC meeting", "hours": 1 },
-        { "category": "Career", "text": "Claude Code time management project", "hours": 4 },
-        { "category": "Career", "text": "Networking — walk with Travis (former colleague)", "hours": 0.5 }
+        {
+          "category": "Self",
+          "text": "1 hour gym workout",
+          "hours": 1
+        },
+        {
+          "category": "Home Duties",
+          "text": "RBC meeting",
+          "hours": 1
+        },
+        {
+          "category": "Career",
+          "text": "Claude Code time management project",
+          "hours": 4
+        },
+        {
+          "category": "Career",
+          "text": "Networking — walk with Travis (former colleague)",
+          "hours": 0.5
+        }
       ],
       "mood": "Pretty good. Energized by the Travis conversation and getting started on Claude Code. Conscious of not wanting to over-optimize how he spends his time.",
       "obstacles": "Slow transition from gym to work — initiation drag",
@@ -105,12 +347,36 @@
     {
       "date": "2026-03-20",
       "activities": [
-        { "category": "Career", "text": "LinkedIn post brainstorm with Omri Roth", "hours": 1 },
-        { "category": "Career", "text": "Claude Code — Facebook selling tool + taxes project", "hours": 3 },
-        { "category": "Home Duties", "text": "Organized Facebook items for sale", "hours": 1 },
-        { "category": "Home Duties", "text": "Attorney meeting re: naturalization", "hours": 0.5 },
-        { "category": "Self", "text": "Couple therapy", "hours": 1 },
-        { "category": "Family", "text": "Lunch, dog walk, kids to shul, Shabbat dinner", "hours": 2 }
+        {
+          "category": "Career",
+          "text": "LinkedIn post brainstorm with Omri Roth",
+          "hours": 1
+        },
+        {
+          "category": "Career",
+          "text": "Claude Code — Facebook selling tool + taxes project",
+          "hours": 3
+        },
+        {
+          "category": "Home Duties",
+          "text": "Organized Facebook items for sale",
+          "hours": 1
+        },
+        {
+          "category": "Home Duties",
+          "text": "Attorney meeting re: naturalization",
+          "hours": 0.5
+        },
+        {
+          "category": "Self",
+          "text": "Couple therapy",
+          "hours": 1
+        },
+        {
+          "category": "Family",
+          "text": "Lunch, dog walk, kids to shul, Shabbat dinner",
+          "hours": 2
+        }
       ],
       "mood": "Good overall",
       "obstacles": "Argument with Arielle near the kids",
@@ -119,62 +385,209 @@
     }
   ],
   "completedItems": [
-    { "category": "Career", "text": "Completed Claude Code course (Carl's)", "hours": 3, "date": "2026-03-16" },
-    { "category": "Career", "text": "Severance package negotiation session", "hours": 4, "date": "2026-03-16" },
-    { "category": "Career", "text": "LinkedIn post published", "hours": 3, "date": "2026-03-17" },
-    { "category": "Family", "text": "Full day with Arielle", "hours": 8, "date": "2026-03-18" },
-    { "category": "Self", "text": "1 hour gym workout", "hours": 1, "date": "2026-03-19" },
-    { "category": "Home Duties", "text": "RBC meeting", "hours": 1, "date": "2026-03-19" },
-    { "category": "Career", "text": "Claude Code time management project", "hours": 4, "date": "2026-03-19" },
-    { "category": "Career", "text": "Networking — walk with Travis (former colleague)", "hours": 0.5, "date": "2026-03-19" },
-    { "category": "Career", "text": "LinkedIn post brainstorm with Omri Roth", "hours": 1, "date": "2026-03-20" },
-    { "category": "Career", "text": "Claude Code — Facebook selling tool + taxes project", "hours": 3, "date": "2026-03-20" },
-    { "category": "Home Duties", "text": "Organized Facebook items for sale", "hours": 1, "date": "2026-03-20" },
-    { "category": "Home Duties", "text": "Attorney meeting re: naturalization", "hours": 0.5, "date": "2026-03-20" },
-    { "category": "Self", "text": "Couple therapy", "hours": 1, "date": "2026-03-20" },
-    { "category": "Family", "text": "Lunch, dog walk, kids to shul, Shabbat dinner", "hours": 2, "date": "2026-03-20" }
+    {
+      "category": "Career",
+      "text": "Completed Claude Code course (Carl's)",
+      "hours": 3,
+      "date": "2026-03-16"
+    },
+    {
+      "category": "Career",
+      "text": "Severance package negotiation session",
+      "hours": 4,
+      "date": "2026-03-16"
+    },
+    {
+      "category": "Career",
+      "text": "LinkedIn post published",
+      "hours": 3,
+      "date": "2026-03-17"
+    },
+    {
+      "category": "Family",
+      "text": "Full day with Arielle",
+      "hours": 8,
+      "date": "2026-03-18"
+    },
+    {
+      "category": "Self",
+      "text": "1 hour gym workout",
+      "hours": 1,
+      "date": "2026-03-19"
+    },
+    {
+      "category": "Home Duties",
+      "text": "RBC meeting",
+      "hours": 1,
+      "date": "2026-03-19"
+    },
+    {
+      "category": "Career",
+      "text": "Claude Code time management project",
+      "hours": 4,
+      "date": "2026-03-19"
+    },
+    {
+      "category": "Career",
+      "text": "Networking — walk with Travis (former colleague)",
+      "hours": 0.5,
+      "date": "2026-03-19"
+    },
+    {
+      "category": "Career",
+      "text": "LinkedIn post brainstorm with Omri Roth",
+      "hours": 1,
+      "date": "2026-03-20"
+    },
+    {
+      "category": "Career",
+      "text": "Claude Code — Facebook selling tool + taxes project",
+      "hours": 3,
+      "date": "2026-03-20"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Organized Facebook items for sale",
+      "hours": 1,
+      "date": "2026-03-20"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Attorney meeting re: naturalization",
+      "hours": 0.5,
+      "date": "2026-03-20"
+    },
+    {
+      "category": "Self",
+      "text": "Couple therapy",
+      "hours": 1,
+      "date": "2026-03-20"
+    },
+    {
+      "category": "Family",
+      "text": "Lunch, dog walk, kids to shul, Shabbat dinner",
+      "hours": 2,
+      "date": "2026-03-20"
+    }
   ],
   "tasks": {
     "Career": {
       "description": "Get ready for my next role.",
       "recurring": [
-        { "text": "Post 2 LinkedIn posts a week", "recurring": "weekly", "sessions": [
-          { "date": "2026-03-17", "note": "Published post" }
-        ]}
+        {
+          "text": "Post 2 LinkedIn posts a week",
+          "recurring": "weekly",
+          "sessions": [
+            {
+              "date": "2026-03-17",
+              "note": "Published post"
+            }
+          ]
+        }
       ],
       "now": [
-        { "text": "Complete severance package", "done": false, "deadline": "2026-03-30" },
-        { "text": "Get really good at Claude Code", "done": false, "subtasks": [
-          { "text": "Time management project", "done": false },
-          { "text": "House expenses", "done": false },
-          { "text": "Case study video", "done": false }
-        ]},
-        { "text": "Get ready to apply for next role", "done": false, "subtasks": [
-          { "text": "2 CV options — Content/Creative Director (design & video)", "done": false }
-        ]}
+        {
+          "text": "Complete severance package",
+          "done": false,
+          "deadline": "2026-03-30",
+          "thisWeek": true
+        },
+        {
+          "text": "Get really good at Claude Code",
+          "done": false,
+          "subtasks": [
+            {
+              "text": "Time management project",
+              "done": false,
+              "thisWeek": true
+            },
+            {
+              "text": "House expenses",
+              "done": false
+            },
+            {
+              "text": "Case study video",
+              "done": false
+            }
+          ]
+        },
+        {
+          "text": "Get ready to apply for next role",
+          "done": false,
+          "subtasks": [
+            {
+              "text": "2 CV options — Content/Creative Director (design & video)",
+              "done": false,
+              "thisWeek": true
+            }
+          ]
+        }
       ],
       "backlog": [
-        { "text": "Learn content strategy", "done": false, "subtasks": [
-          { "text": "B2B Content Marketing Strategy book", "done": false }
-        ]},
-        { "text": "Learn brand building (for Creative Director role)", "done": false, "subtasks": [
-          { "text": "Book", "done": false }
-        ]}
+        {
+          "text": "Learn content strategy",
+          "done": false,
+          "subtasks": [
+            {
+              "text": "B2B Content Marketing Strategy book",
+              "done": false
+            }
+          ]
+        },
+        {
+          "text": "Learn brand building (for Creative Director role)",
+          "done": false,
+          "subtasks": [
+            {
+              "text": "Book",
+              "done": false
+            }
+          ]
+        }
       ]
     },
     "Self": {
       "description": "Use the time to get resilient, process the time at ZoomInfo and get stronger for the next time.",
       "recurring": [
-        { "text": "Workout with trainer (2x/week)", "recurring": "weekly", "nextSession": "2026-03-24", "sessions": [
-          { "date": "2026-03-17", "note": "" },
-          { "date": "2026-03-19", "note": "" }
-        ]},
-        { "text": "Psychologist", "recurring": "weekly", "nextSession": "2026-03-25", "sessions": [
-          { "date": "2026-03-16", "note": "" }
-        ]},
-        { "text": "Piano — 60 min/week (Simply Piano)", "recurring": "weekly", "sessions": [] },
-        { "text": "Stay on track with intermittent fasting", "recurring": "ongoing" },
-        { "text": "Aim to get to 190 lbs", "recurring": "ongoing" }
+        {
+          "text": "Workout with trainer (2x/week)",
+          "recurring": "weekly",
+          "nextSession": "2026-03-24",
+          "sessions": [
+            {
+              "date": "2026-03-17",
+              "note": ""
+            },
+            {
+              "date": "2026-03-19",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "text": "Psychologist",
+          "recurring": "weekly",
+          "nextSession": "2026-03-25",
+          "sessions": [
+            {
+              "date": "2026-03-16",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "text": "Piano — 60 min/week (Simply Piano)",
+          "recurring": "weekly",
+          "sessions": []
+        },
+        {
+          "text": "Stay on track with intermittent fasting",
+          "recurring": "ongoing"
+        },
+        {
+          "text": "Aim to get to 190 lbs",
+          "recurring": "ongoing"
+        }
       ],
       "now": [],
       "backlog": []
@@ -183,39 +596,115 @@
       "description": "Use the opportunity to do important things in the house I never get the chance to do.",
       "recurring": [],
       "now": [
-        { "text": "Taxes 2026", "done": false, "deadline": "2026-03-28" },
-        { "text": "RBC — make a decision how to handle", "done": false, "subtasks": [
-          { "text": "Move the suggested accounts", "done": false },
-          { "text": "Share Schwab statement", "done": false },
-          { "text": "Switch to pre-tax contributions", "done": false },
-          { "text": "Sell ZI stock?", "done": false },
-          { "text": "Sell GoDaddy stock", "done": false }
-        ]}
+        {
+          "text": "Taxes 2026",
+          "done": false,
+          "deadline": "2026-03-28",
+          "thisWeek": true
+        },
+        {
+          "text": "RBC — make a decision how to handle",
+          "done": false,
+          "subtasks": [
+            {
+              "text": "Move the suggested accounts",
+              "done": false,
+              "thisWeek": true
+            },
+            {
+              "text": "Share Schwab statement",
+              "done": false,
+              "thisWeek": true
+            },
+            {
+              "text": "Switch to pre-tax contributions",
+              "done": false
+            },
+            {
+              "text": "Sell ZI stock?",
+              "done": false
+            },
+            {
+              "text": "Sell GoDaddy stock",
+              "done": false
+            }
+          ]
+        }
       ],
       "backlog": [
-        { "text": "Spring clean up (put items on Facebook)", "done": false },
-        { "text": "Naturalization", "done": false },
-        { "text": "Unemployment", "done": false },
-        { "text": "A&A Cohn/Blattner Family Review", "done": false, "link": "https://docs.google.com/document/d/1E3n3Ri_3blDTBzHQphO8UhPLVoHcy4TLXdeRDrgvVYI/edit?tab=t.238u26fz3cmu#heading=h.log9ua9nydve" }
+        {
+          "text": "Spring clean up (put items on Facebook)",
+          "done": false
+        },
+        {
+          "text": "Naturalization",
+          "done": false
+        },
+        {
+          "text": "Unemployment",
+          "done": false
+        },
+        {
+          "text": "A&A Cohn/Blattner Family Review",
+          "done": false,
+          "link": "https://docs.google.com/document/d/1E3n3Ri_3blDTBzHQphO8UhPLVoHcy4TLXdeRDrgvVYI/edit?tab=t.238u26fz3cmu#heading=h.log9ua9nydve"
+        }
       ]
     },
     "Family": {
       "description": "Use this unique time to spend precious time with the kids and Arielle.",
       "recurring": [
-        { "text": "Hebrew day with Alma", "recurring": "weekly", "nextSession": "2026-03-26", "sessions": [
-          { "date": "2026-03-16", "note": "" }
-        ]},
-        { "text": "Special time with Carmeli", "recurring": "weekly", "sessions": [] },
-        { "text": "Day with Arielle", "recurring": "weekly", "sessions": [
-          { "date": "2026-03-18", "note": "Full day together" }
-        ]}
+        {
+          "text": "Hebrew day with Alma",
+          "recurring": "weekly",
+          "nextSession": "2026-03-26",
+          "sessions": [
+            {
+              "date": "2026-03-16",
+              "note": ""
+            }
+          ]
+        },
+        {
+          "text": "Special time with Carmeli",
+          "recurring": "weekly",
+          "sessions": []
+        },
+        {
+          "text": "Day with Arielle",
+          "recurring": "weekly",
+          "sessions": [
+            {
+              "date": "2026-03-18",
+              "note": "Full day together"
+            }
+          ]
+        }
       ],
       "now": [],
       "backlog": [
-        { "text": "Schedule time in NYC", "done": false },
-        { "text": "Possibly extend time in", "done": false },
-        { "text": "Buy tickets to Netherlands", "done": false }
+        {
+          "text": "Schedule time in NYC",
+          "done": false
+        },
+        {
+          "text": "Possibly extend time in",
+          "done": false
+        },
+        {
+          "text": "Buy tickets to Netherlands",
+          "done": false
+        }
       ]
     }
-  }
+  },
+  "weeklyIntentions": [
+    "Have a CV project in Claude Code — be able to apply to any job quickly",
+    "Get all files for taxes",
+    "Apply to 3 jobs",
+    "Write 2 LinkedIn posts",
+    "Photo all the shoes for Spring Clean Up",
+    "Complete Severance (finish watching)",
+    "Move along with naturalization"
+  ]
 }

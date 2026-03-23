@@ -20,57 +20,75 @@
 
     <div class="kpi-strip" id="kpiStrip"></div>
 
-    <section class="card daily-focus">
-      <div class="section-header-with-toggle">
-        <h2 id="focusTitle">My Focus Today</h2>
-        <div class="toggle-group" id="dayToggle">
-          <button class="toggle-btn active" data-day="today">Today</button>
-          <button class="toggle-btn" data-day="tomorrow">Tomorrow</button>
+    <div class="dashboard-grid">
+      <section class="card daily-focus" style="grid-area: focus;">
+        <div class="section-header-with-toggle">
+          <h2 id="focusTitle">My Focus Today</h2>
+          <div class="toggle-group" id="dayToggle">
+            <button class="toggle-btn active" data-day="today">Today</button>
+            <button class="toggle-btn" data-day="tomorrow">Tomorrow</button>
+          </div>
         </div>
-      </div>
-      <p id="dailyFocusText" class="focus-text"></p>
-      <p class="empty-state" id="focusEmpty">No focus set for today.</p>
-      <div id="yesterdayBreadcrumb" class="yesterday-breadcrumb"></div>
-      <div id="calendarEvents" class="calendar-events"></div>
-    </section>
+        <div id="dailyFocusContent"></div>
+        <p class="empty-state" id="focusEmpty">No focus set for today.</p>
+        <div id="yesterdayBreadcrumb" class="yesterday-breadcrumb"></div>
+        <div id="calendarEvents" class="calendar-events"></div>
+      </section>
 
-    <!-- Yesterday notes merged into Daily Focus card above -->
+      <section class="card weekly-objectives" style="grid-area: objectives;">
+        <h2>Weekly Objectives</h2>
+        <ul id="weeklyObjectives"></ul>
+      </section>
 
-    <section class="card intentions">
-      <h2>Weekly Focus</h2>
-      <ul id="focusList"></ul>
-    </section>
+      <section class="card projects-card" style="grid-area: projects;">
+        <h2>Projects on the Agenda</h2>
+        <div id="projectsAgenda" class="project-card-grid"></div>
+        <p class="empty-state" id="projectsEmpty" style="display:none;">No active projects.</p>
+      </section>
 
-    <section class="card accomplished">
-      <div class="section-header-with-toggle">
-        <h2>Wins & Time</h2>
-        <div class="toggle-group" id="mainToggle">
-          <button class="toggle-btn active" data-range="today">Today</button>
-          <button class="toggle-btn" data-range="week">This Week</button>
-          <button class="toggle-btn" data-range="all">All Time</button>
+      <section class="card recurring-card" style="grid-area: habits;">
+        <h2>Recurring Habits</h2>
+        <div id="recurringHabits" class="habits-grid"></div>
+      </section>
+
+      <section class="card accomplished" style="grid-area: wins;">
+        <div class="section-header-with-toggle">
+          <h2>Wins & Time</h2>
+          <div class="toggle-group" id="mainToggle">
+            <button class="toggle-btn active" data-range="today">Today</button>
+            <button class="toggle-btn" data-range="week">This Week</button>
+          </div>
         </div>
-      </div>
-      <div id="categoryBars" class="category-bars"></div>
-      <p class="empty-state" id="chartEmpty">No data yet — do your first check-in.</p>
-      <div id="completedList" class="completed-list"></div>
-      <p class="empty-state" id="completedEmpty">Check in to start tracking wins.</p>
-    </section>
+        <div id="restBanner" class="rest-banner" style="display:none;"></div>
+        <div id="winsHeadline" class="wins-headline"></div>
+        <div id="categoryBars" class="category-bars"></div>
+        <p class="empty-state" id="chartEmpty">No data yet — do your first check-in.</p>
+        <div id="completedList" class="completed-list"></div>
+        <p class="empty-state" id="completedEmpty">Check in to start tracking wins.</p>
+      </section>
 
-    <section class="card diet-card">
-      <h2>Diet & Weight</h2>
-      <div id="dietSection"></div>
-      <p class="empty-state" id="dietEmpty">Log how you're eating during your daily check-in.</p>
-    </section>
+      <section class="card weight-card" style="grid-area: weight;">
+        <h2>Weight & Body</h2>
+        <div id="weightSection"></div>
+        <p class="empty-state" id="weightEmpty" style="display:none;">Log your weight during check-in.</p>
+      </section>
 
-    <section class="card task-list-card">
-      <div class="section-header-with-toggle">
-        <h2>My Task List</h2>
-        <button class="sync-btn" id="syncBtn" style="display:none;">
-          <span id="syncCount">0</span> changes — Sync
-        </button>
-      </div>
-      <div id="taskList"></div>
-    </section>
+      <section class="card backlog-card" style="grid-area: backlog;">
+        <div class="section-header-with-toggle">
+          <h2>Backlog</h2>
+          <button class="sync-btn" id="syncBtn" style="display:none;">
+            Sync Changes (<span id="syncCount">0</span>)
+          </button>
+        </div>
+        <div id="taskList"></div>
+      </section>
+
+      <section class="card daybyday-card" style="grid-area: daybyday;">
+        <h2>This Week Day by Day</h2>
+        <div id="dayByDay" class="day-list"></div>
+        <p class="empty-state" id="daysEmpty">Check-ins will show up here.</p>
+      </section>
+    </div>
 
     <!-- Notes for Claude: floating panel -->
     <div class="notes-fab" id="notesFab" title="Notes for Claude">&#9998;</div>
@@ -88,18 +106,15 @@
       </div>
     </div>
 
-    <section class="card">
-      <h2>This Week Day by Day</h2>
-      <div id="dayByDay" class="day-list"></div>
-      <p class="empty-state" id="daysEmpty">Check-ins will show up here.</p>
-    </section>
-
     <footer>
-      <p class="dyk-footer" id="dykText"></p>
+      <p class="identity-vote" id="identityVotes"></p>
       <p>Built with care. One day at a time.</p>
     </footer>
   </div>
 
+  <script src="utils.js"></script>
+  <script src="charts.js"></script>
+  <script src="tasks.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
