@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "dailyFocus": "Get the time management dashboard working end-to-end",
+  "dailyFocus": "Build the job search system — have a working CV ready to apply",
   "weeklyFocus": [
     "Learn CC",
     "Severance",
@@ -519,6 +519,16 @@
               "text": "2 CV options — Content/Creative Director (design & video)",
               "done": false,
               "thisWeek": true
+            },
+            {
+              "text": "Have a system for CV + Cover letter to apply quickly",
+              "done": false,
+              "thisWeek": true
+            },
+            {
+              "text": "Apply to at least 3 jobs",
+              "done": false,
+              "thisWeek": true
             }
           ]
         }
@@ -600,7 +610,14 @@
           "text": "Taxes 2026",
           "done": false,
           "deadline": "2026-03-28",
-          "thisWeek": true
+          "thisWeek": true,
+          "subtasks": [
+            {
+              "text": "Share all files and email with CPA",
+              "done": false,
+              "thisWeek": true
+            }
+          ]
         },
         {
           "text": "RBC — make a decision how to handle",
@@ -629,21 +646,41 @@
               "done": false
             }
           ]
-        }
-      ],
-      "backlog": [
-        {
-          "text": "Spring clean up (put items on Facebook)",
-          "done": false
         },
         {
           "text": "Naturalization",
-          "done": false
+          "done": false,
+          "subtasks": [
+            {
+              "text": "Share all files with attorney",
+              "done": false,
+              "thisWeek": true
+            }
+          ]
         },
         {
-          "text": "Unemployment",
-          "done": false
+          "text": "Spring clean up",
+          "done": false,
+          "subtasks": [
+            {
+              "text": "Post first batch of items on FB Marketplace",
+              "done": false,
+              "thisWeek": true
+            },
+            {
+              "text": "Take photos of all shoes — pptx file",
+              "done": false,
+              "thisWeek": true
+            }
+          ]
         },
+        {
+          "text": "File for unemployment",
+          "done": false,
+          "thisWeek": true
+        }
+      ],
+      "backlog": [
         {
           "text": "A&A Cohn/Blattner Family Review",
           "done": false,
@@ -681,7 +718,18 @@
           ]
         }
       ],
-      "now": [],
+      "now": [
+        {
+          "text": "Find Hebrew tutor for Alma",
+          "done": false,
+          "thisWeek": true
+        },
+        {
+          "text": "Buy tickets to Netherlands",
+          "done": false,
+          "thisWeek": true
+        }
+      ],
       "backlog": [
         {
           "text": "Schedule time in NYC",
@@ -689,10 +737,6 @@
         },
         {
           "text": "Possibly extend time in",
-          "done": false
-        },
-        {
-          "text": "Buy tickets to Netherlands",
           "done": false
         }
       ]
