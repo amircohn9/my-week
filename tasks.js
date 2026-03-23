@@ -250,6 +250,7 @@ function renderBacklog(tasks) {
     const addedHtml = addedItems.map((item, i) => `<div class="task-item">
       <input type="checkbox" class="task-checkbox added-task-checkbox" data-cat="${cat}" data-idx="${i}">
       <span class="task-text">${escapeHtml(item.text)}</span>
+      <button class="move-added-task-btn" data-cat="${cat}" data-idx="${i}" title="Move to Agenda">&#8593;</button>
       <button class="delete-added-task-btn" data-cat="${cat}" data-idx="${i}" title="Remove">&times;</button>
     </div>`).join('');
 
@@ -469,6 +470,29 @@ function renderBacklog(tasks) {
     input.addEventListener('blur', () => { if (!input.value.trim()) { input.style.display = 'none'; const trigger = input.closest('.add-task-row').querySelector('.add-task-trigger'); if (trigger) trigger.style.display = ''; } });
   });
 
+  // Move added task to agenda
+  container.querySelectorAll('.move-added-task-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const st = getTaskState();
+      const cat = btn.dataset.cat;
+      const idx = parseInt(btn.dataset.idx);
+      if (st._added && st._added[cat] && st._added[cat][idx]) {
+        const item = st._added[cat][idx];
+        const mv = getTaskMoves();
+        if (!mv[cat]) mv[cat] = {};
+        mv[cat][item.text] = 'now';
+        saveTaskMoves(mv);
+        st._added[cat].splice(idx, 1);
+        saveTaskState(st);
+        renderBacklog(tasks);
+        renderProjectsAgenda(tasks);
+        renderWeeklyObjectives(tasks);
+        updateSyncButton();
+      }
+    });
+  });
+
   // Delete added task
   container.querySelectorAll('.delete-added-task-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -491,9 +515,9 @@ function renderBacklog(tasks) {
     try {
       await navigator.clipboard.writeText(summary);
       const st = getTaskState();
+      // Clear completions, moves, edits — but KEEP _added tasks and weight so they persist until data.json is updated
       const keysToRemove = Object.keys(st).filter(k => k !== '_added' && k !== '_synced' && k !== '_addedSubs' && k !== '_deletedSubs');
       keysToRemove.forEach(k => delete st[k]);
-      if (st._added) delete st._added;
       if (st._addedSubs) delete st._addedSubs;
       if (st._deletedSubs) delete st._deletedSubs;
       saveTaskState(st);
@@ -501,7 +525,6 @@ function renderBacklog(tasks) {
       saveTaskMoves({});
       saveThisWeekState({});
       saveDailyFocusEdit('');
-      localStorage.removeItem('myweek-weight-updates');
       const btn = document.getElementById('syncBtn');
       btn.innerHTML = 'Synced!';
       btn.classList.add('sync-copied');

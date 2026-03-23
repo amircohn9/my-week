@@ -432,7 +432,6 @@ function renderDayByDay(checkins, dietEntries) {
   const sorted = [...checkins].sort((a, b) => b.date.localeCompare(a.date));
 
   // Group by week
-  const { weekStart: currentWeekStart } = getWeekRange();
   const weekGroups = {};
   for (const day of sorted) {
     const d = new Date(day.date + 'T12:00:00');
@@ -454,10 +453,9 @@ function renderDayByDay(checkins, dietEntries) {
     we.setDate(ws.getDate() + 4);
     const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const label = `Week of ${fmt(ws)} – ${fmt(we)}`;
-    const isCurrentWeek = weekKey === formatDateStr(currentWeekStart);
     const collapseKey = `collapse-week-${weekKey}`;
     const stored = localStorage.getItem(collapseKey);
-    const isCollapsed = stored !== null ? stored === 'true' : !isCurrentWeek;
+    const isCollapsed = stored !== null ? stored === 'true' : true;
     const days = weekGroups[weekKey];
 
     const daysHtml = days.map(day => {
@@ -712,9 +710,11 @@ function renderProjectsAgenda(tasks) {
     const addedSubsHtml = addedForThis.map((sub, si) => {
       const subKey = `${proj.category}::now-${proj.origIdx}::addedsub-${si}::${sub.text}`;
       const isDone = state[subKey] || false;
+      const isTW = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : false;
       return `<div class="proj-subtask ${isDone ? 'proj-subtask-done' : ''}">
         <input type="checkbox" class="proj-subtask-checkbox" data-key="${subKey}" ${isDone ? 'checked' : ''}>
         <span class="proj-subtask-text">${escapeHtml(sub.text)}</span>
+        <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${subKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
         <button class="delete-added-sub-btn" data-parent="${parentKey}" data-sub-index="${si}" title="Remove">&times;</button>
       </div>`;
     }).join('');
