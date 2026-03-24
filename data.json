@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "dailyFocus": "Build the job search system — have a working CV ready to apply",
+  "dailyFocus": "Build the job search system \u2014 have a working CV ready to apply",
   "weeklyFocus": [
     "Learn CC",
     "Severance",
@@ -13,7 +13,7 @@
     "Family"
   ],
   "startDate": "2026-03-16",
-  "yesterdayNotes": "Finish food log entry. Plan priorities for next week.",
+  "yesterdayNotes": "CV versions for other roles. Personal brand + accomplishments master document. Land on a CV design. Write LinkedIn post based on CV work. Morning workout.",
   "didYouKnow": [
     "Walt Disney was fired from a newspaper for 'lacking imagination.' He went bankrupt before Mickey Mouse.",
     "Steven Spielberg was rejected from USC film school three times. He eventually got an honorary degree from them.",
@@ -24,7 +24,7 @@
     "Arianna Huffington's second book was rejected by 36 publishers. She went on to build The Huffington Post.",
     "Howard Schultz was turned down by 242 investors when trying to fund Starbucks.",
     "Oprah was fired from her first TV job and told she was 'unfit for television.'",
-    "Steve Jobs was fired from Apple — the company he founded. He called it 'the best thing that could have ever happened to me.'"
+    "Steve Jobs was fired from Apple \u2014 the company he founded. He called it 'the best thing that could have ever happened to me.'"
   ],
   "diet": {
     "entries": [
@@ -41,6 +41,10 @@
       {
         "date": "2026-03-20",
         "note": "3.5 TJ chicken sausages, TJ Greek salad, half box chicken liver, 3 cups 2% yogurt, chocolate protein shake, 2oz Brooklyn Biltong steak slices (~180cal, 32g protein), half sumo orange, Shabbat dinner ~800cal + 1.5 challah buns"
+      },
+      {
+        "date": "2026-03-23",
+        "note": "Off day \u2014 messy eating, no details logged"
       }
     ],
     "weights": [
@@ -98,7 +102,7 @@
       },
       {
         "time": "8:15 AM",
-        "summary": "Workout — Katie Duca",
+        "summary": "Workout \u2014 Katie Duca",
         "color": "#039BE5"
       },
       {
@@ -140,7 +144,7 @@
       },
       {
         "time": "10:00 AM",
-        "summary": "Psychologist — Melissa",
+        "summary": "Psychologist \u2014 Melissa",
         "color": "#039BE5"
       },
       {
@@ -155,7 +159,7 @@
       },
       {
         "time": "3:30 PM",
-        "summary": "Amir/Brian — Caffe Nero",
+        "summary": "Amir/Brian \u2014 Caffe Nero",
         "color": "#039BE5"
       },
       {
@@ -177,7 +181,7 @@
       },
       {
         "time": "8:15 AM",
-        "summary": "Workout — Katie Duca",
+        "summary": "Workout \u2014 Katie Duca",
         "color": "#039BE5"
       },
       {
@@ -253,7 +257,7 @@
       "activities": [
         {
           "category": "Career",
-          "text": "Networking — met Kate Hoffmayer",
+          "text": "Networking \u2014 met Kate Hoffmayer",
           "hours": 2
         },
         {
@@ -275,7 +279,7 @@
       "mood": "",
       "obstacles": "",
       "wins": "Finished the CC course, moved severance forward",
-      "summary": "Heavy Career day — finished Carl's Claude Code course, 2-hour networking catch-up with Kate Hoffmayer, and a long push on severance negotiation. Also kept the psychologist appointment."
+      "summary": "Heavy Career day \u2014 finished Carl's Claude Code course, 2-hour networking catch-up with Kate Hoffmayer, and a long push on severance negotiation. Also kept the psychologist appointment."
     },
     {
       "date": "2026-03-17",
@@ -292,14 +296,14 @@
         },
         {
           "category": "Career",
-          "text": "Reading — B2B Content Marketing Strategy",
+          "text": "Reading \u2014 B2B Content Marketing Strategy",
           "hours": 1.5
         }
       ],
       "mood": "",
       "obstacles": "",
       "wins": "LinkedIn post done, making progress on the B2B book",
-      "summary": "Focused Career day — wrote and published a LinkedIn post (3 hrs) and read 1.5 hours of B2B Content Marketing Strategy. Started the day with a workout."
+      "summary": "Focused Career day \u2014 wrote and published a LinkedIn post (3 hrs) and read 1.5 hours of B2B Content Marketing Strategy. Started the day with a workout."
     },
     {
       "date": "2026-03-18",
@@ -313,7 +317,7 @@
       "mood": "",
       "obstacles": "",
       "wins": "Quality full day with Arielle",
-      "summary": "Dedicated the whole day to Arielle — 8 hours of quality time together."
+      "summary": "Dedicated the whole day to Arielle \u2014 8 hours of quality time together."
     },
     {
       "date": "2026-03-19",
@@ -335,14 +339,14 @@
         },
         {
           "category": "Career",
-          "text": "Networking — walk with Travis (former colleague)",
+          "text": "Networking \u2014 walk with Travis (former colleague)",
           "hours": 0.5
         }
       ],
       "mood": "Pretty good. Energized by the Travis conversation and getting started on Claude Code. Conscious of not wanting to over-optimize how he spends his time.",
-      "obstacles": "Slow transition from gym to work — initiation drag",
+      "obstacles": "Slow transition from gym to work \u2014 initiation drag",
       "wins": "Started something new. Second gym session this week. First Claude Code session.",
-      "summary": "5.5 hours tracked — second gym session this week, RBC meeting, 4 hours building the time management project in Claude Code, and a networking walk with Travis."
+      "summary": "5.5 hours tracked \u2014 second gym session this week, RBC meeting, 4 hours building the time management project in Claude Code, and a networking walk with Travis."
     },
     {
       "date": "2026-03-20",
@@ -354,7 +358,7 @@
         },
         {
           "category": "Career",
-          "text": "Claude Code — Facebook selling tool + taxes project",
+          "text": "Claude Code \u2014 Facebook selling tool + taxes project",
           "hours": 3
         },
         {
@@ -380,8 +384,30 @@
       ],
       "mood": "Good overall",
       "obstacles": "Argument with Arielle near the kids",
-      "wins": "Getting much more comfortable with Claude Code — staying focused, out of rabbit holes",
-      "summary": "8.5 hours tracked — LinkedIn brainstorm with Omri, 3 hours on Claude Code projects, organized items for Facebook sale, naturalization attorney meeting, couple therapy, and quality Shabbat family time."
+      "wins": "Getting much more comfortable with Claude Code \u2014 staying focused, out of rabbit holes",
+      "summary": "8.5 hours tracked \u2014 LinkedIn brainstorm with Omri, 3 hours on Claude Code projects, organized items for Facebook sale, naturalization attorney meeting, couple therapy, and quality Shabbat family time."
+    },
+    {
+      "date": "2026-03-23",
+      "activities": [
+        {
+          "category": "Home Duties",
+          "text": "Morning cleanup, walked dog, errand for Arielle, picked up food, Facebook Marketplace uploads, sent docs to CPA"
+        },
+        {
+          "category": "Self",
+          "text": "Meditation (~10 min), breakfast"
+        },
+        {
+          "category": "Career",
+          "text": "LinkedIn story + CV project \u2014 solid CV draft completed",
+          "hours": 4
+        }
+      ],
+      "mood": "OK \u2014 Monday initiation drag, brain fog from deep Claude work, pushed through",
+      "obstacles": "Slow start, usage leak issue in the morning, distraction",
+      "wins": "CV momentum \u2014 clear vision for personal brand document and how to build from it",
+      "summary": "4 hours on LinkedIn story + CV project with a solid draft completed. Home duties covered throughout the day. Short meditation to start."
     }
   ],
   "completedItems": [
@@ -429,7 +455,7 @@
     },
     {
       "category": "Career",
-      "text": "Networking — walk with Travis (former colleague)",
+      "text": "Networking \u2014 walk with Travis (former colleague)",
       "hours": 0.5,
       "date": "2026-03-19"
     },
@@ -441,7 +467,7 @@
     },
     {
       "category": "Career",
-      "text": "Claude Code — Facebook selling tool + taxes project",
+      "text": "Claude Code \u2014 Facebook selling tool + taxes project",
       "hours": 3,
       "date": "2026-03-20"
     },
@@ -468,6 +494,22 @@
       "text": "Lunch, dog walk, kids to shul, Shabbat dinner",
       "hours": 2,
       "date": "2026-03-20"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Morning cleanup, walked dog, errand for Arielle, picked up food, Facebook Marketplace uploads, sent docs to CPA",
+      "date": "2026-03-23"
+    },
+    {
+      "category": "Self",
+      "text": "Meditation (~10 min), breakfast",
+      "date": "2026-03-23"
+    },
+    {
+      "category": "Career",
+      "text": "LinkedIn story + CV project \u2014 solid CV draft completed",
+      "hours": 4,
+      "date": "2026-03-23"
     }
   ],
   "tasks": {
@@ -516,7 +558,7 @@
           "done": false,
           "subtasks": [
             {
-              "text": "2 CV options — Content/Creative Director (design & video)",
+              "text": "2 CV options \u2014 Content/Creative Director (design & video)",
               "done": false,
               "thisWeek": true
             },
@@ -531,6 +573,26 @@
               "thisWeek": true
             }
           ]
+        },
+        {
+          "text": "CV versions for other roles",
+          "done": false,
+          "thisWeek": true
+        },
+        {
+          "text": "Personal brand + accomplishments master document",
+          "done": false,
+          "thisWeek": true
+        },
+        {
+          "text": "Land on a CV design",
+          "done": false,
+          "thisWeek": true
+        },
+        {
+          "text": "Write LinkedIn post based on CV work",
+          "done": false,
+          "thisWeek": true
         }
       ],
       "backlog": [
@@ -586,7 +648,7 @@
           ]
         },
         {
-          "text": "Piano — 60 min/week (Simply Piano)",
+          "text": "Piano \u2014 60 min/week (Simply Piano)",
           "recurring": "weekly",
           "sessions": []
         },
@@ -599,7 +661,13 @@
           "recurring": "ongoing"
         }
       ],
-      "now": [],
+      "now": [
+        {
+          "text": "Morning workout",
+          "done": false,
+          "thisWeek": true
+        }
+      ],
       "backlog": []
     },
     "Home Duties": {
@@ -620,7 +688,7 @@
           ]
         },
         {
-          "text": "RBC — make a decision how to handle",
+          "text": "RBC \u2014 make a decision how to handle",
           "done": false,
           "subtasks": [
             {
@@ -668,7 +736,7 @@
               "thisWeek": true
             },
             {
-              "text": "Take photos of all shoes — pptx file",
+              "text": "Take photos of all shoes \u2014 pptx file",
               "done": false,
               "thisWeek": true
             }
@@ -743,7 +811,8 @@
     }
   },
   "weeklyIntentions": [
-    "Have a CV project in Claude Code — be able to apply to any job quickly",
+    "Theme: Exploration mode \u2014 get a pulse on the market, keep applying, follow what's interesting",
+    "Have a CV project in Claude Code \u2014 be able to apply to any job quickly",
     "Get all files for taxes",
     "Apply to 3 jobs",
     "Write 2 LinkedIn posts",
