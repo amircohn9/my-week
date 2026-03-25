@@ -13,7 +13,7 @@
     "Family"
   ],
   "startDate": "2026-03-16",
-  "yesterdayNotes": "CV versions for other roles. Personal brand + accomplishments master document. Land on a CV design. Write LinkedIn post based on CV work. Morning workout.",
+  "yesterdayNotes": "Send Ramp application (CV + cover letter). Facebook Marketplace listings. Find more job opportunities. LinkedIn post. Respond to RBC. Work on naturalization application.",
   "didYouKnow": [
     "Walt Disney was fired from a newspaper for 'lacking imagination.' He went bankrupt before Mickey Mouse.",
     "Steven Spielberg was rejected from USC film school three times. He eventually got an honorary degree from them.",
@@ -45,12 +45,20 @@
       {
         "date": "2026-03-23",
         "note": "Off day \u2014 messy eating, no details logged"
+      },
+      {
+        "date": "2026-03-24",
+        "note": "Calorie deficit. IF window eating from ~11-12. Main meal ~4pm, light dinner + yogurt with pudding powder. Weekdays controlled, weekends free. Managing protein intake."
       }
     ],
     "weights": [
       {
         "date": "2025-12-20",
         "lbs": 214
+      },
+      {
+        "date": "2026-03-24",
+        "lbs": 201
       }
     ],
     "goalWeight": 190,
@@ -408,6 +416,30 @@
       "obstacles": "Slow start, usage leak issue in the morning, distraction",
       "wins": "CV momentum \u2014 clear vision for personal brand document and how to build from it",
       "summary": "4 hours on LinkedIn story + CV project with a solid draft completed. Home duties covered throughout the day. Short meditation to start."
+    },
+    {
+      "date": "2026-03-24",
+      "activities": [
+        {
+          "category": "Self",
+          "text": "Workout",
+          "hours": 0.5
+        },
+        {
+          "category": "Career",
+          "text": "CV and cover letter for Ramp",
+          "hours": 5
+        },
+        {
+          "category": "Career",
+          "text": "Follow-up to RBC with requested documents",
+          "hours": 0.5
+        }
+      ],
+      "mood": "OK — solid CV baseline done, good clarity on personal brand direction and LinkedIn post ideas",
+      "obstacles": "Hard to know the right amount of time to invest in CV work",
+      "wins": "Ramp CV baseline done, clarity on direction, cover letter mostly there, RBC follow-up sent",
+      "summary": "6 hours tracked — 5 hours on Ramp CV and cover letter, RBC follow-up sent, plus a morning workout. Real clarity emerging on personal brand direction."
     }
   ],
   "completedItems": [
@@ -510,6 +542,24 @@
       "text": "LinkedIn story + CV project \u2014 solid CV draft completed",
       "hours": 4,
       "date": "2026-03-23"
+    },
+    {
+      "category": "Self",
+      "text": "Workout",
+      "hours": 0.5,
+      "date": "2026-03-24"
+    },
+    {
+      "category": "Career",
+      "text": "CV and cover letter for Ramp",
+      "hours": 5,
+      "date": "2026-03-24"
+    },
+    {
+      "category": "Career",
+      "text": "Follow-up to RBC with requested documents",
+      "hours": 0.5,
+      "date": "2026-03-24"
     }
   ],
   "tasks": {
@@ -558,7 +608,12 @@
           "done": false,
           "subtasks": [
             {
-              "text": "2 CV options \u2014 Content/Creative Director (design & video)",
+              "text": "CV for Content role (Ramp baseline done)",
+              "done": true,
+              "thisWeek": true
+            },
+            {
+              "text": "CV for Creative Director role (design & video)",
               "done": false,
               "thisWeek": true
             },
@@ -575,7 +630,7 @@
           ]
         },
         {
-          "text": "CV versions for other roles",
+          "text": "CV for Creative Director role",
           "done": false,
           "thisWeek": true
         },
@@ -586,7 +641,7 @@
         },
         {
           "text": "Land on a CV design",
-          "done": false,
+          "done": true,
           "thisWeek": true
         },
         {
@@ -624,7 +679,7 @@
         {
           "text": "Workout with trainer (2x/week)",
           "recurring": "weekly",
-          "nextSession": "2026-03-24",
+          "nextSession": "2026-03-26",
           "sessions": [
             {
               "date": "2026-03-17",
@@ -632,6 +687,10 @@
             },
             {
               "date": "2026-03-19",
+              "note": ""
+            },
+            {
+              "date": "2026-03-24",
               "note": ""
             }
           ]
@@ -746,6 +805,10 @@
           "text": "File for unemployment",
           "done": false,
           "thisWeek": true
+        },
+        {
+          "text": "Complete Facebook Marketplace listings",
+          "done": false
         }
       ],
       "backlog": [
@@ -796,6 +859,10 @@
           "text": "Buy tickets to Netherlands",
           "done": false,
           "thisWeek": true
+        },
+        {
+          "text": "Book project with Stephen (father-in-law)",
+          "done": false
         }
       ],
       "backlog": [

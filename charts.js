@@ -313,8 +313,12 @@ function renderWeeklyObjectives(tasks) {
     return `<li class="${doneClass}">
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
       <input type="checkbox" class="obj-checkbox" data-key="${obj.key}" ${obj.done ? 'checked' : ''}>
-      <span>${escapeHtml(obj.text)}</span>
+      <span class="obj-text" data-edit-key="${obj.key}">${escapeHtml(obj.text)}</span>
       ${projectLabel}
+      <span class="obj-actions">
+        <button class="obj-unstar-btn" data-key="${obj.key}" title="Remove from this week">&#9734;</button>
+        <button class="obj-delete-btn" data-key="${obj.key}" title="Delete task">&times;</button>
+      </span>
     </li>`;
   }).join('');
 
@@ -326,7 +330,73 @@ function renderWeeklyObjectives(tasks) {
       saveTaskState(st);
       cb.closest('li').classList.toggle('obj-done', cb.checked);
       updateSyncButton();
-      // Refresh project progress bars
+      renderProjectsAgenda(appData.tasks);
+    });
+  });
+
+  // Double-click to edit text inline
+  list.querySelectorAll('.obj-text').forEach(span => {
+    span.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      const key = span.dataset.editKey;
+      const current = span.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = current;
+      input.className = 'obj-edit-input';
+      span.replaceWith(input);
+      input.focus();
+      input.select();
+      const save = () => {
+        const newVal = input.value.trim();
+        const newSpan = document.createElement('span');
+        newSpan.className = 'obj-text';
+        newSpan.dataset.editKey = key;
+        newSpan.textContent = newVal || current;
+        input.replaceWith(newSpan);
+        if (newVal && newVal !== current) {
+          const ed = getTaskEdits();
+          ed[key] = newVal;
+          saveTaskEdits(ed);
+          updateSyncButton();
+        }
+        // Re-bind dblclick on the new span
+        newSpan.addEventListener('dblclick', span.ondblclick);
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = current; input.blur(); }
+      });
+    });
+  });
+
+  // Un-star: remove from weekly focus without deleting
+  list.querySelectorAll('.obj-unstar-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tw = getThisWeekState();
+      tw[btn.dataset.key] = false;
+      saveThisWeekState(tw);
+      updateSyncButton();
+      renderWeeklyObjectives(tasks);
+      renderProjectsAgenda(appData.tasks);
+    });
+  });
+
+  // Delete: mark task as done and remove from focus
+  list.querySelectorAll('.obj-delete-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.key;
+      const st = getTaskState();
+      st[key] = true; // mark done
+      saveTaskState(st);
+      const tw = getThisWeekState();
+      tw[key] = false;
+      saveThisWeekState(tw);
+      updateSyncButton();
+      renderWeeklyObjectives(tasks);
       renderProjectsAgenda(appData.tasks);
     });
   });
@@ -542,7 +612,6 @@ function renderDailyFocus(data, dayMode) {
   const contentEl = document.getElementById('dailyFocusContent');
   const empty = document.getElementById('focusEmpty');
   const title = document.getElementById('focusTitle');
-  const calContainer = document.getElementById('calendarEvents');
   const breadcrumb = document.getElementById('yesterdayBreadcrumb');
 
   const isToday = dayMode === 'today';
@@ -591,34 +660,6 @@ function renderDailyFocus(data, dayMode) {
     } else {
       breadcrumb.style.display = 'none';
     }
-  }
-
-  // Calendar events — on weekends, show Monday
-  let calDateStr;
-  if (isToday) {
-    calDateStr = isWeekend() ? getNextMondayStr() : getTodayStr();
-  } else {
-    calDateStr = getTomorrowStr();
-  }
-
-  const events = (data.calendarEvents && data.calendarEvents[calDateStr]) || [];
-  const calDate = new Date(calDateStr + 'T12:00:00');
-  const calDateLabel = calDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-
-  if (events.length > 0) {
-    const weekendNote = isToday && isWeekend() ? ' (Monday)' : '';
-    calContainer.innerHTML = `<div class="cal-header">${calDateLabel}${weekendNote}</div>
-      <div class="cal-event-count">${events.length} event${events.length > 1 ? 's' : ''}</div>` +
-      events.map(e => {
-        const borderStyle = e.color ? `border-left: 3px solid ${e.color}; padding-left: 8px;` : '';
-        const dot = e.color ? `<span class="cal-dot" style="background:${e.color}"></span>` : '';
-        return `<div class="cal-event" style="${borderStyle}">${dot}<span class="cal-time">${e.time}</span><span class="cal-summary">${escapeHtml(e.summary)}</span></div>`;
-      }).join('');
-    calContainer.style.display = 'block';
-  } else {
-    const weekendMsg = isToday && isWeekend() ? `No calendar events for Monday yet.` : `No calendar events for ${dayLabel.toLowerCase()}.`;
-    calContainer.innerHTML = `<p class="empty-state">${weekendMsg}</p>`;
-    calContainer.style.display = 'block';
   }
 
   // Day toggle
