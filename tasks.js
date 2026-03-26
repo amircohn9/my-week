@@ -519,17 +519,8 @@ function renderBacklog(tasks) {
     const summary = generateSyncSummary();
     try {
       await navigator.clipboard.writeText(summary);
-      const st = getTaskState();
-      // Clear completions, moves, edits — but KEEP _added tasks and weight so they persist until data.json is updated
-      const keysToRemove = Object.keys(st).filter(k => k !== '_added' && k !== '_synced' && k !== '_addedSubs' && k !== '_deletedSubs');
-      keysToRemove.forEach(k => delete st[k]);
-      if (st._addedSubs) delete st._addedSubs;
-      if (st._deletedSubs) delete st._deletedSubs;
-      saveTaskState(st);
-      saveTaskEdits({});
-      saveTaskMoves({});
-      saveThisWeekState({});
-      // Keep todayState — Today items persist until managed during check-in
+      // Keep all localStorage state — it persists until Claude updates data.json during check-in
+      // Sync just copies the summary to clipboard for pasting into Claude
       saveDailyFocusEdit('');
       const btn = document.getElementById('syncBtn');
       btn.innerHTML = 'Synced!';
