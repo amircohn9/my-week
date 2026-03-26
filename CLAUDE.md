@@ -29,11 +29,13 @@ When Amir says something like "let's check in," "daily check-in," or "how was my
 
 3. **How was your eating today?** — Quick, no-judgment check-in on diet. Save to `data.json` under `diet.entries` as `{ "date": "YYYY-MM-DD", "note": "their words" }`. Once a week (e.g., Friday or whenever Amir mentions it), ask about weight and save to `diet.weights` as `{ "date": "YYYY-MM-DD", "lbs": number }`.
 
-4. **What's the most important task for tomorrow?** — One thing. Save to `data.json` as `yesterdayNotes` so it shows on the dashboard the next day as "Notes from Yesterday" — breadcrumbs from past-Amir to future-Amir.
+4. **What's the most important task for tomorrow?** — One thing. Save to `data.json` as `yesterdayNotes` so it shows on the dashboard the next day as today's focus text.
 
-5. **Anything to add or change on the task list, or any upcoming deadlines?** — New items, completed items, priority shifts. Update `tasks.md` and `data.json` tasks if Amir says yes. If deadlines are mentioned, add a `"deadline": "YYYY-MM-DD"` field to the relevant task in `data.json`. The dashboard will show deadline badges in warm amber. Tasks due within 7 days get a subtle highlight. Also check for any pending sync changes from the website (Amir may paste a sync summary from the dashboard).
+5. **Anything from today's list carrying over to tomorrow?** — Review the Today tasks list with Amir. Items he finished get checked off. Items he wants to keep for tomorrow stay in the today list (persist in localStorage `myweek-today`). Everything else gets moved back to Weekly Objectives. Update accordingly.
 
-6. **Any notes for the system or dashboard?** — Meta-feedback, system ideas, or notes from the website's "Notes for Claude" section. He may paste them in. The system should evolve.
+6. **Anything to add or change on the task list, or any upcoming deadlines?** — New items, completed items, priority shifts. Update `tasks.md` and `data.json` tasks if Amir says yes. If deadlines are mentioned, add a `"deadline": "YYYY-MM-DD"` field to the relevant task in `data.json`. The dashboard will show deadline badges in warm amber. Tasks due within 7 days get a subtle highlight. Also check for any pending sync changes from the website (Amir may paste a sync summary from the dashboard).
+
+7. **Any notes for the system or dashboard?** — Meta-feedback, system ideas, or notes from the website's "Notes for Claude" section. He may paste them in. The system should evolve.
 
 **Closing:** End with a strong, genuine, **data-informed** encouragement. Don't be generic — reference specific numbers from today's check-in or the week so far. Examples:
 - "11 hours tracked this week across 3 categories — you're showing up for yourself."

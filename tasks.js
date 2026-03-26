@@ -16,6 +16,9 @@ function saveHiddenRecurring(hidden) { localStorage.setItem('myweek-hidden-recur
 function getThisWeekState() { try { return JSON.parse(localStorage.getItem('myweek-this-week')) || {}; } catch { return {}; } }
 function saveThisWeekState(state) { localStorage.setItem('myweek-this-week', JSON.stringify(state)); }
 
+function getTodayState() { try { return JSON.parse(localStorage.getItem('myweek-today')) || {}; } catch { return {}; } }
+function saveTodayState(state) { localStorage.setItem('myweek-today', JSON.stringify(state)); }
+
 function getDailyFocusEdit() { return localStorage.getItem('myweek-daily-focus-edit') || ''; }
 function saveDailyFocusEdit(text) {
   if (text) localStorage.setItem('myweek-daily-focus-edit', text);
@@ -63,6 +66,9 @@ function countSyncChanges() {
   // thisWeek changes
   const tw = getThisWeekState();
   count += Object.keys(tw).length;
+  // today changes
+  const td = getTodayState();
+  count += Object.keys(td).length;
   // Daily focus edit
   if (getDailyFocusEdit()) count++;
   return count;
@@ -120,6 +126,10 @@ function generateSyncSummary() {
   // thisWeek changes
   const tw = getThisWeekState();
   if (Object.keys(tw).length) { lines.push('THIS WEEK TOGGLES:'); Object.entries(tw).forEach(([k, v]) => lines.push('  ' + k + ' → ' + (v ? 'ON' : 'OFF'))); lines.push(''); }
+
+  // today changes
+  const td = getTodayState();
+  if (Object.keys(td).length) { lines.push('TODAY TOGGLES:'); Object.entries(td).forEach(([k, v]) => lines.push('  ' + k + ' → ' + (v ? 'ON' : 'OFF'))); lines.push(''); }
 
   // Added tasks
   if (state._added) {
@@ -524,6 +534,7 @@ function renderBacklog(tasks) {
       saveTaskEdits({});
       saveTaskMoves({});
       saveThisWeekState({});
+      saveTodayState({});
       saveDailyFocusEdit('');
       const btn = document.getElementById('syncBtn');
       btn.innerHTML = 'Synced!';

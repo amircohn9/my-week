@@ -256,12 +256,30 @@ function renderWinsAndTime(data, range) {
 // ---------------------------------------------------------------------------
 // 5. renderWeeklyObjectives(tasks) — Auto-generated from thisWeek subtasks
 // ---------------------------------------------------------------------------
+// Build list of recurring habit texts for filtering
+function getRecurringTexts(tasks) {
+  const texts = [];
+  for (const cat of CATEGORY_ORDER) {
+    const group = tasks[cat];
+    if (!group || !group.recurring) continue;
+    for (const item of group.recurring) {
+      if (item.recurring === 'ongoing') continue;
+      texts.push(item.text.toLowerCase());
+      const short = item.text.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+      if (short !== item.text.toLowerCase()) texts.push(short);
+    }
+  }
+  return texts;
+}
+
 function renderWeeklyObjectives(tasks) {
   const list = document.getElementById('weeklyObjectives');
   if (!list) return;
 
   const state = getTaskState();
   const thisWeekState = getThisWeekState();
+  const todayState = getTodayState();
+  const edits = getTaskEdits();
   const objectives = [];
   const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
 
@@ -278,10 +296,8 @@ function renderWeeklyObjectives(tasks) {
           const isThisWeek = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : !!sub.thisWeek;
           if (!isThisWeek) return;
           const isDone = sub.done || state[subKey];
-          const edits = getTaskEdits();
           objectives.push({ text: edits[subKey] || sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
         });
-        // Also include added subtasks starred thisWeek
         const parentKey = `${cat}::now-${idx}::${item.text}`;
         const addedSubs = (state._addedSubs || {})[parentKey] || [];
         addedSubs.forEach((sub, si) => {
@@ -292,7 +308,6 @@ function renderWeeklyObjectives(tasks) {
           objectives.push({ text: sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
         });
       } else {
-        // Task with no subtasks but marked thisWeek
         const taskKey = `${cat}::now-${idx}::${item.text}`;
         const isThisWeek = thisWeekState.hasOwnProperty(taskKey) ? thisWeekState[taskKey] : !!item.thisWeek;
         if (!isThisWeek) return;
@@ -302,12 +317,22 @@ function renderWeeklyObjectives(tasks) {
     });
   }
 
-  if (objectives.length === 0) {
+  // Filter out items in today (they show in the Today list instead)
+  // Filter out items that match recurring habits
+  const recurringTexts = getRecurringTexts(tasks);
+  const filtered = objectives.filter(obj => {
+    if (todayState[obj.key]) return false;
+    const lower = obj.text.toLowerCase();
+    if (recurringTexts.some(rt => lower.includes(rt) || rt.includes(lower))) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
     list.innerHTML = '<li class="empty-state">Mark subtasks as "this week" in your projects to populate objectives.</li>';
     return;
   }
 
-  list.innerHTML = objectives.map(obj => {
+  list.innerHTML = filtered.map(obj => {
     const doneClass = obj.done ? 'obj-done' : '';
     const projectLabel = obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : '';
     return `<li class="${doneClass}">
@@ -316,6 +341,7 @@ function renderWeeklyObjectives(tasks) {
       <span class="obj-text" data-edit-key="${obj.key}">${escapeHtml(obj.text)}</span>
       ${projectLabel}
       <span class="obj-actions">
+        <button class="obj-today-btn" data-key="${obj.key}" title="Move to today">&#9650;</button>
         <button class="obj-unstar-btn" data-key="${obj.key}" title="Remove from this week">&#9734;</button>
         <button class="obj-delete-btn" data-key="${obj.key}" title="Delete task">&times;</button>
       </span>
@@ -360,14 +386,25 @@ function renderWeeklyObjectives(tasks) {
           saveTaskEdits(ed);
           updateSyncButton();
         }
-        // Re-bind dblclick on the new span
-        newSpan.addEventListener('dblclick', span.ondblclick);
       };
       input.addEventListener('blur', save);
       input.addEventListener('keydown', (ev) => {
         if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
         if (ev.key === 'Escape') { input.value = current; input.blur(); }
       });
+    });
+  });
+
+  // Move to today
+  list.querySelectorAll('.obj-today-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const td = getTodayState();
+      td[btn.dataset.key] = true;
+      saveTodayState(td);
+      updateSyncButton();
+      renderWeeklyObjectives(tasks);
+      renderTodayTasks(appData);
     });
   });
 
@@ -390,7 +427,7 @@ function renderWeeklyObjectives(tasks) {
       e.stopPropagation();
       const key = btn.dataset.key;
       const st = getTaskState();
-      st[key] = true; // mark done
+      st[key] = true;
       saveTaskState(st);
       const tw = getThisWeekState();
       tw[key] = false;
@@ -605,75 +642,211 @@ function renderIdentityVotes(data) {
 }
 
 // ---------------------------------------------------------------------------
-// 9. renderDailyFocus(data, dayMode) — Editable + weekend calendar fix
+// 8b. renderTodayTasks(data) — Today's task list inside focus card
 // ---------------------------------------------------------------------------
-function renderDailyFocus(data, dayMode) {
-  dayMode = dayMode || 'today';
+function renderTodayTasks(data) {
+  const container = document.getElementById('todayTasks');
+  if (!container) return;
+
+  const tasks = data.tasks;
+  if (!tasks) { container.innerHTML = ''; return; }
+
+  const todayState = getTodayState();
+  const state = getTaskState();
+  const edits = getTaskEdits();
+  const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
+  const items = [];
+
+  for (const cat of CATEGORY_ORDER) {
+    const { now: nowItems } = getResolvedItems(tasks, cat);
+    nowItems.forEach((item, itemIdx) => {
+      if (item.done) return;
+      const origIdx = (tasks[cat].now || []).findIndex(t => t.text === item.text);
+      const idx = origIdx >= 0 ? origIdx : itemIdx;
+
+      if (item.subtasks && item.subtasks.length > 0) {
+        item.subtasks.forEach((sub, si) => {
+          const subKey = `${cat}::now-${idx}::sub-${si}::${sub.text}`;
+          if (!todayState[subKey]) return;
+          const isDone = sub.done || state[subKey];
+          items.push({ text: edits[subKey] || sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
+        });
+        const parentKey = `${cat}::now-${idx}::${item.text}`;
+        const addedSubs = (state._addedSubs || {})[parentKey] || [];
+        addedSubs.forEach((sub, si) => {
+          const subKey = `${cat}::now-${idx}::addedsub-${si}::${sub.text}`;
+          if (!todayState[subKey]) return;
+          const isDone = state[subKey] || false;
+          items.push({ text: sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
+        });
+      } else {
+        const taskKey = `${cat}::now-${idx}::${item.text}`;
+        if (!todayState[taskKey]) return;
+        const isDone = item.done || state[taskKey];
+        items.push({ text: item.text, project: null, category: cat, color: colors[cat], key: taskKey, done: isDone });
+      }
+    });
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = '<p class="today-empty">Pull items from Weekly Objectives using the <strong>&uarr;</strong> button.</p>';
+    return;
+  }
+
+  container.innerHTML = '<div class="today-header">Today</div>' +
+    '<ul class="today-list">' + items.map(obj => {
+    const doneClass = obj.done ? 'obj-done' : '';
+    const projectLabel = obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : '';
+    return `<li class="${doneClass}">
+      <span class="obj-cat-dot" style="background:${obj.color}"></span>
+      <input type="checkbox" class="today-checkbox" data-key="${obj.key}" ${obj.done ? 'checked' : ''}>
+      <span class="today-text" data-edit-key="${obj.key}">${escapeHtml(obj.text)}</span>
+      ${projectLabel}
+      <span class="today-actions">
+        <button class="today-to-week-btn" data-key="${obj.key}" title="Move back to weekly">&darr;</button>
+        <button class="today-remove-btn" data-key="${obj.key}" title="Remove from week">&times;</button>
+      </span>
+    </li>`;
+  }).join('') + '</ul>';
+
+  // Checkboxes
+  container.querySelectorAll('.today-checkbox').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const st = getTaskState();
+      st[cb.dataset.key] = cb.checked;
+      saveTaskState(st);
+      cb.closest('li').classList.toggle('obj-done', cb.checked);
+      updateSyncButton();
+      renderProjectsAgenda(appData.tasks);
+    });
+  });
+
+  // Double-click to edit
+  container.querySelectorAll('.today-text').forEach(span => {
+    span.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      const key = span.dataset.editKey;
+      const current = span.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = current;
+      input.className = 'obj-edit-input';
+      span.replaceWith(input);
+      input.focus();
+      input.select();
+      const save = () => {
+        const newVal = input.value.trim();
+        const newSpan = document.createElement('span');
+        newSpan.className = 'today-text';
+        newSpan.dataset.editKey = key;
+        newSpan.textContent = newVal || current;
+        input.replaceWith(newSpan);
+        if (newVal && newVal !== current) {
+          const ed = getTaskEdits();
+          ed[key] = newVal;
+          saveTaskEdits(ed);
+          updateSyncButton();
+        }
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = current; input.blur(); }
+      });
+    });
+  });
+
+  // Move back to week
+  container.querySelectorAll('.today-to-week-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const td = getTodayState();
+      delete td[btn.dataset.key];
+      saveTodayState(td);
+      updateSyncButton();
+      renderTodayTasks(data);
+      renderWeeklyObjectives(appData.tasks);
+    });
+  });
+
+  // Remove from week entirely
+  container.querySelectorAll('.today-remove-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.key;
+      const td = getTodayState();
+      delete td[key];
+      saveTodayState(td);
+      const tw = getThisWeekState();
+      tw[key] = false;
+      saveThisWeekState(tw);
+      updateSyncButton();
+      renderTodayTasks(data);
+      renderWeeklyObjectives(appData.tasks);
+      renderProjectsAgenda(appData.tasks);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 9. renderDailyFocus(data) — Editable focus text + today tasks
+// ---------------------------------------------------------------------------
+function renderDailyFocus(data) {
   const contentEl = document.getElementById('dailyFocusContent');
   const empty = document.getElementById('focusEmpty');
   const title = document.getElementById('focusTitle');
   const breadcrumb = document.getElementById('yesterdayBreadcrumb');
 
-  const isToday = dayMode === 'today';
-  const dayLabel = isToday ? 'Today' : 'Tomorrow';
-  title.textContent = `My Focus ${dayLabel}`;
+  title.textContent = 'My Focus Today';
 
-  // Focus text — editable
+  // Focus text — shows yesterdayNotes (today's plan, set during yesterday's check-in)
   const editedFocus = getDailyFocusEdit();
-  const focusContent = isToday ? (editedFocus || data.dailyFocus) : data.yesterdayNotes;
+  const focusContent = editedFocus || data.yesterdayNotes;
 
-  if (focusContent || isToday) {
+  if (focusContent) {
     empty.style.display = 'none';
     contentEl.style.display = 'block';
-    const isEdited = isToday && editedFocus;
-    contentEl.innerHTML = `<div class="focus-text-editable ${isEdited ? 'focus-edited' : ''}" contenteditable="${isToday}" data-placeholder="Click to set your focus for today...">${escapeHtml(focusContent || '')}</div>`;
+    const isEdited = !!editedFocus;
+    contentEl.innerHTML = `<div class="focus-text-editable ${isEdited ? 'focus-edited' : ''}" contenteditable="true" data-placeholder="Click to set your focus for today...">${escapeHtml(focusContent || '')}</div>`;
 
-    if (isToday) {
-      const editable = contentEl.querySelector('.focus-text-editable');
-      if (!editable.textContent.trim()) editable.textContent = '';
-      editable.addEventListener('blur', () => {
-        const newText = editable.textContent.trim();
-        if (newText && newText !== data.dailyFocus) {
-          saveDailyFocusEdit(newText);
-          editable.classList.add('focus-edited');
-          updateSyncButton();
-        } else if (!newText || newText === data.dailyFocus) {
-          saveDailyFocusEdit('');
-          editable.classList.remove('focus-edited');
-        }
-      });
-      editable.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); editable.blur(); }
-      });
-    }
+    const editable = contentEl.querySelector('.focus-text-editable');
+    if (!editable.textContent.trim()) editable.textContent = '';
+    editable.addEventListener('blur', () => {
+      const newText = editable.textContent.trim();
+      if (newText && newText !== data.yesterdayNotes) {
+        saveDailyFocusEdit(newText);
+        editable.classList.add('focus-edited');
+        updateSyncButton();
+      } else if (!newText || newText === data.yesterdayNotes) {
+        saveDailyFocusEdit('');
+        editable.classList.remove('focus-edited');
+      }
+    });
+    editable.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); editable.blur(); }
+    });
   } else {
     contentEl.style.display = 'none';
     empty.style.display = 'block';
-    empty.textContent = 'No focus set for tomorrow yet.';
+    empty.textContent = 'No focus set for today.';
   }
 
-  // Yesterday's notes
+  // Overarching goal breadcrumb
   if (breadcrumb) {
-    if (isToday && data.yesterdayNotes) {
-      breadcrumb.innerHTML = `<div class="yesterday-reminder"><div class="yesterday-reminder-label">Reminder from yesterday</div><div class="yesterday-reminder-text">${escapeHtml(data.yesterdayNotes)}</div></div>`;
+    if (data.dailyFocus) {
+      breadcrumb.innerHTML = `<div class="yesterday-reminder"><div class="yesterday-reminder-label">Overarching goal</div><div class="yesterday-reminder-text">${escapeHtml(data.dailyFocus)}</div></div>`;
       breadcrumb.style.display = 'block';
     } else {
       breadcrumb.style.display = 'none';
     }
   }
 
-  // Day toggle
+  // Render today tasks below focus text
+  renderTodayTasks(data);
+
+  // Day toggle removed — card is always "today"
   const dayToggle = document.getElementById('dayToggle');
-  if (dayToggle && !dayToggle._bound) {
-    dayToggle._bound = true;
-    dayToggle.addEventListener('click', (ev) => {
-      const btn = ev.target.closest('.toggle-btn');
-      if (!btn) return;
-      ev.currentTarget.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderDailyFocus(data, btn.dataset.day);
-    });
-  }
+  if (dayToggle) dayToggle.style.display = 'none';
 }
 
 // ---------------------------------------------------------------------------
@@ -716,6 +889,7 @@ function renderProjectsAgenda(tasks) {
 
   const state = getTaskState();
   const thisWeekState = getThisWeekState();
+  const todayState = getTodayState();
   const addedSubs = state._addedSubs || {};
   const deletedSubs = state._deletedSubs || {};
 
@@ -751,11 +925,14 @@ function renderProjectsAgenda(tasks) {
       const isDone = sub.done || state[subKey];
       const twKey = subKey;
       const isTW = thisWeekState.hasOwnProperty(twKey) ? thisWeekState[twKey] : !!sub.thisWeek;
+      const isTD = todayState[twKey] || false;
       const edits = getTaskEdits();
       const displayText = edits[subKey] || sub.text;
+      const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-today-key="${twKey}" title="Toggle today">T</button>` : '';
       return `<div class="proj-subtask ${isDone ? 'proj-subtask-done' : ''}">
         <input type="checkbox" class="proj-subtask-checkbox" data-key="${subKey}" ${isDone ? 'checked' : ''}>
         <span class="proj-subtask-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(displayText)}</span>
+        ${todayBtn}
         <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${twKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
       </div>`;
     }).join('');
@@ -764,9 +941,12 @@ function renderProjectsAgenda(tasks) {
       const subKey = `${proj.category}::now-${proj.origIdx}::addedsub-${si}::${sub.text}`;
       const isDone = state[subKey] || false;
       const isTW = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : false;
+      const isTD = todayState[subKey] || false;
+      const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-today-key="${subKey}" title="Toggle today">T</button>` : '';
       return `<div class="proj-subtask ${isDone ? 'proj-subtask-done' : ''}">
         <input type="checkbox" class="proj-subtask-checkbox" data-key="${subKey}" ${isDone ? 'checked' : ''}>
         <span class="proj-subtask-text">${escapeHtml(sub.text)}</span>
+        ${todayBtn}
         <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${subKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
         <button class="delete-added-sub-btn" data-parent="${parentKey}" data-sub-index="${si}" title="Remove">&times;</button>
       </div>`;
@@ -777,7 +957,9 @@ function renderProjectsAgenda(tasks) {
     if (totalSubs === 0) {
       const taskTwKey = `${proj.category}::now-${proj.origIdx}::${proj.text}`;
       const isTW = thisWeekState.hasOwnProperty(taskTwKey) ? thisWeekState[taskTwKey] : !!proj.thisWeek;
-      taskThisWeekHtml = `<button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${taskTwKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>`;
+      const isTD = todayState[taskTwKey] || false;
+      const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-today-key="${taskTwKey}" title="Toggle today">T</button>` : '';
+      taskThisWeekHtml = `${todayBtn}<button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${taskTwKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>`;
     }
 
     return `<div class="proj-card" data-proj="${pi}">
@@ -817,7 +999,7 @@ function renderProjectsAgenda(tasks) {
   // Card expand/collapse
   container.querySelectorAll('.proj-card-header').forEach(header => {
     header.addEventListener('click', (e) => {
-      if (e.target.closest('.this-week-toggle')) return;
+      if (e.target.closest('.this-week-toggle') || e.target.closest('.today-toggle')) return;
       const card = header.closest('.proj-card');
       const pi = parseInt(card.dataset.proj);
       if (card.classList.contains('proj-card-expanded')) {
@@ -901,11 +1083,32 @@ function renderProjectsAgenda(tasks) {
       const tw = getThisWeekState();
       const key = btn.dataset.twKey;
       tw[key] = !tw[key];
-      if (!tw[key]) delete tw[key]; // Clean up false values
+      if (!tw[key]) {
+        delete tw[key];
+        const td = getTodayState();
+        if (td[key]) { delete td[key]; saveTodayState(td); }
+      }
       saveThisWeekState(tw);
       updateSyncButton();
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
+      renderTodayTasks(appData);
+    });
+  });
+
+  // Today toggles
+  container.querySelectorAll('.today-toggle').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const td = getTodayState();
+      const key = btn.dataset.todayKey;
+      td[key] = !td[key];
+      if (!td[key]) delete td[key];
+      saveTodayState(td);
+      updateSyncButton();
+      renderProjectsAgenda(tasks);
+      renderWeeklyObjectives(tasks);
+      renderTodayTasks(appData);
     });
   });
 

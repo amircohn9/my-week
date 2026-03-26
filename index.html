@@ -28,16 +28,11 @@
 
     <div class="dashboard-grid">
       <section class="card daily-focus" style="grid-area: focus;">
-        <div class="section-header-with-toggle">
-          <h2 id="focusTitle">My Focus Today</h2>
-          <div class="toggle-group" id="dayToggle">
-            <button class="toggle-btn active" data-day="today">Today</button>
-            <button class="toggle-btn" data-day="tomorrow">Tomorrow</button>
-          </div>
-        </div>
+        <h2 id="focusTitle">My Focus Today</h2>
         <div id="dailyFocusContent"></div>
         <p class="empty-state" id="focusEmpty">No focus set for today.</p>
         <div id="yesterdayBreadcrumb" class="yesterday-breadcrumb"></div>
+        <div id="todayTasks" class="today-tasks"></div>
       </section>
 
       <section class="card weekly-objectives" style="grid-area: objectives;">

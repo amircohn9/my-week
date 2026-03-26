@@ -720,13 +720,7 @@
           "recurring": "ongoing"
         }
       ],
-      "now": [
-        {
-          "text": "Morning workout",
-          "done": false,
-          "thisWeek": true
-        }
-      ],
+      "now": [],
       "backlog": []
     },
     "Home Duties": {
