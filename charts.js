@@ -405,6 +405,7 @@ function renderWeeklyObjectives(tasks) {
       updateSyncButton();
       renderWeeklyObjectives(tasks);
       renderTodayTasks(appData);
+      renderProjectsAgenda(appData.tasks);
     });
   });
 
@@ -582,7 +583,7 @@ function renderDayByDay(checkins, dietEntries) {
       for (const a of (day.activities || [])) totalHrs += a.hours || 0;
       const activityHtml = (day.activities || []).map(a => {
         const color = colors[a.category] || '#ccc';
-        return `<div class="day-activity-item" style="border-left: 3px solid ${color};"><span class="day-activity-text">${escapeHtml(a.text)}</span><span class="day-activity-hours">${a.hours}h</span></div>`;
+        return `<div class="day-activity-item" style="border-left: 3px solid ${color};"><span class="day-activity-text">${escapeHtml(a.text)}</span>${a.hours ? `<span class="day-activity-hours">${a.hours}h</span>` : ''}</div>`;
       }).join('');
       const wins = (day.wins || '').trim();
       const winsHtml = wins ? `<div class="day-wins"><strong>Wins:</strong> ${escapeHtml(wins)}</div>` : '';

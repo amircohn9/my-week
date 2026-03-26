@@ -60,8 +60,8 @@ function countSyncChanges() {
   if (state._addedSubs) for (const key of Object.keys(state._addedSubs)) count += state._addedSubs[key].length;
   if (state._deletedSubs) for (const key of Object.keys(state._deletedSubs)) count += state._deletedSubs[key].length;
   if (state._added) for (const cat of Object.keys(state._added)) count += state._added[cat].length;
-  const hidden = getHiddenRecurring();
-  count += Object.keys(hidden).length;
+  const hidden = getHiddenHabits();
+  count += hidden.length;
   try { const wu = JSON.parse(localStorage.getItem('myweek-weight-updates')) || []; count += wu.length; } catch {}
   // thisWeek changes
   const tw = getThisWeekState();
@@ -91,7 +91,7 @@ function generateSyncSummary() {
   const state = getTaskState();
   const edits = getTaskEdits();
   const moves = getTaskMoves();
-  const hidden = getHiddenRecurring();
+  const hidden = getHiddenHabits();
   const lines = ['=== MyWeek Sync Summary ===', ''];
 
   const completions = Object.entries(state).filter(([k, v]) => v === true && !k.startsWith('_'));
@@ -116,7 +116,7 @@ function generateSyncSummary() {
     if (entries.length) { lines.push('DELETED SUBTASKS:'); entries.forEach(([parent, indices]) => { indices.forEach(i => lines.push('  ' + parent + ' → remove sub #' + i)); }); lines.push(''); }
   }
 
-  if (Object.keys(hidden).length) { lines.push('HIDDEN RECURRING:'); Object.keys(hidden).forEach(k => lines.push('  ' + k)); lines.push(''); }
+  if (hidden.length) { lines.push('HIDDEN RECURRING:'); hidden.forEach(k => lines.push('  ' + k)); lines.push(''); }
 
   try {
     const wu = JSON.parse(localStorage.getItem('myweek-weight-updates')) || [];
