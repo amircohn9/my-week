@@ -66,9 +66,7 @@ function countSyncChanges() {
   // thisWeek changes
   const tw = getThisWeekState();
   count += Object.keys(tw).length;
-  // today changes
-  const td = getTodayState();
-  count += Object.keys(td).length;
+  // today changes not counted — todayState persists across syncs
   // Daily focus edit
   if (getDailyFocusEdit()) count++;
   return count;
@@ -534,7 +532,7 @@ function renderBacklog(tasks) {
       saveTaskEdits({});
       saveTaskMoves({});
       saveThisWeekState({});
-      saveTodayState({});
+      // Keep todayState — Today items persist until managed during check-in
       saveDailyFocusEdit('');
       const btn = document.getElementById('syncBtn');
       btn.innerHTML = 'Synced!';
