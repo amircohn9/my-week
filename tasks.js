@@ -10,9 +10,6 @@ function saveTaskEdits(edits) { localStorage.setItem('myweek-task-edits', JSON.s
 function getTaskMoves() { try { return JSON.parse(localStorage.getItem('myweek-task-moves')) || {}; } catch { return {}; } }
 function saveTaskMoves(moves) { localStorage.setItem('myweek-task-moves', JSON.stringify(moves)); }
 
-function getHiddenRecurring() { try { return JSON.parse(localStorage.getItem('myweek-hidden-recurring')) || {}; } catch { return {}; } }
-function saveHiddenRecurring(hidden) { localStorage.setItem('myweek-hidden-recurring', JSON.stringify(hidden)); }
-
 function getThisWeekState() { try { return JSON.parse(localStorage.getItem('myweek-this-week')) || {}; } catch { return {}; } }
 function saveThisWeekState(state) { localStorage.setItem('myweek-this-week', JSON.stringify(state)); }
 
@@ -144,8 +141,8 @@ function generateSyncSummary() {
 
 // --- Backlog rendering (only backlog items) ---
 
-function renderTaskItem(item, cat, index, state, edits, moveTarget) {
-  const key = `${cat}::${index}::${item.text}`;
+function renderTaskItem(item, cat, section, state, edits, moveTarget) {
+  const key = `${cat}::${section}::${item.text}`;
   const checked = state[key] || item.done;
   const doneClass = checked ? 'task-done' : '';
 
@@ -189,7 +186,7 @@ function renderTaskItem(item, cat, index, state, edits, moveTarget) {
 
   if (hasSubtasks || allSubs.length > 0) {
     const subItems = allSubs.map((sub, si) => {
-      const subKey = `${cat}::${index}::sub-${si}::${sub.text}`;
+      const subKey = `${cat}::${section}::${item.text}::${sub.text}`;
       if (deletedForThis.includes(si)) return '';
       const subChecked = state[subKey] || sub.done;
       const subDisplay = edits[subKey] || sub.text;
@@ -201,7 +198,7 @@ function renderTaskItem(item, cat, index, state, edits, moveTarget) {
     }).join('');
 
     const addedSubItems = addedForThis.map((sub, si) => {
-      const subKey = `${cat}::${index}::addedsub-${si}::${sub.text}`;
+      const subKey = `${cat}::${section}::${item.text}::added::${sub.text}`;
       const subChecked = state[subKey] || false;
       return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
         <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
@@ -254,7 +251,7 @@ function renderBacklog(tasks) {
 
     const tagClass = categoryTagClass(cat);
     const isCollapsed = collapseState[cat];
-    const backlogHtml = backlogItems.map((item, i) => renderTaskItem(item, cat, `backlog-${i}`, state, edits, 'now')).join('');
+    const backlogHtml = backlogItems.map((item) => renderTaskItem(item, cat, 'backlog', state, edits, 'now')).join('');
     const addedHtml = addedItems.map((item, i) => `<div class="task-item">
       <input type="checkbox" class="task-checkbox added-task-checkbox" data-cat="${cat}" data-idx="${i}">
       <span class="task-text">${escapeHtml(item.text)}</span>

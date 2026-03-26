@@ -285,30 +285,28 @@ function renderWeeklyObjectives(tasks) {
 
   for (const cat of CATEGORY_ORDER) {
     const { now: nowItems } = getResolvedItems(tasks, cat);
-    nowItems.forEach((item, itemIdx) => {
+    nowItems.forEach((item) => {
       if (item.done) return;
-      const origIdx = (tasks[cat].now || []).findIndex(t => t.text === item.text);
-      const idx = origIdx >= 0 ? origIdx : itemIdx;
 
       if (item.subtasks && item.subtasks.length > 0) {
-        item.subtasks.forEach((sub, si) => {
-          const subKey = `${cat}::now-${idx}::sub-${si}::${sub.text}`;
+        item.subtasks.forEach((sub) => {
+          const subKey = `${cat}::${item.text}::${sub.text}`;
           const isThisWeek = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : !!sub.thisWeek;
           if (!isThisWeek) return;
           const isDone = sub.done || state[subKey];
           objectives.push({ text: edits[subKey] || sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
         });
-        const parentKey = `${cat}::now-${idx}::${item.text}`;
+        const parentKey = `${cat}::${item.text}`;
         const addedSubs = (state._addedSubs || {})[parentKey] || [];
-        addedSubs.forEach((sub, si) => {
-          const subKey = `${cat}::now-${idx}::addedsub-${si}::${sub.text}`;
+        addedSubs.forEach((sub) => {
+          const subKey = `${cat}::${item.text}::added::${sub.text}`;
           const isThisWeek = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : false;
           if (!isThisWeek) return;
           const isDone = state[subKey] || false;
           objectives.push({ text: sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
         });
       } else {
-        const taskKey = `${cat}::now-${idx}::${item.text}`;
+        const taskKey = `${cat}::${item.text}`;
         const isThisWeek = thisWeekState.hasOwnProperty(taskKey) ? thisWeekState[taskKey] : !!item.thisWeek;
         if (!isThisWeek) return;
         const isDone = item.done || state[taskKey];
@@ -660,28 +658,26 @@ function renderTodayTasks(data) {
 
   for (const cat of CATEGORY_ORDER) {
     const { now: nowItems } = getResolvedItems(tasks, cat);
-    nowItems.forEach((item, itemIdx) => {
+    nowItems.forEach((item) => {
       if (item.done) return;
-      const origIdx = (tasks[cat].now || []).findIndex(t => t.text === item.text);
-      const idx = origIdx >= 0 ? origIdx : itemIdx;
 
       if (item.subtasks && item.subtasks.length > 0) {
-        item.subtasks.forEach((sub, si) => {
-          const subKey = `${cat}::now-${idx}::sub-${si}::${sub.text}`;
+        item.subtasks.forEach((sub) => {
+          const subKey = `${cat}::${item.text}::${sub.text}`;
           if (!todayState[subKey]) return;
           const isDone = sub.done || state[subKey];
           items.push({ text: edits[subKey] || sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
         });
-        const parentKey = `${cat}::now-${idx}::${item.text}`;
+        const parentKey = `${cat}::${item.text}`;
         const addedSubs = (state._addedSubs || {})[parentKey] || [];
-        addedSubs.forEach((sub, si) => {
-          const subKey = `${cat}::now-${idx}::addedsub-${si}::${sub.text}`;
+        addedSubs.forEach((sub) => {
+          const subKey = `${cat}::${item.text}::added::${sub.text}`;
           if (!todayState[subKey]) return;
           const isDone = state[subKey] || false;
           items.push({ text: sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
         });
       } else {
-        const taskKey = `${cat}::now-${idx}::${item.text}`;
+        const taskKey = `${cat}::${item.text}`;
         if (!todayState[taskKey]) return;
         const isDone = item.done || state[taskKey];
         items.push({ text: item.text, project: null, category: cat, color: colors[cat], key: taskKey, done: isDone });
@@ -867,15 +863,13 @@ function renderProjectsAgenda(tasks) {
     const { now: nowItems } = getResolvedItems(tasks, cat);
     nowItems.forEach((item) => {
       if (item.done) return;
-      const origIdx = (tasks[cat].now || []).findIndex(t => t.text === item.text);
       projects.push({
         text: item.text,
         category: cat,
         color: colors[cat],
         deadline: item.deadline || null,
         subtasks: item.subtasks || [],
-        thisWeek: item.thisWeek || false,
-        origIdx: origIdx >= 0 ? origIdx : 0
+        thisWeek: item.thisWeek || false
       });
     });
   }
@@ -896,8 +890,8 @@ function renderProjectsAgenda(tasks) {
 
   container.innerHTML = projects.map((proj, pi) => {
     const totalSubs = proj.subtasks.length;
-    const doneSubs = proj.subtasks.filter((s, si) => {
-      const key = `${proj.category}::now-${proj.origIdx}::sub-${si}::${s.text}`;
+    const doneSubs = proj.subtasks.filter((s) => {
+      const key = `${proj.category}::${proj.text}::${s.text}`;
       return s.done || state[key];
     }).length;
     const pct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
@@ -916,30 +910,29 @@ function renderProjectsAgenda(tasks) {
     const tagClass = categoryTagClass(proj.category);
 
     // Expanded content: subtasks with checkboxes and thisWeek toggles
-    const parentKey = `${proj.category}::now-${proj.origIdx}::${proj.text}`;
+    const parentKey = `${proj.category}::${proj.text}`;
     const addedForThis = addedSubs[parentKey] || [];
     const deletedForThis = deletedSubs[parentKey] || [];
 
     const subtasksHtml = proj.subtasks.map((sub, si) => {
       if (deletedForThis.includes(si)) return '';
-      const subKey = `${proj.category}::now-${proj.origIdx}::sub-${si}::${sub.text}`;
+      const subKey = `${proj.category}::${proj.text}::${sub.text}`;
       const isDone = sub.done || state[subKey];
-      const twKey = subKey;
-      const isTW = thisWeekState.hasOwnProperty(twKey) ? thisWeekState[twKey] : !!sub.thisWeek;
-      const isTD = todayState[twKey] || false;
+      const isTW = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : !!sub.thisWeek;
+      const isTD = todayState[subKey] || false;
       const edits = getTaskEdits();
       const displayText = edits[subKey] || sub.text;
-      const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-today-key="${twKey}" title="Toggle today">T</button>` : '';
+      const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-today-key="${subKey}" title="Toggle today">T</button>` : '';
       return `<div class="proj-subtask ${isDone ? 'proj-subtask-done' : ''}">
         <input type="checkbox" class="proj-subtask-checkbox" data-key="${subKey}" ${isDone ? 'checked' : ''}>
         <span class="proj-subtask-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(displayText)}</span>
         ${todayBtn}
-        <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${twKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
+        <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${subKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
       </div>`;
     }).join('');
 
     const addedSubsHtml = addedForThis.map((sub, si) => {
-      const subKey = `${proj.category}::now-${proj.origIdx}::addedsub-${si}::${sub.text}`;
+      const subKey = `${proj.category}::${proj.text}::added::${sub.text}`;
       const isDone = state[subKey] || false;
       const isTW = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : false;
       const isTD = todayState[subKey] || false;
@@ -956,7 +949,7 @@ function renderProjectsAgenda(tasks) {
     // For tasks without subtasks, show thisWeek toggle on the task itself
     let taskThisWeekHtml = '';
     if (totalSubs === 0) {
-      const taskTwKey = `${proj.category}::now-${proj.origIdx}::${proj.text}`;
+      const taskTwKey = `${proj.category}::${proj.text}`;
       const isTW = thisWeekState.hasOwnProperty(taskTwKey) ? thisWeekState[taskTwKey] : !!proj.thisWeek;
       const isTD = todayState[taskTwKey] || false;
       const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-today-key="${taskTwKey}" title="Toggle today">T</button>` : '';
@@ -1227,8 +1220,7 @@ function renderRecurringHabits(tasks) {
 
       // Check localStorage for logged sessions
       const state = getTaskState();
-      const catIdx = (group.recurring || []).indexOf(item);
-      const sessionKey = `${cat}::session::${catIdx}::next`;
+      const sessionKey = `${cat}::session::${item.text}`;
       if (state[sessionKey]) thisWeekCount++;
 
       habits.push({
