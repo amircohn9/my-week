@@ -13,7 +13,7 @@
     "Family"
   ],
   "startDate": "2026-03-16",
-  "yesterdayNotes": "Send Ramp application (CV + cover letter). Facebook Marketplace listings. Find more job opportunities. LinkedIn post. Respond to RBC. Work on naturalization application.",
+  "yesterdayNotes": "Prep Creative Director CV. House stuff with Arielle. Hebrew tutor for Alma. File for unemployment. FB Marketplace listings.",
   "didYouKnow": [
     "Walt Disney was fired from a newspaper for 'lacking imagination.' He went bankrupt before Mickey Mouse.",
     "Steven Spielberg was rejected from USC film school three times. He eventually got an honorary degree from them.",
@@ -440,6 +440,40 @@
       "obstacles": "Hard to know the right amount of time to invest in CV work",
       "wins": "Ramp CV baseline done, clarity on direction, cover letter mostly there, RBC follow-up sent",
       "summary": "6 hours tracked — 5 hours on Ramp CV and cover letter, RBC follow-up sent, plus a morning workout. Real clarity emerging on personal brand direction."
+    },
+    {
+      "date": "2026-03-25",
+      "activities": [
+        {
+          "category": "Career",
+          "text": "Read content strategy book (Devin)",
+          "hours": 0.5
+        },
+        {
+          "category": "Self",
+          "text": "Psychologist session",
+          "hours": 1
+        },
+        {
+          "category": "Career",
+          "text": "Ramp application, LinkedIn outreach, LinkedIn post, time mgmt updates",
+          "hours": 4
+        },
+        {
+          "category": "Career",
+          "text": "Networking \u2014 Brian Moore",
+          "hours": 0.5
+        },
+        {
+          "category": "Career",
+          "text": "LinkedIn post work (evening)",
+          "hours": 1.5
+        }
+      ],
+      "mood": "Tired. Felt like not enough got done but objectively a full day.",
+      "obstacles": "Low energy",
+      "wins": "Covered applications, networking, content creation, learning, and therapy in one day",
+      "summary": "7.5 hours tracked \u2014 content book, psychologist, Ramp application work, LinkedIn outreach + post, networking with Brian Moore, evening LinkedIn session."
     }
   ],
   "completedItems": [
@@ -560,6 +594,36 @@
       "text": "Follow-up to RBC with requested documents",
       "hours": 0.5,
       "date": "2026-03-24"
+    },
+    {
+      "category": "Career",
+      "text": "Read content strategy book (Devin)",
+      "hours": 0.5,
+      "date": "2026-03-25"
+    },
+    {
+      "category": "Self",
+      "text": "Psychologist session",
+      "hours": 1,
+      "date": "2026-03-25"
+    },
+    {
+      "category": "Career",
+      "text": "Ramp application, LinkedIn outreach, LinkedIn post, time mgmt updates",
+      "hours": 4,
+      "date": "2026-03-25"
+    },
+    {
+      "category": "Career",
+      "text": "Networking \u2014 Brian Moore",
+      "hours": 0.5,
+      "date": "2026-03-25"
+    },
+    {
+      "category": "Career",
+      "text": "LinkedIn post work (evening)",
+      "hours": 1.5,
+      "date": "2026-03-25"
     }
   ],
   "tasks": {
@@ -698,10 +762,14 @@
         {
           "text": "Psychologist",
           "recurring": "weekly",
-          "nextSession": "2026-03-25",
+          "nextSession": "2026-04-01",
           "sessions": [
             {
               "date": "2026-03-16",
+              "note": ""
+            },
+            {
+              "date": "2026-03-25",
               "note": ""
             }
           ]
