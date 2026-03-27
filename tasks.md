@@ -2,10 +2,10 @@
 
 ## Week of March 23–29, 2026
 
-- [ ] Have a CV project in Claude Code — be able to apply to any job quickly
-- [ ] Get all files for taxes
+- [x] Have a CV project in Claude Code — be able to apply to any job quickly
+- [x] Get all files for taxes
 - [ ] Apply to 3 jobs
-- [ ] Write 2 LinkedIn posts
+- [x] Write 2 LinkedIn posts
 - [ ] Photo all the shoes for Spring Clean Up
 - [ ] Complete Severance (finish watching)
 - [ ] Move along with naturalization
@@ -15,10 +15,10 @@
 Use the opportunity to do important things in the house I never get the chance to do.
 
 - [ ] Taxes 2026
-- [ ] Spring clean up (put items on Facebook)
+- [x] Spring clean up — post first batch on Facebook
 - [ ] RBC — make a decision how to handle
   - [ ] Move the suggested accounts
-  - [ ] Share Schwab statement
+  - [x] Share Schwab statement
   - [ ] Switch to pre-tax contributions
   - [ ] Sell ZI stock?
   - [ ] Sell GoDaddy stock
@@ -27,11 +27,12 @@ Use the opportunity to do important things in the house I never get the chance t
 - [ ] A&A Cohn/Blattner Family Review
 
 ## Family
+- [x] Find Hebrew tutor for Alma
 - [ ] Hebrew day with Alma once a week
 - [ ] Special time with Carmeli once a week
 - [ ] Arielle — day off once
 - [ ] Schedule time in NYC
-- [ ] Possibly extend time in
+- [ ] Possibly extend time in Israel
 - [ ] Buy tickets to Netherlands
 
 ## Self
@@ -48,10 +49,13 @@ Get ready for my next role.
 
 - [ ] Complete severance package
 - [ ] Get ready to apply for next role
-  - [ ] 2 CV options — Content/Creative Director (design & video)
-- [ ] Post 2 LinkedIn posts a week
-- [ ] Get really good at Claude Code
-  - [ ] Time management project
+  - [x] 2 CV options — Content/Creative Director (design & video)
+  - [x] Have a system for CV + Cover letter to apply quickly
+  - [ ] Apply to at least 3 jobs
+- [x] Post 2 LinkedIn posts a week
+- [x] Personal brand + accomplishments master document
+- [x] Get really good at Claude Code
+  - [x] Time management project
   - [ ] House expenses
   - [ ] Case study video
 - [ ] Learn content strategy

@@ -61,6 +61,10 @@
         "lbs": 214
       },
       {
+        "date": "2026-03-22",
+        "lbs": 202
+      },
+      {
         "date": "2026-03-24",
         "lbs": 201
       }
@@ -694,6 +698,51 @@
       "category": "Family",
       "text": "Making dinner",
       "date": "2026-03-26"
+    },
+    {
+      "category": "Career",
+      "text": "Write LinkedIn post based on CV work",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Career",
+      "text": "CV for Creative Director role",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Career",
+      "text": "Personal brand + accomplishments master document",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Career",
+      "text": "Have a system for CV + Cover letter to apply quickly",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Career",
+      "text": "CV for Creative Director role (design & video)",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Share all files and email with CPA",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Post first batch of items on FB Marketplace",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Share Schwab statement",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Career",
+      "text": "Time management project",
+      "date": "2026-03-26"
     }
   ],
   "tasks": {
@@ -728,7 +777,7 @@
           "subtasks": [
             {
               "text": "Time management project",
-              "done": false,
+              "done": true,
               "thisWeek": true
             },
             {
@@ -752,12 +801,12 @@
             },
             {
               "text": "CV for Creative Director role (design & video)",
-              "done": false,
+              "done": true,
               "thisWeek": true
             },
             {
               "text": "Have a system for CV + Cover letter to apply quickly",
-              "done": false,
+              "done": true,
               "thisWeek": true
             },
             {
@@ -769,12 +818,12 @@
         },
         {
           "text": "CV for Creative Director role",
-          "done": false,
+          "done": true,
           "thisWeek": true
         },
         {
           "text": "Personal brand + accomplishments master document",
-          "done": false,
+          "done": true,
           "thisWeek": true
         },
         {
@@ -784,8 +833,8 @@
         },
         {
           "text": "Write LinkedIn post based on CV work",
-          "done": false,
-          "thisWeek": true
+          "done": true,
+          "thisWeek": false
         }
       ],
       "backlog": [
@@ -855,6 +904,7 @@
         {
           "text": "Piano \u2014 60 min/week (Simply Piano)",
           "recurring": "weekly",
+          "hidden": true,
           "sessions": []
         },
         {
@@ -881,7 +931,7 @@
           "subtasks": [
             {
               "text": "Share all files and email with CPA",
-              "done": false,
+              "done": true,
               "thisWeek": true
             }
           ]
@@ -897,7 +947,7 @@
             },
             {
               "text": "Share Schwab statement",
-              "done": false,
+              "done": true,
               "thisWeek": true
             },
             {
@@ -931,7 +981,7 @@
           "subtasks": [
             {
               "text": "Post first batch of items on FB Marketplace",
-              "done": false,
+              "done": true,
               "thisWeek": true
             },
             {
@@ -1015,7 +1065,7 @@
           "done": false
         },
         {
-          "text": "Possibly extend time in",
+          "text": "Possibly extend time in Israel",
           "done": false
         }
       ]
