@@ -13,7 +13,7 @@
     "Family"
   ],
   "startDate": "2026-03-16",
-  "yesterdayNotes": "Prep Creative Director CV. House stuff with Arielle. Hebrew tutor for Alma. File for unemployment. FB Marketplace listings.",
+  "yesterdayNotes": "1) LinkedIn post #2 — snowball breakdown. 2) Job application #3 — streamline CV workflow so it's faster per app. 3) Start thinking about networking. 4) More naturalization paperwork.",
   "didYouKnow": [
     "Walt Disney was fired from a newspaper for 'lacking imagination.' He went bankrupt before Mickey Mouse.",
     "Steven Spielberg was rejected from USC film school three times. He eventually got an honorary degree from them.",
@@ -49,6 +49,10 @@
       {
         "date": "2026-03-24",
         "note": "Calorie deficit. IF window eating from ~11-12. Main meal ~4pm, light dinner + yogurt with pudding powder. Weekdays controlled, weekends free. Managing protein intake."
+      },
+      {
+        "date": "2026-03-26",
+        "note": "Greek salad (olive oil, balsamic, olives, no feta), 3 hard-boiled eggs, 2 large chicken schnitzel (breadcrumbs + chicken breast), ~12 large green grapes, dinner TBD"
       }
     ],
     "weights": [
@@ -474,6 +478,24 @@
       "obstacles": "Low energy",
       "wins": "Covered applications, networking, content creation, learning, and therapy in one day",
       "summary": "7.5 hours tracked \u2014 content book, psychologist, Ramp application work, LinkedIn outreach + post, networking with Brian Moore, evening LinkedIn session."
+    },
+    {
+      "date": "2026-03-26",
+      "activities": [
+        { "category": "Self", "text": "Workout with trainer", "hours": 1 },
+        { "category": "Home Duties", "text": "Errands \u2014 kitchen cleanup, food prep, Whole Foods grocery run", "hours": 1.5 },
+        { "category": "Home Duties", "text": "Applied for unemployment" },
+        { "category": "Home Duties", "text": "Completed first naturalization application" },
+        { "category": "Career", "text": "Fixed Facebook posting, published LinkedIn post" },
+        { "category": "Career", "text": "Career research with Claude \u2014 finding positions to apply for", "hours": 1 },
+        { "category": "Career", "text": "Working on CV/application" },
+        { "category": "Family", "text": "Hebrew tutor started with Alma at 3:30" },
+        { "category": "Family", "text": "Making dinner" }
+      ],
+      "mood": "OK but foggy \u2014 felt like a logistics-heavy day where small things ate time, but looking back there's real progress",
+      "obstacles": "No major obstacles \u2014 just death by errands",
+      "wins": "Hebrew tutor started for Alma, naturalization process moving, clearing backlog items that had been sitting",
+      "summary": "Logistics-heavy day but real progress: workout, filed for unemployment, completed first naturalization application, published LinkedIn post, career research, Hebrew tutor started for Alma."
     }
   ],
   "completedItems": [
@@ -624,6 +646,54 @@
       "text": "LinkedIn post work (evening)",
       "hours": 1.5,
       "date": "2026-03-25"
+    },
+    {
+      "category": "Self",
+      "text": "Workout with trainer",
+      "hours": 1,
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Errands \u2014 kitchen cleanup, food prep, Whole Foods grocery run",
+      "hours": 1.5,
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Applied for unemployment",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Completed first naturalization application",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Career",
+      "text": "Fixed Facebook posting, published LinkedIn post",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Career",
+      "text": "Career research with Claude \u2014 finding positions to apply for",
+      "hours": 1,
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Career",
+      "text": "Working on CV/application",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Family",
+      "text": "Hebrew tutor started with Alma",
+      "date": "2026-03-26"
+    },
+    {
+      "category": "Family",
+      "text": "Making dinner",
+      "date": "2026-03-26"
     }
   ],
   "tasks": {
@@ -636,6 +706,10 @@
           "sessions": [
             {
               "date": "2026-03-17",
+              "note": "Published post"
+            },
+            {
+              "date": "2026-03-26",
               "note": "Published post"
             }
           ]
@@ -743,7 +817,7 @@
         {
           "text": "Workout with trainer (2x/week)",
           "recurring": "weekly",
-          "nextSession": "2026-03-26",
+          "nextSession": "2026-03-30",
           "sessions": [
             {
               "date": "2026-03-17",
@@ -755,6 +829,10 @@
             },
             {
               "date": "2026-03-24",
+              "note": ""
+            },
+            {
+              "date": "2026-03-26",
               "note": ""
             }
           ]
@@ -865,7 +943,7 @@
         },
         {
           "text": "File for unemployment",
-          "done": false,
+          "done": true,
           "thisWeek": true
         },
         {
@@ -887,11 +965,15 @@
         {
           "text": "Hebrew day with Alma",
           "recurring": "weekly",
-          "nextSession": "2026-03-26",
+          "nextSession": "2026-04-02",
           "sessions": [
             {
               "date": "2026-03-16",
               "note": ""
+            },
+            {
+              "date": "2026-03-26",
+              "note": "Hebrew tutor started"
             }
           ]
         },
@@ -914,7 +996,7 @@
       "now": [
         {
           "text": "Find Hebrew tutor for Alma",
-          "done": false,
+          "done": true,
           "thisWeek": true
         },
         {

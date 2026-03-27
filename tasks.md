@@ -1,5 +1,16 @@
 # What I Want to Accomplish
 
+## Week of March 23–29, 2026
+
+- [ ] Have a CV project in Claude Code — be able to apply to any job quickly
+- [ ] Get all files for taxes
+- [ ] Apply to 3 jobs
+- [ ] Write 2 LinkedIn posts
+- [ ] Photo all the shoes for Spring Clean Up
+- [ ] Complete Severance (finish watching)
+- [ ] Move along with naturalization
+
+
 ## Home Duties
 Use the opportunity to do important things in the house I never get the chance to do.
 
@@ -12,7 +23,7 @@ Use the opportunity to do important things in the house I never get the chance t
   - [ ] Sell ZI stock?
   - [ ] Sell GoDaddy stock
 - [ ] Naturalization
-- [ ] Unemployment
+- [x] Unemployment
 - [ ] A&A Cohn/Blattner Family Review
 
 ## Family
