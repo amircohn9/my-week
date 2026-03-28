@@ -35,7 +35,7 @@ When Amir says something like "let's check in," "daily check-in," or "how was my
 
 6. **Anything to add or change on the task list, or any upcoming deadlines?** — New items, completed items, priority shifts. Update `tasks.md` and `data.json` tasks if Amir says yes. If deadlines are mentioned, add a `"deadline": "YYYY-MM-DD"` field to the relevant task in `data.json`. The dashboard will show deadline badges in warm amber. Tasks due within 7 days get a subtle highlight. Also check for any pending sync changes from the website (Amir may paste a sync summary from the dashboard).
 
-7. **Check Arielle's requests** — Use `mcp__claude_ai_Gmail__gmail_search_messages` with query `subject:[Arielle] newer_than:7d` to find requests Arielle sent via the family hub form. Each email has a category tag in the subject: `[Urgent]`, `[To Do]`, `[Shopping]`, or `[Decision]`. Add each new request to the corresponding section in `data.json` `familyHub` (`now`, `backlog`, `shopping`, or `decisions`) as `{ "text": "...", "date": "YYYY-MM-DD", "addedBy": "Arielle", "done": false }`. If a request also belongs as a task in Amir's personal system, place it there too (right category/backlog). Only ask Amir if unclear.
+7. **Check Arielle's requests** — Use `mcp__claude_ai_Gmail__gmail_search_messages` with query `from:arielle newer_than:7d` (or similar) to find any emails from Arielle that look like requests or family tasks. She emails naturally — no special format. Read each email, figure out what it is, and place it in the right `familyHub` section: `thisWeek` (needs to happen this week), `comingUp` (next 2-4 weeks), `decisions` (needs discussion), or `someday` (no pressure, just parking it). Schema: `{ "text": "...", "date": "YYYY-MM-DD", "addedBy": "Arielle", "assignee": "", "done": false, "deadline": null }`. Set assignee if obvious from context. If a request also belongs in Amir's personal tasks, add it there too. Only ask Amir if genuinely unclear. When items are completed, set `"done": true` and `"doneDate": "YYYY-MM-DD"` — they auto-fade from the dashboard after 2 days but remain in data for the weekly handled summary.
 
 8. **Any notes for the system or dashboard?** — Meta-feedback, system ideas, or notes from the website's "Notes for Claude" section. He may paste them in. The system should evolve.
 
@@ -98,10 +98,10 @@ After saving the log, also update `data.json` so the web dashboard reflects the 
     { "category": "Career", "text": "Set up time management system", "date": "YYYY-MM-DD" }
   ],
   "familyHub": {
-    "now": [{ "text": "...", "date": "YYYY-MM-DD", "addedBy": "Arielle", "done": false }],
-    "backlog": [],
+    "thisWeek": [{ "text": "...", "date": "YYYY-MM-DD", "addedBy": "Arielle", "assignee": "Amir", "done": false, "deadline": "YYYY-MM-DD", "doneDate": null }],
+    "comingUp": [],
     "decisions": [],
-    "shopping": []
+    "someday": []
   }
 }
 ```

@@ -67,8 +67,8 @@ function countSyncChanges() {
   // today changes not counted — todayState persists across syncs
   // Daily focus edit
   if (getDailyFocusEdit()) count++;
-  try { const fm = JSON.parse(localStorage.getItem('family-hub-moves')) || []; count += fm.length; } catch {}
-  try { const ft = JSON.parse(localStorage.getItem('family-hub-toggles')) || []; count += ft.length; } catch {}
+  try { const fc = JSON.parse(localStorage.getItem('family-hub-changes')) || []; count += fc.length; } catch {}
+  try { const fa = JSON.parse(localStorage.getItem('family-hub-added')) || []; count += fa.length; } catch {}
   return count;
 }
 
@@ -146,16 +146,22 @@ function generateSyncSummary() {
   const focusEdit = getDailyFocusEdit();
   if (focusEdit) { lines.push('DAILY FOCUS EDIT:'); lines.push('  ' + focusEdit); lines.push(''); }
 
-  // Family hub moves
+  // Family hub changes
   try {
-    const fm = JSON.parse(localStorage.getItem('family-hub-moves')) || [];
-    if (fm.length) { lines.push('FAMILY HUB → MY TASKS:'); fm.forEach(m => lines.push('  [' + m.section + '] ' + m.text)); lines.push(''); }
-  } catch {}
-
-  // Family hub toggles
-  try {
-    const ft = JSON.parse(localStorage.getItem('family-hub-toggles')) || [];
-    if (ft.length) { lines.push('FAMILY HUB TOGGLES:'); ft.forEach(t => lines.push('  [' + t.section + '] ' + t.text + ' → ' + (t.done ? 'DONE' : 'UNDONE'))); lines.push(''); }
+    const fc = JSON.parse(localStorage.getItem('family-hub-changes')) || [];
+    if (fc.length) {
+      lines.push('FAMILY HUB CHANGES:');
+      fc.forEach(c => {
+        if (c.type === 'toggle') lines.push('  [' + c.section + '] ' + c.text + ' → ' + (c.done ? 'HANDLED' : 'REOPENED'));
+        else if (c.type === 'add') lines.push('  Added to ' + c.section + ': ' + c.text);
+        else if (c.type === 'edit') lines.push('  Edited [' + c.section + ']: "' + c.oldText + '" → "' + c.newText + '"');
+        else if (c.type === 'assign') lines.push('  [' + c.section + '] ' + c.text + ' → ' + (c.assignee || 'unassigned'));
+        else if (c.type === 'deadline') lines.push('  [' + c.section + '] ' + c.text + ' deadline: ' + (c.deadline || 'removed'));
+        else if (c.type === 'move') lines.push('  Moved "' + c.text + '" from ' + c.from + ' → ' + c.to);
+        else if (c.type === 'moveToAmir') lines.push('  Move to Amir\'s tasks: ' + c.text + ' (from ' + c.section + ')');
+      });
+      lines.push('');
+    }
   } catch {}
 
   return lines.join('\n');

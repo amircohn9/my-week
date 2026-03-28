@@ -268,28 +268,29 @@
   },
   "notes": [],
   "familyHub": {
-    "now": [
-      { "text": "Stuff next to the microwave", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Goodwill donations", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Monetary donations", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Clean up storage stairs", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "House cleanup — go over drawers, kitchen crap, baby stuff, get rid of what we don't use", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Stuff to sell — big baby stuff, toys/books, shoes", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Stuff to sell — take pics, find prices/URLs, make FB posts", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Stuff to sell — manage pickups and Venmo", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Send links to Arielle to make Google Slides to sell", "date": "2026-03-28", "addedBy": "Amir", "done": false }
+    "thisWeek": [
+      { "text": "Stuff next to the microwave", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
+      { "text": "Goodwill donations", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
+      { "text": "Monetary donations", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
+      { "text": "Clean up storage stairs", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
+      { "text": "House cleanup — go over drawers, kitchen crap, baby stuff, get rid of what we don't use", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
+      { "text": "Stuff to sell — big baby stuff, toys/books, shoes", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Amir", "done": false, "deadline": null },
+      { "text": "Stuff to sell — take pics, find prices/URLs, make FB posts", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Amir", "done": false, "deadline": null },
+      { "text": "Stuff to sell — manage pickups and Venmo", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Amir", "done": false, "deadline": null },
+      { "text": "Send links to Arielle to make Google Slides to sell", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Arielle", "done": false, "deadline": null }
     ],
-    "backlog": [
-      { "text": "Guest room closet cleanup + bins downstairs", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Organize office", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Figure out bikes for kids", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Clothing and next round of basement stuff (on shelves)", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Prep outside pots, swing", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Hebrew plan", "date": "2026-03-28", "addedBy": "Amir", "done": false },
-      { "text": "Summer travels", "date": "2026-03-28", "addedBy": "Amir", "done": false }
+    "comingUp": [
+      { "text": "Guest room closet cleanup + bins downstairs", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
+      { "text": "Organize office", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Amir", "done": false, "deadline": null },
+      { "text": "Figure out bikes for kids", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
+      { "text": "Clothing and next round of basement stuff (on shelves)", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
+      { "text": "Prep outside pots, swing", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null }
     ],
-    "decisions": [],
-    "shopping": []
+    "decisions": [
+      { "text": "Hebrew plan for kids", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
+      { "text": "Summer travels", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null }
+    ],
+    "someday": []
   },
   "checkins": [
     {

@@ -94,80 +94,278 @@ function setupTabRail() {
   });
 }
 
-const FAMILY_SECTIONS = ['now', 'backlog', 'decisions', 'shopping'];
+const FAMILY_SECTIONS = ['thisWeek', 'comingUp', 'decisions', 'someday'];
+const FAMILY_LABELS = { thisWeek: 'This Week', comingUp: 'Coming Up', decisions: 'Decisions', someday: 'Someday' };
+
+function getFamilyHub() {
+  if (!appData.familyHub) appData.familyHub = {};
+  // Migrate old keys
+  if (appData.familyHub.now) { appData.familyHub.thisWeek = appData.familyHub.now; delete appData.familyHub.now; }
+  if (appData.familyHub.backlog) { appData.familyHub.comingUp = appData.familyHub.backlog; delete appData.familyHub.backlog; }
+  for (const s of FAMILY_SECTIONS) if (!appData.familyHub[s]) appData.familyHub[s] = [];
+  // Apply local additions
+  let added;
+  try { added = JSON.parse(localStorage.getItem('family-hub-added')) || []; } catch { added = []; }
+  for (const a of added) {
+    const list = appData.familyHub[a.section];
+    if (list && !list.find(i => i.text === a.item.text)) list.push(a.item);
+  }
+  return appData.familyHub;
+}
+
+function saveFamilyChange(type, payload) {
+  const key = 'family-hub-changes';
+  let changes;
+  try { changes = JSON.parse(localStorage.getItem(key)) || []; } catch { changes = []; }
+  changes.push({ type, ...payload, timestamp: Date.now() });
+  localStorage.setItem(key, JSON.stringify(changes));
+  updateSyncButton();
+}
+
+function renderFamilyHandled(hub) {
+  const container = document.getElementById('familyHandled');
+  const allDone = [];
+  for (const s of FAMILY_SECTIONS) {
+    for (const item of (hub[s] || [])) {
+      if (item.done && item.doneDate) {
+        const age = (Date.now() - new Date(item.doneDate + 'T12:00:00').getTime()) / 86400000;
+        if (age <= 7) allDone.push(item);
+      }
+    }
+  }
+  if (allDone.length === 0) {
+    container.innerHTML = '';
+    document.getElementById('familySummary').textContent = 'Our shared space';
+    return;
+  }
+  const decisionsDone = allDone.filter(i => i._section === 'decisions').length;
+  let summary = `${allDone.length} thing${allDone.length !== 1 ? 's' : ''} handled this week`;
+  if (decisionsDone > 0) summary += `, ${decisionsDone} decision${decisionsDone !== 1 ? 's' : ''} made`;
+  document.getElementById('familySummary').textContent = summary;
+
+  container.innerHTML = `<div class="family-handled-list">${allDone.slice(0, 5).map(i =>
+    `<span class="family-handled-item">${escapeHtml(i.text)}</span>`
+  ).join('')}</div>`;
+}
 
 function renderFamilyHub() {
-  const hub = (appData && appData.familyHub) || {};
+  const hub = getFamilyHub();
+
+  // Tag done items with their section for the handled summary
+  for (const s of FAMILY_SECTIONS) {
+    for (const item of (hub[s] || [])) item._section = s;
+  }
+  renderFamilyHandled(hub);
+
   for (const section of FAMILY_SECTIONS) {
     const items = hub[section] || [];
-    const container = document.getElementById('family' + section.charAt(0).toUpperCase() + section.slice(1));
-    const empty = document.getElementById('family' + section.charAt(0).toUpperCase() + section.slice(1) + 'Empty');
-    const count = document.getElementById('family' + section.charAt(0).toUpperCase() + section.slice(1) + 'Count');
-    const active = items.filter(i => !i.done);
-    const done = items.filter(i => i.done);
+    const capSection = section.charAt(0).toUpperCase() + section.slice(1);
+    const container = document.getElementById('family' + capSection);
+    const empty = document.getElementById('family' + capSection + 'Empty');
 
-    if (count) count.textContent = active.length > 0 ? active.length : '';
+    // Filter: hide done items older than 2 days (they fade out)
+    const now = Date.now();
+    const visible = items.filter(i => {
+      if (!i.done) return true;
+      if (!i.doneDate) return true;
+      const age = (now - new Date(i.doneDate + 'T12:00:00').getTime()) / 86400000;
+      return age <= 2;
+    });
+    const active = visible.filter(i => !i.done);
+    const done = visible.filter(i => i.done);
 
-    if (items.length === 0) {
+    if (visible.length === 0) {
       container.style.display = 'none';
       empty.style.display = 'block';
-      continue;
+    } else {
+      empty.style.display = 'none';
+      container.style.display = 'block';
     }
 
-    empty.style.display = 'none';
-    container.style.display = 'block';
-
+    const otherSections = FAMILY_SECTIONS.filter(s => s !== section);
     const sorted = [...active, ...done];
     container.innerHTML = sorted.map(item => {
-      const d = item.date ? new Date(item.date + 'T12:00:00') : null;
-      const dateStr = d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-      const byBadge = item.addedBy ? `<span class="family-item-by">${escapeHtml(item.addedBy)}</span>` : '';
       const isDecision = section === 'decisions';
-      const checkLabel = item.done ? '&#10003;' : '';
-      const moveBtn = (!item.done && section !== 'shopping') ? `<span class="family-item-move" data-section="${section}" data-text="${escapeHtml(item.text)}" title="Move to my tasks">&rarr;</span>` : '';
+      const assignee = item.assignee || '';
+      const assigneeHtml = assignee
+        ? `<span class="family-owner ${assignee === 'Amir' ? 'owner-amir' : 'owner-arielle'}" data-section="${section}" data-text="${escapeHtml(item.text)}">${assignee}'s got this</span>`
+        : `<span class="family-owner owner-none" data-section="${section}" data-text="${escapeHtml(item.text)}">who's got this?</span>`;
+      const deadlineHtml = item.deadline
+        ? `<span class="family-item-deadline">by ${new Date(item.deadline + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`
+        : '';
+      const flaggedBy = item.addedBy ? `<span class="family-flagged">flagged by ${item.addedBy}</span>` : '';
+      const moveOptions = otherSections.map(s =>
+        `<span class="family-move-option" data-to="${s}" data-from="${section}" data-text="${escapeHtml(item.text)}">${FAMILY_LABELS[s]}</span>`
+      ).join('');
+
       return `<div class="family-item${item.done ? ' done' : ''}">
-        <div class="family-item-check${isDecision ? ' decision' : ''}" data-section="${section}" data-text="${escapeHtml(item.text)}">${checkLabel}</div>
+        <div class="family-item-check${isDecision ? ' decision' : ''}" data-section="${section}" data-text="${escapeHtml(item.text)}">${item.done ? '&#10003;' : ''}</div>
         <div class="family-item-body">
-          <div class="family-item-text">${escapeHtml(item.text)}</div>
-          <div class="family-item-meta">${byBadge}${dateStr}</div>
+          <span class="family-item-text" data-section="${section}" data-text="${escapeHtml(item.text)}">${escapeHtml(item.text)}</span>
+          ${deadlineHtml}
+          <div class="family-item-meta">
+            ${assigneeHtml}
+            ${flaggedBy}
+          </div>
         </div>
-        ${moveBtn}
+        <div class="family-item-actions">
+          <span class="family-item-date-btn" data-section="${section}" data-text="${escapeHtml(item.text)}" title="Set deadline">&#128197;</span>
+          <span class="family-item-move-btn" data-section="${section}" data-text="${escapeHtml(item.text)}" title="Move">&#8596;</span>
+          <div class="family-move-menu" style="display:none;">
+            ${moveOptions}
+            <span class="family-move-option move-to-amir" data-to="_amirTasks" data-from="${section}" data-text="${escapeHtml(item.text)}">Amir's personal tasks</span>
+          </div>
+        </div>
       </div>`;
     }).join('');
 
-    // Toggle done via click
+    // --- Events ---
+
+    // Toggle done
     container.querySelectorAll('.family-item-check').forEach(el => {
       el.addEventListener('click', () => {
-        const sec = el.dataset.section;
         const text = el.dataset.text;
-        const hubData = appData.familyHub || {};
-        const list = hubData[sec] || [];
-        const item = list.find(i => i.text === text);
-        if (item) item.done = !item.done;
-        const key = 'family-hub-toggles';
-        let toggles;
-        try { toggles = JSON.parse(localStorage.getItem(key)) || []; } catch { toggles = []; }
-        toggles.push({ section: sec, text, done: item ? item.done : true, timestamp: Date.now() });
-        localStorage.setItem(key, JSON.stringify(toggles));
+        const item = (hub[section] || []).find(i => i.text === text);
+        if (!item) return;
+        item.done = !item.done;
+        item.doneDate = item.done ? getTodayStr() : null;
+        saveFamilyChange('toggle', { section, text, done: item.done });
         renderFamilyHub();
       });
     });
 
-    // Move to my tasks
-    container.querySelectorAll('.family-item-move').forEach(el => {
+    // Inline edit
+    container.querySelectorAll('.family-item-text').forEach(el => {
       el.addEventListener('click', () => {
-        const sec = el.dataset.section;
-        const text = el.dataset.text;
-        const key = 'family-hub-moves';
-        let moves;
-        try { moves = JSON.parse(localStorage.getItem(key)) || []; } catch { moves = []; }
-        moves.push({ section: sec, text, timestamp: Date.now() });
-        localStorage.setItem(key, JSON.stringify(moves));
-        el.textContent = '✓ queued';
-        el.classList.add('moved');
-        el.style.pointerEvents = 'none';
-        updateSyncButton();
+        if (el.querySelector('input')) return;
+        const oldText = el.dataset.text;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'family-inline-edit';
+        input.value = oldText;
+        el.textContent = '';
+        el.appendChild(input);
+        input.focus();
+        input.select();
+        const save = () => {
+          const newText = input.value.trim();
+          if (newText && newText !== oldText) {
+            const item = (hub[section] || []).find(i => i.text === oldText);
+            if (item) item.text = newText;
+            saveFamilyChange('edit', { section, oldText, newText });
+          }
+          renderFamilyHub();
+        };
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') { ev.preventDefault(); save(); }
+          if (ev.key === 'Escape') renderFamilyHub();
+        });
       });
+    });
+
+    // Toggle assignee
+    container.querySelectorAll('.family-owner').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = el.dataset.text;
+        const item = (hub[section] || []).find(i => i.text === text);
+        if (!item) return;
+        const cycle = ['Amir', 'Arielle', ''];
+        const idx = cycle.indexOf(item.assignee || '');
+        item.assignee = cycle[(idx + 1) % cycle.length];
+        saveFamilyChange('assign', { section, text, assignee: item.assignee });
+        renderFamilyHub();
+      });
+    });
+
+    // Deadline picker
+    container.querySelectorAll('.family-item-date-btn').forEach(el => {
+      el.addEventListener('click', () => {
+        const text = el.dataset.text;
+        const item = (hub[section] || []).find(i => i.text === text);
+        const picker = document.createElement('input');
+        picker.type = 'date';
+        picker.className = 'family-date-picker';
+        picker.value = item && item.deadline ? item.deadline : '';
+        el.parentElement.appendChild(picker);
+        picker.focus();
+        picker.showPicker && picker.showPicker();
+        const finish = () => {
+          const val = picker.value;
+          if (item) item.deadline = val || null;
+          saveFamilyChange('deadline', { section, text, deadline: val || null });
+          picker.remove();
+          renderFamilyHub();
+        };
+        picker.addEventListener('change', finish);
+        picker.addEventListener('blur', () => setTimeout(() => picker.remove(), 200));
+      });
+    });
+
+    // Move menu
+    container.querySelectorAll('.family-item-move-btn').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = el.parentElement.querySelector('.family-move-menu');
+        const isOpen = menu.style.display !== 'none';
+        document.querySelectorAll('.family-move-menu').forEach(m => m.style.display = 'none');
+        menu.style.display = isOpen ? 'none' : 'flex';
+      });
+    });
+
+    container.querySelectorAll('.family-move-option').forEach(el => {
+      el.addEventListener('click', () => {
+        const from = el.dataset.from;
+        const to = el.dataset.to;
+        const text = el.dataset.text;
+        if (to === '_amirTasks') {
+          saveFamilyChange('moveToAmir', { section: from, text });
+          const row = el.closest('.family-item');
+          if (row) { row.style.opacity = '0.3'; row.style.pointerEvents = 'none'; }
+          return;
+        }
+        const fromList = hub[from] || [];
+        const idx = fromList.findIndex(i => i.text === text);
+        if (idx === -1) return;
+        const [item] = fromList.splice(idx, 1);
+        if (!hub[to]) hub[to] = [];
+        hub[to].push(item);
+        saveFamilyChange('move', { from, to, text });
+        renderFamilyHub();
+      });
+    });
+  }
+
+  // Add item inputs
+  document.querySelectorAll('.family-add-input').forEach(input => {
+    if (input._bound) return;
+    input._bound = true;
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const text = input.value.trim();
+      if (!text) return;
+      const section = input.dataset.section;
+      const item = { text, date: getTodayStr(), addedBy: '', assignee: '', done: false, deadline: null };
+      if (!hub[section]) hub[section] = [];
+      hub[section].push(item);
+      let added;
+      try { added = JSON.parse(localStorage.getItem('family-hub-added')) || []; } catch { added = []; }
+      added.push({ section, item });
+      localStorage.setItem('family-hub-added', JSON.stringify(added));
+      saveFamilyChange('add', { section, text });
+      input.value = '';
+      renderFamilyHub();
+    });
+  });
+
+  // Close move menus on outside click
+  if (!document._familyClickBound) {
+    document._familyClickBound = true;
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.family-item-actions')) {
+        document.querySelectorAll('.family-move-menu').forEach(m => m.style.display = 'none');
+      }
     });
   }
 }
