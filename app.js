@@ -87,47 +87,71 @@ function setupTabRail() {
       document.querySelectorAll('.tab-rail-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
-      const tabId = btn.dataset.tab === 'dashboard' ? 'tabDashboard' : 'tabArielle';
+      const tabId = btn.dataset.tab === 'dashboard' ? 'tabDashboard' : 'tabFamily';
       document.getElementById(tabId).classList.add('active');
-      if (btn.dataset.tab === 'arielle') renderArielleTab();
+      if (btn.dataset.tab === 'family') renderFamilyHub();
     });
   });
 }
 
-function renderArielleTab() {
-  const container = document.getElementById('arielleList');
-  const empty = document.getElementById('arielleEmpty');
-  const requests = (appData && appData.arielleRequests) || [];
+const FAMILY_SECTIONS = ['now', 'backlog', 'decisions', 'shopping'];
 
-  if (requests.length === 0) {
-    container.style.display = 'none';
-    empty.style.display = 'block';
-    return;
+function renderFamilyHub() {
+  const hub = (appData && appData.familyHub) || {};
+  for (const section of FAMILY_SECTIONS) {
+    const items = hub[section] || [];
+    const container = document.getElementById('family' + section.charAt(0).toUpperCase() + section.slice(1));
+    const empty = document.getElementById('family' + section.charAt(0).toUpperCase() + section.slice(1) + 'Empty');
+    const count = document.getElementById('family' + section.charAt(0).toUpperCase() + section.slice(1) + 'Count');
+    const active = items.filter(i => !i.done);
+    const done = items.filter(i => i.done);
+
+    if (count) count.textContent = active.length > 0 ? active.length : '';
+
+    if (items.length === 0) {
+      container.style.display = 'none';
+      empty.style.display = 'block';
+      continue;
+    }
+
+    empty.style.display = 'none';
+    container.style.display = 'block';
+
+    const sorted = [...active, ...done];
+    container.innerHTML = sorted.map(item => {
+      const d = item.date ? new Date(item.date + 'T12:00:00') : null;
+      const dateStr = d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+      const byBadge = item.addedBy ? `<span class="family-item-by">${escapeHtml(item.addedBy)}</span>` : '';
+      const isDecision = section === 'decisions';
+      const checkLabel = isDecision ? (item.done ? '&#10003;' : '') : (item.done ? '&#10003;' : '');
+      return `<div class="family-item${item.done ? ' done' : ''}">
+        <div class="family-item-check${isDecision ? ' decision' : ''}" data-section="${section}" data-text="${escapeHtml(item.text)}">${checkLabel}</div>
+        <div class="family-item-body">
+          <div class="family-item-text">${escapeHtml(item.text)}</div>
+          <div class="family-item-meta">${byBadge}${dateStr}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Toggle done via click
+    container.querySelectorAll('.family-item-check').forEach(el => {
+      el.addEventListener('click', () => {
+        const sec = el.dataset.section;
+        const text = el.dataset.text;
+        const hubData = appData.familyHub || {};
+        const list = hubData[sec] || [];
+        const item = list.find(i => i.text === text);
+        if (item) item.done = !item.done;
+        // Save toggle to localStorage for sync
+        const key = 'family-hub-toggles';
+        let toggles;
+        try { toggles = JSON.parse(localStorage.getItem(key)) || []; } catch { toggles = []; }
+        toggles.push({ section: sec, text, done: item ? item.done : true, timestamp: Date.now() });
+        localStorage.setItem(key, JSON.stringify(toggles));
+        renderFamilyHub();
+      });
+    });
   }
-
-  empty.style.display = 'none';
-  container.style.display = 'flex';
-
-  const sorted = [...requests].sort((a, b) => {
-    if (a.status === 'done' && b.status !== 'done') return 1;
-    if (a.status !== 'done' && b.status === 'done') return -1;
-    return (b.date || '').localeCompare(a.date || '');
-  });
-
-  container.innerHTML = sorted.map((req, i) => {
-    const isDone = req.status === 'done';
-    const d = req.date ? new Date(req.date + 'T12:00:00') : null;
-    const dateStr = d ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
-    const todayBadge = req.priority === 'today' ? '<span class="arielle-request-today">Today</span>' : '';
-    const placedBadge = req.placedIn ? `<span class="arielle-request-placed">&rarr; ${escapeHtml(req.placedIn)}</span>` : '';
-    return `<div class="arielle-request-card${isDone ? ' done' : ''}">
-      <div class="arielle-request-check" data-idx="${i}">${isDone ? '&#10003;' : ''}</div>
-      <div class="arielle-request-body">
-        <div class="arielle-request-text">${escapeHtml(req.text)}${todayBadge}${placedBadge}</div>
-        <div class="arielle-request-meta">${dateStr}</div>
-      </div>
-    </div>`;
-  }).join('');
 }
 
 // --- Notes for Claude (via Gmail) ---

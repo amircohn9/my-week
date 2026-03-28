@@ -149,10 +149,12 @@
       <textarea id="requestInput" rows="3" placeholder="Pick up dry cleaning, call the pediatrician..."></textarea>
 
       <div class="priority-row">
-        <span class="priority-label">Priority:</span>
+        <span class="priority-label">What kind:</span>
         <div class="priority-toggle">
-          <button class="priority-btn active" data-priority="normal">Normal</button>
-          <button class="priority-btn" data-priority="today">Today please</button>
+          <button class="priority-btn category-btn active" data-category="now">Urgent</button>
+          <button class="priority-btn category-btn" data-category="backlog">To do</button>
+          <button class="priority-btn category-btn" data-category="shopping">Shopping</button>
+          <button class="priority-btn category-btn" data-category="decisions">Decision</button>
         </div>
       </div>
 
@@ -172,17 +174,19 @@
   <script>
     const ARIELLE_EMAIL = 'amircohn9@gmail.com';
     const STORAGE_KEY = 'arielle-requests';
-    let priority = 'normal';
+    let category = 'now';
 
-    // Priority toggle
-    document.querySelectorAll('.priority-btn').forEach(btn => {
+    // Category toggle
+    document.querySelectorAll('.category-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active', 'urgent'));
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active', 'urgent'));
         btn.classList.add('active');
-        if (btn.dataset.priority === 'today') btn.classList.add('urgent');
-        priority = btn.dataset.priority;
+        if (btn.dataset.category === 'now') btn.classList.add('urgent');
+        category = btn.dataset.category;
       });
     });
+    // Set initial urgent style
+    document.querySelector('[data-category="now"]').classList.add('urgent');
 
     function getRequests() {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
@@ -201,8 +205,9 @@
       list.innerHTML = reqs.slice(-8).reverse().map(r => {
         const d = new Date(r.timestamp);
         const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        const urgentBadge = r.priority === 'today' ? '<span class="recent-urgent">TODAY</span>' : '';
-        return `<div class="recent-item">${urgentBadge}<span class="recent-text">${escapeHtml(r.text)}</span><span class="recent-date">${dateStr}</span></div>`;
+        const catLabel = { now: 'URGENT', shopping: 'SHOP', decisions: 'DECIDE', backlog: '' }[r.category] || '';
+        const badge = catLabel ? `<span class="recent-urgent">${catLabel}</span>` : '';
+        return `<div class="recent-item">${badge}<span class="recent-text">${escapeHtml(r.text)}</span><span class="recent-date">${dateStr}</span></div>`;
       }).join('');
     }
 
@@ -218,21 +223,22 @@
       const text = input.value.trim();
       if (!text) return;
 
-      const prefix = priority === 'today' ? '[Arielle][Today] ' : '[Arielle] ';
+      const catLabels = { now: 'Urgent', backlog: 'To Do', shopping: 'Shopping', decisions: 'Decision' };
+      const prefix = '[Arielle][' + catLabels[category] + '] ';
       const subject = encodeURIComponent(prefix + text.substring(0, 60));
-      const body = encodeURIComponent(text + '\n\n---\nSent: ' + new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }));
+      const body = encodeURIComponent(text + '\n\n---\nCategory: ' + catLabels[category] + '\nSent: ' + new Date().toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }));
       window.open('https://mail.google.com/mail/?view=cm&to=' + ARIELLE_EMAIL + '&su=' + subject + '&body=' + body, '_blank');
 
       // Save locally
       const reqs = getRequests();
-      reqs.push({ text, priority, timestamp: Date.now() });
+      reqs.push({ text, category, timestamp: Date.now() });
       saveRequests(reqs);
 
       // Show confirmation
       input.value = '';
-      priority = 'normal';
-      document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active', 'urgent'));
-      document.querySelector('[data-priority="normal"]').classList.add('active');
+      category = 'now';
+      document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active', 'urgent'));
+      document.querySelector('[data-category="now"]').classList.add('active', 'urgent');
 
       const conf = document.getElementById('confirmation');
       const btn = document.getElementById('sendBtn');

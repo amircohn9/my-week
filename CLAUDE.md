@@ -35,7 +35,7 @@ When Amir says something like "let's check in," "daily check-in," or "how was my
 
 6. **Anything to add or change on the task list, or any upcoming deadlines?** — New items, completed items, priority shifts. Update `tasks.md` and `data.json` tasks if Amir says yes. If deadlines are mentioned, add a `"deadline": "YYYY-MM-DD"` field to the relevant task in `data.json`. The dashboard will show deadline badges in warm amber. Tasks due within 7 days get a subtle highlight. Also check for any pending sync changes from the website (Amir may paste a sync summary from the dashboard).
 
-7. **Check Arielle's requests** — Use `mcp__claude_ai_Gmail__gmail_search_messages` with query `subject:[Arielle] newer_than:7d` to find requests Arielle sent. For each new request, auto-categorize it and place it in the right spot in `data.json` tasks (correct category, backlog or as a subtask of an existing project if it fits). Also add it to the `arielleRequests` array in `data.json` with `{ "text": "...", "date": "YYYY-MM-DD", "priority": "normal|today", "status": "pending", "placedIn": "Home Duties > backlog" }`. Only ask Amir if the categorization is genuinely unclear. Mark requests as `"status": "done"` when Amir completes them.
+7. **Check Arielle's requests** — Use `mcp__claude_ai_Gmail__gmail_search_messages` with query `subject:[Arielle] newer_than:7d` to find requests Arielle sent via the family hub form. Each email has a category tag in the subject: `[Urgent]`, `[To Do]`, `[Shopping]`, or `[Decision]`. Add each new request to the corresponding section in `data.json` `familyHub` (`now`, `backlog`, `shopping`, or `decisions`) as `{ "text": "...", "date": "YYYY-MM-DD", "addedBy": "Arielle", "done": false }`. If a request also belongs as a task in Amir's personal system, place it there too (right category/backlog). Only ask Amir if unclear.
 
 8. **Any notes for the system or dashboard?** — Meta-feedback, system ideas, or notes from the website's "Notes for Claude" section. He may paste them in. The system should evolve.
 
@@ -96,7 +96,13 @@ After saving the log, also update `data.json` so the web dashboard reflects the 
   ],
   "completedItems": [
     { "category": "Career", "text": "Set up time management system", "date": "YYYY-MM-DD" }
-  ]
+  ],
+  "familyHub": {
+    "now": [{ "text": "...", "date": "YYYY-MM-DD", "addedBy": "Arielle", "done": false }],
+    "backlog": [],
+    "decisions": [],
+    "shopping": []
+  }
 }
 ```
 

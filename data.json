@@ -267,7 +267,12 @@
     ]
   },
   "notes": [],
-  "arielleRequests": [],
+  "familyHub": {
+    "now": [],
+    "backlog": [],
+    "decisions": [],
+    "shopping": []
+  },
   "checkins": [
     {
       "date": "2026-03-16",

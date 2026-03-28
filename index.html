@@ -20,9 +20,9 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       <span class="tab-rail-label">Dashboard</span>
     </button>
-    <button class="tab-rail-btn" data-tab="arielle" title="Arielle">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <span class="tab-rail-label">Arielle</span>
+    <button class="tab-rail-btn" data-tab="family" title="Amir & Arielle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="tab-rail-label">A &amp; A</span>
     </button>
   </nav>
   <div class="tab-content">
@@ -139,16 +139,56 @@
   </div>
   </div><!-- end tabDashboard -->
 
-  <div class="tab-pane" id="tabArielle">
+  <div class="tab-pane" id="tabFamily">
   <div class="container">
     <header>
-      <h1>Arielle's Requests</h1>
-      <p class="subtitle">Things Arielle asked you to handle</p>
+      <h1>Amir & Arielle</h1>
+      <p class="subtitle">Our shared hub</p>
     </header>
-    <div id="arielleList" class="arielle-list"></div>
-    <p class="empty-state" id="arielleEmpty" style="display:none;">No requests yet. Share <a href="arielle.html" style="color:#e8a87c;">this link</a> with Arielle.</p>
+
+    <div class="family-sections">
+      <section class="card family-section" data-section="now">
+        <h2 class="family-section-header">
+          <span class="family-section-icon">&#9889;</span> Now
+          <span class="family-section-count" id="familyNowCount"></span>
+        </h2>
+        <div id="familyNow" class="family-items"></div>
+        <p class="empty-state family-empty" id="familyNowEmpty">Nothing urgent right now.</p>
+      </section>
+
+      <section class="card family-section" data-section="backlog">
+        <h2 class="family-section-header">
+          <span class="family-section-icon">&#128203;</span> Backlog
+          <span class="family-section-count" id="familyBacklogCount"></span>
+        </h2>
+        <div id="familyBacklog" class="family-items"></div>
+        <p class="empty-state family-empty" id="familyBacklogEmpty">Backlog is clear.</p>
+      </section>
+
+      <section class="card family-section" data-section="decisions">
+        <h2 class="family-section-header">
+          <span class="family-section-icon">&#128172;</span> Decisions
+          <span class="family-section-count" id="familyDecisionsCount"></span>
+        </h2>
+        <div id="familyDecisions" class="family-items"></div>
+        <p class="empty-state family-empty" id="familyDecisionsEmpty">No open decisions.</p>
+      </section>
+
+      <section class="card family-section" data-section="shopping">
+        <h2 class="family-section-header">
+          <span class="family-section-icon">&#128722;</span> Shopping
+          <span class="family-section-count" id="familyShoppingCount"></span>
+        </h2>
+        <div id="familyShopping" class="family-items"></div>
+        <p class="empty-state family-empty" id="familyShoppingEmpty">Shopping list is empty.</p>
+      </section>
+    </div>
+
+    <div class="family-footer">
+      <a href="arielle.html" class="family-share-link">Share form with Arielle &rarr;</a>
+    </div>
   </div>
-  </div><!-- end tabArielle -->
+  </div><!-- end tabFamily -->
 
   </div><!-- end tab-content -->
   </div>

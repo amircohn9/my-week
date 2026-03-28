@@ -75,33 +75,50 @@ body {
   .tab-content { margin-left: 0; margin-bottom: 56px; }
 }
 
-/* ─── Arielle Tab ─── */
-.arielle-list {
+/* ─── Family Hub Tab ─── */
+.family-sections {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
-.arielle-request-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid rgba(0,0,0,0.04);
+.family-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.family-section-icon {
+  font-size: 1rem;
+}
+.family-section-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #999;
+  margin-left: auto;
+}
+.family-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.family-item {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #f5f4f1;
+  transition: opacity 0.15s;
 }
-.arielle-request-card.done {
-  opacity: 0.5;
-}
-.arielle-request-check {
+.family-item:last-child { border-bottom: none; }
+.family-item.done { opacity: 0.4; }
+.family-item.done .family-item-text { text-decoration: line-through; }
+.family-item-check {
   width: 20px;
   height: 20px;
   border: 2px solid #ddd;
   border-radius: 6px;
   cursor: pointer;
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 1px;
   transition: all 0.15s;
   display: flex;
   align-items: center;
@@ -109,37 +126,47 @@ body {
   font-size: 0.7rem;
   color: transparent;
 }
-.arielle-request-check:hover { border-color: #e8a87c; }
-.arielle-request-card.done .arielle-request-check {
+.family-item-check:hover { border-color: #e8a87c; }
+.family-item-check.decision {
+  border-radius: 50%;
+}
+.family-item.done .family-item-check {
   background: #e8a87c;
   border-color: #e8a87c;
   color: #fff;
 }
-.arielle-request-body { flex: 1; }
-.arielle-request-text {
-  font-size: 0.95rem;
+.family-item-body { flex: 1; }
+.family-item-text {
+  font-size: 0.9rem;
   color: #2d2d2d;
-  line-height: 1.5;
+  line-height: 1.45;
 }
-.arielle-request-meta {
-  font-size: 0.75rem;
-  color: #bbb;
-  margin-top: 4px;
+.family-item-meta {
+  font-size: 0.72rem;
+  color: #ccc;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.arielle-request-today {
-  font-size: 0.7rem;
+.family-item-by {
+  color: #e8a87c;
   font-weight: 500;
-  color: #c67b3a;
-  background: #fef3e6;
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-left: 8px;
 }
-.arielle-request-placed {
-  font-size: 0.7rem;
-  color: #7db87d;
-  margin-left: 8px;
+.family-empty {
+  font-size: 0.85rem;
 }
+.family-footer {
+  margin-top: 32px;
+  text-align: center;
+}
+.family-share-link {
+  font-size: 0.8rem;
+  color: #ccc;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.family-share-link:hover { color: #e8a87c; }
 
 .container {
   max-width: 1100px;
