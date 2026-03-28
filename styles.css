@@ -357,6 +357,29 @@ header h1 {
 
 .obj-done { text-decoration: line-through; color: #bbb; }
 
+.obj-divider {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 6px;
+  padding: 0;
+}
+.obj-divider::before,
+.obj-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e0ddd8;
+}
+.obj-divider span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #bbb;
+  font-weight: 500;
+}
+
 .obj-text { cursor: default; }
 
 .obj-actions {

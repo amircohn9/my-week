@@ -13,7 +13,7 @@
     "Family"
   ],
   "startDate": "2026-03-16",
-  "yesterdayNotes": "1) LinkedIn post #2 — snowball breakdown. 2) Job application #3 — streamline CV workflow so it's faster per app. 3) Start thinking about networking. 4) More naturalization paperwork.",
+  "yesterdayNotes": "Next week: 1) GEN HQ AI course. 2) Apply to 5 jobs.",
   "didYouKnow": [
     "Walt Disney was fired from a newspaper for 'lacking imagination.' He went bankrupt before Mickey Mouse.",
     "Steven Spielberg was rejected from USC film school three times. He eventually got an honorary degree from them.",
@@ -500,6 +500,20 @@
       "obstacles": "No major obstacles \u2014 just death by errands",
       "wins": "Hebrew tutor started for Alma, naturalization process moving, clearing backlog items that had been sitting",
       "summary": "Logistics-heavy day but real progress: workout, filed for unemployment, completed first naturalization application, published LinkedIn post, career research, Hebrew tutor started for Alma."
+    },
+    {
+      "date": "2026-03-27",
+      "activities": [
+        { "category": "Home Duties", "text": "Organizing at home" },
+        { "category": "Career", "text": "CV work + applied to Klaviyo (Lead Video Strategist & Producer)", "hours": 2 },
+        { "category": "Self", "text": "Couple therapy", "hours": 0.5 },
+        { "category": "Career", "text": "Networking — Dave (AI creator)", "hours": 1 },
+        { "category": "Career", "text": "Looked at roles + wrote LinkedIn post (publishing Monday)", "hours": 1.5 }
+      ],
+      "mood": "Time felt like it disappeared — scattered appointments, but objectively a full day",
+      "obstacles": "Time fragmentation from appointments breaking up the flow",
+      "wins": "Applied to Klaviyo, LinkedIn post written, networking with AI creator",
+      "summary": "5 hours tracked — applied to Klaviyo, wrote LinkedIn post for Monday, couple therapy, networking with Dave (AI creator), organized at home."
     }
   ],
   "completedItems": [
@@ -743,6 +757,31 @@
       "category": "Career",
       "text": "Time management project",
       "date": "2026-03-26"
+    },
+    {
+      "category": "Career",
+      "text": "Applied to Klaviyo — Lead Video Strategist & Producer",
+      "date": "2026-03-27"
+    },
+    {
+      "category": "Career",
+      "text": "LinkedIn post written (publishing Monday)",
+      "date": "2026-03-27"
+    },
+    {
+      "category": "Career",
+      "text": "Complete severance package",
+      "date": "2026-03-27"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Move the suggested accounts (RBC)",
+      "date": "2026-03-27"
+    },
+    {
+      "category": "Home Duties",
+      "text": "Share all files with attorney (naturalization)",
+      "date": "2026-03-27"
     }
   ],
   "tasks": {
@@ -760,6 +799,10 @@
             {
               "date": "2026-03-26",
               "note": "Published post"
+            },
+            {
+              "date": "2026-03-27",
+              "note": "Written, publishing Monday"
             }
           ]
         }
@@ -767,7 +810,7 @@
       "now": [
         {
           "text": "Complete severance package",
-          "done": false,
+          "done": true,
           "deadline": "2026-03-30",
           "thisWeek": true
         },
@@ -811,7 +854,7 @@
             },
             {
               "text": "Apply to at least 3 jobs",
-              "done": false,
+              "done": true,
               "thisWeek": true
             }
           ]
@@ -942,7 +985,7 @@
           "subtasks": [
             {
               "text": "Move the suggested accounts",
-              "done": false,
+              "done": true,
               "thisWeek": true
             },
             {
@@ -970,7 +1013,7 @@
           "subtasks": [
             {
               "text": "Share all files with attorney",
-              "done": false,
+              "done": true,
               "thisWeek": true
             }
           ]
@@ -1072,13 +1115,10 @@
     }
   },
   "weeklyIntentions": [
-    "Theme: Exploration mode \u2014 get a pulse on the market, keep applying, follow what's interesting",
-    "Have a CV project in Claude Code \u2014 be able to apply to any job quickly",
-    "Get all files for taxes",
-    "Apply to 3 jobs",
+    "Theme: Application mode \u2014 ramp up applications, start GEN HQ AI course",
+    "GEN HQ AI course",
+    "Apply to 5 jobs",
     "Write 2 LinkedIn posts",
-    "Photo all the shoes for Spring Clean Up",
-    "Complete Severance (finish watching)",
-    "Move along with naturalization"
+    "Photo all the shoes for Spring Clean Up"
   ]
 }

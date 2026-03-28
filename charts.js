@@ -330,14 +330,19 @@ function renderWeeklyObjectives(tasks) {
     return;
   }
 
-  list.innerHTML = filtered.map(obj => {
-    const doneClass = obj.done ? 'obj-done' : '';
-    const projectLabel = obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : '';
-    return `<li class="${doneClass}">
+  // Sort: incomplete first, done items sink to bottom
+  const incomplete = filtered.filter(o => !o.done);
+  const complete = filtered.filter(o => o.done);
+  const sorted = [...incomplete, ...complete];
+  const hasBoth = incomplete.length > 0 && complete.length > 0;
+
+  list.innerHTML = sorted.map((obj, i) => {
+    const divider = (hasBoth && i === incomplete.length) ? '<li class="obj-divider"><span>completed</span></li>' : '';
+    return divider + `<li class="${obj.done ? 'obj-done' : ''}">
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
       <input type="checkbox" class="obj-checkbox" data-key="${obj.key}" ${obj.done ? 'checked' : ''}>
       <span class="obj-text" data-edit-key="${obj.key}">${escapeHtml(obj.text)}</span>
-      ${projectLabel}
+      ${obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : ''}
       <span class="obj-actions">
         <button class="obj-today-btn" data-key="${obj.key}" title="Move to today">&#9650;</button>
         <button class="obj-unstar-btn" data-key="${obj.key}" title="Remove from this week">&#9734;</button>
@@ -352,8 +357,8 @@ function renderWeeklyObjectives(tasks) {
       const st = getTaskState();
       st[cb.dataset.key] = cb.checked;
       saveTaskState(st);
-      cb.closest('li').classList.toggle('obj-done', cb.checked);
       updateSyncButton();
+      renderWeeklyObjectives(tasks);
       renderProjectsAgenda(appData.tasks);
     });
   });
@@ -690,15 +695,20 @@ function renderTodayTasks(data) {
     return;
   }
 
+  // Sort: incomplete first, done items sink to bottom
+  const todayIncomplete = items.filter(o => !o.done);
+  const todayComplete = items.filter(o => o.done);
+  const todaySorted = [...todayIncomplete, ...todayComplete];
+  const todayHasBoth = todayIncomplete.length > 0 && todayComplete.length > 0;
+
   container.innerHTML = '<div class="today-header">Today</div>' +
-    '<ul class="today-list">' + items.map(obj => {
-    const doneClass = obj.done ? 'obj-done' : '';
-    const projectLabel = obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : '';
-    return `<li class="${doneClass}">
+    '<ul class="today-list">' + todaySorted.map((obj, i) => {
+    const divider = (todayHasBoth && i === todayIncomplete.length) ? '<li class="obj-divider"><span>completed</span></li>' : '';
+    return divider + `<li class="${obj.done ? 'obj-done' : ''}">
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
       <input type="checkbox" class="today-checkbox" data-key="${obj.key}" ${obj.done ? 'checked' : ''}>
       <span class="today-text" data-edit-key="${obj.key}">${escapeHtml(obj.text)}</span>
-      ${projectLabel}
+      ${obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : ''}
       <span class="today-actions">
         <button class="today-to-week-btn" data-key="${obj.key}" title="Move back to weekly">&darr;</button>
         <button class="today-remove-btn" data-key="${obj.key}" title="Remove from week">&times;</button>
@@ -712,8 +722,8 @@ function renderTodayTasks(data) {
       const st = getTaskState();
       st[cb.dataset.key] = cb.checked;
       saveTaskState(st);
-      cb.closest('li').classList.toggle('obj-done', cb.checked);
       updateSyncButton();
+      renderTodayTasks(data);
       renderProjectsAgenda(appData.tasks);
     });
   });
