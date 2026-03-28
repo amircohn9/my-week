@@ -661,6 +661,16 @@ header h1 {
 
 .proj-move-backlog:hover { color: #888; }
 
+.proj-delete-added {
+  font-size: 0.75rem;
+  color: #e27070;
+  cursor: pointer;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #f0f0f0;
+}
+.proj-delete-added:hover { color: #c0392b; }
+
 /* Add project */
 .add-project-row { margin-top: 12px; }
 .add-project-trigger {
