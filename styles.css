@@ -153,6 +153,18 @@ body {
   color: #e8a87c;
   font-weight: 500;
 }
+.family-item-move {
+  font-size: 0.8rem;
+  color: #ccc;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  align-self: center;
+}
+.family-item-move:hover { color: #e8a87c; background: #fef8f4; }
+.family-item-move.moved { color: #7db87d; font-size: 0.7rem; }
 .family-empty {
   font-size: 0.85rem;
 }

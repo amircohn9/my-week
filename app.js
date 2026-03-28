@@ -123,13 +123,15 @@ function renderFamilyHub() {
       const dateStr = d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
       const byBadge = item.addedBy ? `<span class="family-item-by">${escapeHtml(item.addedBy)}</span>` : '';
       const isDecision = section === 'decisions';
-      const checkLabel = isDecision ? (item.done ? '&#10003;' : '') : (item.done ? '&#10003;' : '');
+      const checkLabel = item.done ? '&#10003;' : '';
+      const moveBtn = (!item.done && section !== 'shopping') ? `<span class="family-item-move" data-section="${section}" data-text="${escapeHtml(item.text)}" title="Move to my tasks">&rarr;</span>` : '';
       return `<div class="family-item${item.done ? ' done' : ''}">
         <div class="family-item-check${isDecision ? ' decision' : ''}" data-section="${section}" data-text="${escapeHtml(item.text)}">${checkLabel}</div>
         <div class="family-item-body">
           <div class="family-item-text">${escapeHtml(item.text)}</div>
           <div class="family-item-meta">${byBadge}${dateStr}</div>
         </div>
+        ${moveBtn}
       </div>`;
     }).join('');
 
@@ -142,13 +144,29 @@ function renderFamilyHub() {
         const list = hubData[sec] || [];
         const item = list.find(i => i.text === text);
         if (item) item.done = !item.done;
-        // Save toggle to localStorage for sync
         const key = 'family-hub-toggles';
         let toggles;
         try { toggles = JSON.parse(localStorage.getItem(key)) || []; } catch { toggles = []; }
         toggles.push({ section: sec, text, done: item ? item.done : true, timestamp: Date.now() });
         localStorage.setItem(key, JSON.stringify(toggles));
         renderFamilyHub();
+      });
+    });
+
+    // Move to my tasks
+    container.querySelectorAll('.family-item-move').forEach(el => {
+      el.addEventListener('click', () => {
+        const sec = el.dataset.section;
+        const text = el.dataset.text;
+        const key = 'family-hub-moves';
+        let moves;
+        try { moves = JSON.parse(localStorage.getItem(key)) || []; } catch { moves = []; }
+        moves.push({ section: sec, text, timestamp: Date.now() });
+        localStorage.setItem(key, JSON.stringify(moves));
+        el.textContent = '✓ queued';
+        el.classList.add('moved');
+        el.style.pointerEvents = 'none';
+        updateSyncButton();
       });
     });
   }

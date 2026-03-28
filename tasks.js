@@ -67,6 +67,8 @@ function countSyncChanges() {
   // today changes not counted — todayState persists across syncs
   // Daily focus edit
   if (getDailyFocusEdit()) count++;
+  try { const fm = JSON.parse(localStorage.getItem('family-hub-moves')) || []; count += fm.length; } catch {}
+  try { const ft = JSON.parse(localStorage.getItem('family-hub-toggles')) || []; count += ft.length; } catch {}
   return count;
 }
 
@@ -143,6 +145,18 @@ function generateSyncSummary() {
   // Daily focus edit
   const focusEdit = getDailyFocusEdit();
   if (focusEdit) { lines.push('DAILY FOCUS EDIT:'); lines.push('  ' + focusEdit); lines.push(''); }
+
+  // Family hub moves
+  try {
+    const fm = JSON.parse(localStorage.getItem('family-hub-moves')) || [];
+    if (fm.length) { lines.push('FAMILY HUB → MY TASKS:'); fm.forEach(m => lines.push('  [' + m.section + '] ' + m.text)); lines.push(''); }
+  } catch {}
+
+  // Family hub toggles
+  try {
+    const ft = JSON.parse(localStorage.getItem('family-hub-toggles')) || [];
+    if (ft.length) { lines.push('FAMILY HUB TOGGLES:'); ft.forEach(t => lines.push('  [' + t.section + '] ' + t.text + ' → ' + (t.done ? 'DONE' : 'UNDONE'))); lines.push(''); }
+  } catch {}
 
   return lines.join('\n');
 }
