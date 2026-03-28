@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderNotes();
   setupToggle();
   setupCollapsibleSections();
+  setupTabRail();
   updateSyncButton();
 });
 
@@ -76,6 +77,57 @@ function setupCollapsibleSections() {
       card.classList.add('section-collapsed');
     }
   });
+}
+
+// --- Tab Rail ---
+
+function setupTabRail() {
+  document.querySelectorAll('.tab-rail-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-rail-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const tabId = btn.dataset.tab === 'dashboard' ? 'tabDashboard' : 'tabArielle';
+      document.getElementById(tabId).classList.add('active');
+      if (btn.dataset.tab === 'arielle') renderArielleTab();
+    });
+  });
+}
+
+function renderArielleTab() {
+  const container = document.getElementById('arielleList');
+  const empty = document.getElementById('arielleEmpty');
+  const requests = (appData && appData.arielleRequests) || [];
+
+  if (requests.length === 0) {
+    container.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  container.style.display = 'flex';
+
+  const sorted = [...requests].sort((a, b) => {
+    if (a.status === 'done' && b.status !== 'done') return 1;
+    if (a.status !== 'done' && b.status === 'done') return -1;
+    return (b.date || '').localeCompare(a.date || '');
+  });
+
+  container.innerHTML = sorted.map((req, i) => {
+    const isDone = req.status === 'done';
+    const d = req.date ? new Date(req.date + 'T12:00:00') : null;
+    const dateStr = d ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
+    const todayBadge = req.priority === 'today' ? '<span class="arielle-request-today">Today</span>' : '';
+    const placedBadge = req.placedIn ? `<span class="arielle-request-placed">&rarr; ${escapeHtml(req.placedIn)}</span>` : '';
+    return `<div class="arielle-request-card${isDone ? ' done' : ''}">
+      <div class="arielle-request-check" data-idx="${i}">${isDone ? '&#10003;' : ''}</div>
+      <div class="arielle-request-body">
+        <div class="arielle-request-text">${escapeHtml(req.text)}${todayBadge}${placedBadge}</div>
+        <div class="arielle-request-meta">${dateStr}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // --- Notes for Claude (via Gmail) ---

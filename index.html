@@ -15,6 +15,18 @@
     <div id="authError" style="color:#e74c3c;font-size:0.85rem;display:none;">Incorrect password</div>
   </div>
   <div id="mainApp" style="display:none;">
+  <nav class="tab-rail" id="tabRail">
+    <button class="tab-rail-btn active" data-tab="dashboard" title="Dashboard">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="tab-rail-label">Dashboard</span>
+    </button>
+    <button class="tab-rail-btn" data-tab="arielle" title="Arielle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="tab-rail-label">Arielle</span>
+    </button>
+  </nav>
+  <div class="tab-content">
+  <div class="tab-pane active" id="tabDashboard">
   <div class="container">
     <header>
       <h1>Stay Focused — Keep Moving</h1>
@@ -125,6 +137,20 @@
       <p>Built with care. One day at a time.</p>
     </footer>
   </div>
+  </div><!-- end tabDashboard -->
+
+  <div class="tab-pane" id="tabArielle">
+  <div class="container">
+    <header>
+      <h1>Arielle's Requests</h1>
+      <p class="subtitle">Things Arielle asked you to handle</p>
+    </header>
+    <div id="arielleList" class="arielle-list"></div>
+    <p class="empty-state" id="arielleEmpty" style="display:none;">No requests yet. Share <a href="arielle.html" style="color:#e8a87c;">this link</a> with Arielle.</p>
+  </div>
+  </div><!-- end tabArielle -->
+
+  </div><!-- end tab-content -->
   </div>
 
   <script>

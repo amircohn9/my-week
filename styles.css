@@ -12,6 +12,135 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* ─── Tab Rail ─── */
+.tab-rail {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 64px;
+  height: 100vh;
+  background: #fff;
+  border-right: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+  gap: 4px;
+  z-index: 100;
+}
+.tab-rail-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  padding: 10px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #bbb;
+  transition: all 0.15s;
+  width: 56px;
+}
+.tab-rail-btn:hover { color: #888; background: #f5f4f1; }
+.tab-rail-btn.active { color: #2d2d2d; background: #f0efec; }
+.tab-rail-label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+.tab-content {
+  margin-left: 64px;
+}
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+@media (max-width: 768px) {
+  .tab-rail {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 56px;
+    flex-direction: row;
+    justify-content: center;
+    padding-top: 0;
+    gap: 0;
+    border-right: none;
+    border-top: 1px solid #eee;
+    box-shadow: 0 -1px 4px rgba(0,0,0,0.04);
+  }
+  .tab-rail-btn { width: auto; padding: 6px 24px; }
+  .tab-content { margin-left: 0; margin-bottom: 56px; }
+}
+
+/* ─── Arielle Tab ─── */
+.arielle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.arielle-request-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.04);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.arielle-request-card.done {
+  opacity: 0.5;
+}
+.arielle-request-check {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: transparent;
+}
+.arielle-request-check:hover { border-color: #e8a87c; }
+.arielle-request-card.done .arielle-request-check {
+  background: #e8a87c;
+  border-color: #e8a87c;
+  color: #fff;
+}
+.arielle-request-body { flex: 1; }
+.arielle-request-text {
+  font-size: 0.95rem;
+  color: #2d2d2d;
+  line-height: 1.5;
+}
+.arielle-request-meta {
+  font-size: 0.75rem;
+  color: #bbb;
+  margin-top: 4px;
+}
+.arielle-request-today {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #c67b3a;
+  background: #fef3e6;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+.arielle-request-placed {
+  font-size: 0.7rem;
+  color: #7db87d;
+  margin-left: 8px;
+}
+
 .container {
   max-width: 1100px;
   margin: 0 auto;

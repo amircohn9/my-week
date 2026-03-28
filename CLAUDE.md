@@ -35,7 +35,9 @@ When Amir says something like "let's check in," "daily check-in," or "how was my
 
 6. **Anything to add or change on the task list, or any upcoming deadlines?** — New items, completed items, priority shifts. Update `tasks.md` and `data.json` tasks if Amir says yes. If deadlines are mentioned, add a `"deadline": "YYYY-MM-DD"` field to the relevant task in `data.json`. The dashboard will show deadline badges in warm amber. Tasks due within 7 days get a subtle highlight. Also check for any pending sync changes from the website (Amir may paste a sync summary from the dashboard).
 
-7. **Any notes for the system or dashboard?** — Meta-feedback, system ideas, or notes from the website's "Notes for Claude" section. He may paste them in. The system should evolve.
+7. **Check Arielle's requests** — Use `mcp__claude_ai_Gmail__gmail_search_messages` with query `subject:[Arielle] newer_than:7d` to find requests Arielle sent. For each new request, auto-categorize it and place it in the right spot in `data.json` tasks (correct category, backlog or as a subtask of an existing project if it fits). Also add it to the `arielleRequests` array in `data.json` with `{ "text": "...", "date": "YYYY-MM-DD", "priority": "normal|today", "status": "pending", "placedIn": "Home Duties > backlog" }`. Only ask Amir if the categorization is genuinely unclear. Mark requests as `"status": "done"` when Amir completes them.
+
+8. **Any notes for the system or dashboard?** — Meta-feedback, system ideas, or notes from the website's "Notes for Claude" section. He may paste them in. The system should evolve.
 
 **Closing:** End with a strong, genuine, **data-informed** encouragement. Don't be generic — reference specific numbers from today's check-in or the week so far. Examples:
 - "11 hours tracked this week across 3 categories — you're showing up for yourself."
@@ -100,7 +102,7 @@ After saving the log, also update `data.json` so the web dashboard reflects the 
 
 - `hours` is optional — include it if Amir mentions time, omit if not
 - Add new checkin entries, don't overwrite old ones
-- When Amir marks something as done, add it to `completedItems`
+- When Amir marks something as done, add it to `completedItems`. The `text` field should be a real win — not just the task name. Look at what was actually accomplished and write what it means. E.g., not "Complete severance package" but "Severance package finalized and signed". Not "Applied to Klaviyo" but "Applied to Klaviyo — Lead Video Strategist, strong video-first fit". Short, specific, outcome-oriented.
 - **Recurring tasks**: Some tasks have `"recurring": "weekly"` and a `"sessions"` array. When Amir does a recurring task (e.g., workout, psychologist, Hebrew with Alma), add a session entry: `{ "date": "YYYY-MM-DD", "note": "" }`. The dashboard shows completed sessions and an open slot for the next one.
 - Update `yesterdayNotes` at end of check-in with anything Amir wants to remember tomorrow
 - Update `didYouKnow` occasionally with new inspiring facts about people who struggled and succeeded — especially relevant to career transitions, building new skills, or persevering through uncertainty
