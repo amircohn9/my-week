@@ -57,6 +57,7 @@ function countSyncChanges() {
   if (state._addedSubs) for (const key of Object.keys(state._addedSubs)) count += state._addedSubs[key].length;
   if (state._deletedSubs) for (const key of Object.keys(state._deletedSubs)) count += state._deletedSubs[key].length;
   if (state._added) for (const cat of Object.keys(state._added)) count += state._added[cat].length;
+  if (state._addedProjects) count += state._addedProjects.length;
   const hidden = getHiddenHabits();
   count += hidden.length;
   try { const wu = JSON.parse(localStorage.getItem('myweek-weight-updates')) || []; count += wu.length; } catch {}
@@ -125,6 +126,13 @@ function generateSyncSummary() {
   // today changes
   const td = getTodayState();
   if (Object.keys(td).length) { lines.push('TODAY TOGGLES:'); Object.entries(td).forEach(([k, v]) => lines.push('  ' + k + ' → ' + (v ? 'ON' : 'OFF'))); lines.push(''); }
+
+  // Added projects
+  if (state._addedProjects && state._addedProjects.length) {
+    lines.push('ADDED PROJECTS:');
+    state._addedProjects.forEach(p => lines.push('  [' + p.category + '] ' + p.text));
+    lines.push('');
+  }
 
   // Added tasks
   if (state._added) {

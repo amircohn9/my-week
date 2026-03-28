@@ -43,6 +43,20 @@
       <section class="card projects-card" style="grid-area: projects;">
         <h2>Projects on the Agenda</h2>
         <div id="projectsAgenda" class="project-card-grid"></div>
+        <div id="addProjectRow" class="add-project-row">
+          <button id="addProjectTrigger" class="add-project-trigger">+ add project</button>
+          <div id="addProjectForm" class="add-project-form" style="display:none;">
+            <input type="text" id="addProjectInput" class="add-project-input" placeholder="Project name...">
+            <select id="addProjectCat" class="add-project-cat">
+              <option value="Career">Career</option>
+              <option value="Self">Self</option>
+              <option value="Home Duties">Home Duties</option>
+              <option value="Family">Family</option>
+            </select>
+            <button id="addProjectSubmit" class="add-project-submit">Add</button>
+            <button id="addProjectCancel" class="add-project-cancel">&times;</button>
+          </div>
+        </div>
         <p class="empty-state" id="projectsEmpty" style="display:none;">No active projects.</p>
       </section>
 

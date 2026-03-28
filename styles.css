@@ -661,6 +661,66 @@ header h1 {
 
 .proj-move-backlog:hover { color: #888; }
 
+/* Add project */
+.add-project-row { margin-top: 12px; }
+.add-project-trigger {
+  background: none;
+  border: 1px dashed #d0cdc8;
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: #999;
+  cursor: pointer;
+  font-size: 0.85rem;
+  width: 100%;
+  text-align: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+.add-project-trigger:hover { border-color: #999; color: #666; }
+.add-project-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.add-project-input {
+  flex: 1;
+  min-width: 150px;
+  padding: 8px 12px;
+  border: 1px solid #d0cdc8;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+.add-project-input:focus { outline: none; border-color: #34d399; }
+.add-project-cat {
+  padding: 8px 10px;
+  border: 1px solid #d0cdc8;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: #fff;
+}
+.add-project-submit {
+  padding: 8px 16px;
+  background: #34d399;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+.add-project-submit:hover { background: #2ab885; }
+.add-project-cancel {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #999;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.add-project-cancel:hover { color: #666; }
+
 /* Deadline badges */
 .deadline-later { font-size: 0.75rem; color: #aaa; margin-left: 8px; font-style: italic; }
 .deadline-soon { font-size: 0.75rem; color: #b45309; margin-left: 8px; font-weight: 500; }

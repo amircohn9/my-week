@@ -879,10 +879,25 @@ function renderProjectsAgenda(tasks) {
         color: colors[cat],
         deadline: item.deadline || null,
         subtasks: item.subtasks || [],
-        thisWeek: item.thisWeek || false
+        thisWeek: item.thisWeek || false,
+        isAdded: false
       });
     });
   }
+
+  // Include locally added projects
+  const addedProjects = getTaskState()._addedProjects || [];
+  addedProjects.forEach((proj) => {
+    projects.push({
+      text: proj.text,
+      category: proj.category,
+      color: colors[proj.category],
+      deadline: null,
+      subtasks: [],
+      thisWeek: false,
+      isAdded: true
+    });
+  });
 
   if (projects.length === 0) {
     container.style.display = 'none';
@@ -985,6 +1000,7 @@ function renderProjectsAgenda(tasks) {
           <input type="text" class="proj-add-subtask-input" data-parent="${parentKey}" placeholder="Add subtask and press Enter..." style="display:none;">
         </div>
         <div class="proj-move-backlog" data-cat="${proj.category}" data-text="${escapeHtml(proj.text)}" data-move-to="backlog">Move to Backlog</div>
+        ${proj.isAdded ? `<div class="proj-delete-added" data-proj-text="${escapeHtml(proj.text)}" data-proj-cat="${proj.category}">Delete Project</div>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1184,6 +1200,67 @@ function renderProjectsAgenda(tasks) {
       updateSyncButton();
     });
   });
+
+  // Delete added project
+  container.querySelectorAll('.proj-delete-added').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const st = getTaskState();
+      if (!st._addedProjects) return;
+      const text = el.dataset.projText;
+      const cat = el.dataset.projCat;
+      st._addedProjects = st._addedProjects.filter(p => !(p.text === text && p.category === cat));
+      saveTaskState(st);
+      _expandedProjIdx = null;
+      renderProjectsAgenda(tasks);
+      renderWeeklyObjectives(tasks);
+      updateSyncButton();
+    });
+  });
+
+  // Add project form
+  const addTrigger = document.getElementById('addProjectTrigger');
+  const addForm = document.getElementById('addProjectForm');
+  const addInput = document.getElementById('addProjectInput');
+  const addCat = document.getElementById('addProjectCat');
+  const addSubmit = document.getElementById('addProjectSubmit');
+  const addCancel = document.getElementById('addProjectCancel');
+
+  if (addTrigger && !addTrigger._bound) {
+    addTrigger._bound = true;
+    addTrigger.addEventListener('click', () => {
+      addTrigger.style.display = 'none';
+      addForm.style.display = 'flex';
+      addInput.focus();
+    });
+
+    addCancel.addEventListener('click', () => {
+      addForm.style.display = 'none';
+      addTrigger.style.display = '';
+      addInput.value = '';
+    });
+
+    const submitProject = () => {
+      const text = addInput.value.trim();
+      if (!text) return;
+      const st = getTaskState();
+      if (!st._addedProjects) st._addedProjects = [];
+      st._addedProjects.push({ text, category: addCat.value });
+      saveTaskState(st);
+      addInput.value = '';
+      addForm.style.display = 'none';
+      addTrigger.style.display = '';
+      renderProjectsAgenda(tasks);
+      renderWeeklyObjectives(tasks);
+      updateSyncButton();
+    };
+
+    addSubmit.addEventListener('click', submitProject);
+    addInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); submitProject(); }
+      if (e.key === 'Escape') { addCancel.click(); }
+    });
+  }
 }
 
 // Helper: find the index of a project item within its category's now array
