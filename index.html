@@ -142,8 +142,15 @@
   <div class="tab-pane" id="tabFamily">
   <div class="container">
     <header>
-      <h1>Amir & Arielle</h1>
-      <p class="subtitle" id="familySummary"></p>
+      <div class="family-header-row">
+        <div>
+          <h1>Amir & Arielle</h1>
+          <p class="subtitle" id="familySummary"></p>
+        </div>
+        <button class="family-sync-btn" id="familySyncBtn" style="display:none;">
+          Sync Changes <span class="family-sync-count" id="familySyncCount"></span>
+        </button>
+      </div>
     </header>
 
     <div id="familyHandled" class="family-handled"></div>

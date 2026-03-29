@@ -89,7 +89,7 @@ function setupTabRail() {
       btn.classList.add('active');
       const tabId = btn.dataset.tab === 'dashboard' ? 'tabDashboard' : 'tabFamily';
       document.getElementById(tabId).classList.add('active');
-      if (btn.dataset.tab === 'family') renderFamilyHub();
+      if (btn.dataset.tab === 'family') { renderFamilyHub(); setupFamilySync(); }
     });
   });
 }
@@ -120,6 +120,66 @@ function saveFamilyChange(type, payload) {
   changes.push({ type, ...payload, timestamp: Date.now() });
   localStorage.setItem(key, JSON.stringify(changes));
   updateSyncButton();
+  updateFamilySyncBtn();
+}
+
+function countFamilyChanges() {
+  let count = 0;
+  try { count += (JSON.parse(localStorage.getItem('family-hub-changes')) || []).length; } catch {}
+  try { count += (JSON.parse(localStorage.getItem('family-hub-added')) || []).length; } catch {}
+  return count;
+}
+
+function updateFamilySyncBtn() {
+  const btn = document.getElementById('familySyncBtn');
+  const countEl = document.getElementById('familySyncCount');
+  if (!btn) return;
+  const count = countFamilyChanges();
+  if (count === 0) {
+    btn.style.display = 'none';
+  } else {
+    btn.style.display = '';
+    countEl.textContent = count;
+  }
+}
+
+function generateFamilySyncSummary() {
+  const lines = ['FAMILY HUB SYNC — ' + new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }), ''];
+  try {
+    const changes = JSON.parse(localStorage.getItem('family-hub-changes')) || [];
+    for (const c of changes) {
+      if (c.type === 'toggle') lines.push((c.done ? 'HANDLED' : 'REOPENED') + ': ' + c.text + ' [' + c.section + ']');
+      else if (c.type === 'add') lines.push('ADDED to ' + c.section + ': ' + c.text);
+      else if (c.type === 'edit') lines.push('EDITED [' + c.section + ']: "' + c.oldText + '" → "' + c.newText + '"');
+      else if (c.type === 'assign') lines.push('ASSIGNED [' + c.section + ']: ' + c.text + ' → ' + (c.assignee || 'unassigned'));
+      else if (c.type === 'deadline') lines.push('DEADLINE [' + c.section + ']: ' + c.text + ' → ' + (c.deadline || 'removed'));
+      else if (c.type === 'move') lines.push('MOVED: "' + c.text + '" from ' + c.from + ' → ' + c.to);
+      else if (c.type === 'moveToAmir') lines.push('→ AMIR\'S TASKS: ' + c.text + ' (from ' + c.section + ')');
+    }
+  } catch {}
+  try {
+    const added = JSON.parse(localStorage.getItem('family-hub-added')) || [];
+    for (const a of added) lines.push('ADDED to ' + a.section + ': ' + a.item.text);
+  } catch {}
+  return lines.join('\n');
+}
+
+function setupFamilySync() {
+  const btn = document.getElementById('familySyncBtn');
+  if (!btn || btn._bound) return;
+  btn._bound = true;
+  btn.addEventListener('click', () => {
+    const summary = generateFamilySyncSummary();
+    const subject = encodeURIComponent('Family Hub Sync — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+    const body = encodeURIComponent(summary);
+    window.open('https://mail.google.com/mail/?view=cm&to=' + NOTES_EMAIL + '&su=' + subject + '&body=' + body, '_blank');
+    // Clear local changes after sending
+    localStorage.removeItem('family-hub-changes');
+    localStorage.removeItem('family-hub-added');
+    updateFamilySyncBtn();
+    updateSyncButton();
+  });
+  updateFamilySyncBtn();
 }
 
 function renderFamilyHandled(hub) {
