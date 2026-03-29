@@ -543,17 +543,41 @@ function renderBacklog(tasks) {
   });
 
   // Sync button
-  document.getElementById('syncBtn').onclick = async () => {
+  document.getElementById('syncBtn').onclick = () => {
     const summary = generateSyncSummary();
-    try {
-      await navigator.clipboard.writeText(summary);
-      // Keep all localStorage state — it persists until Claude updates data.json during check-in
-      // Sync just copies the summary to clipboard for pasting into Claude
+    const subject = encodeURIComponent('Dashboard Sync — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+    const body = encodeURIComponent(summary);
+    window.open('https://mail.google.com/mail/?view=cm&to=' + NOTES_EMAIL + '&su=' + subject + '&body=' + body, '_blank');
+
+    const btn = document.getElementById('syncBtn');
+    btn.style.display = 'none';
+    let strip = document.getElementById('dashSyncConfirm');
+    if (!strip) {
+      strip = document.createElement('div');
+      strip.id = 'dashSyncConfirm';
+      strip.className = 'family-sync-confirm';
+      btn.parentElement.appendChild(strip);
+    }
+    strip.innerHTML = '<span>Did you send it?</span><button class="family-sync-yes">Yes, clear</button><button class="family-sync-no">No, keep</button>';
+    strip.style.display = 'flex';
+    strip.querySelector('.family-sync-yes').addEventListener('click', () => {
+      // Clear all sync-related localStorage
+      localStorage.removeItem('myweek-tasks');
+      localStorage.removeItem('myweek-task-edits');
+      localStorage.removeItem('myweek-task-moves');
+      localStorage.removeItem('myweek-this-week');
+      localStorage.removeItem('myweek-weight-updates');
+      localStorage.removeItem('myweek-daily-focus-edit');
+      localStorage.removeItem('family-hub-changes');
+      localStorage.removeItem('family-hub-added');
       saveDailyFocusEdit('');
-      const btn = document.getElementById('syncBtn');
-      btn.innerHTML = 'Synced!';
-      btn.classList.add('sync-copied');
-      setTimeout(() => { btn.classList.remove('sync-copied'); updateSyncButton(); }, 2000);
-    } catch { prompt('Copy this and paste in Claude Code:', summary); }
+      strip.style.display = 'none';
+      updateSyncButton();
+      updateFamilySyncBtn && updateFamilySyncBtn();
+    });
+    strip.querySelector('.family-sync-no').addEventListener('click', () => {
+      strip.style.display = 'none';
+      btn.style.display = '';
+    });
   };
 }
