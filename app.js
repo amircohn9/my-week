@@ -94,14 +94,14 @@ function setupTabRail() {
   });
 }
 
-const FAMILY_SECTIONS = ['thisWeek', 'comingUp', 'decisions', 'someday', 'trips'];
-const FAMILY_LABELS = { thisWeek: 'This Week', comingUp: 'Coming Up', decisions: 'Decisions', someday: 'Someday', trips: 'Trips & Events' };
+const FAMILY_SECTIONS = ['thisWeek', 'backlog', 'decisions', 'purchases'];
+const FAMILY_LABELS = { thisWeek: 'This Week', backlog: 'Backlog', decisions: 'Decisions', purchases: 'Purchases' };
 
 function getFamilyHub() {
   if (!appData.familyHub) appData.familyHub = {};
   // Migrate old keys
   if (appData.familyHub.now) { appData.familyHub.thisWeek = appData.familyHub.now; delete appData.familyHub.now; }
-  if (appData.familyHub.backlog) { appData.familyHub.comingUp = appData.familyHub.backlog; delete appData.familyHub.backlog; }
+  if (appData.familyHub.comingUp) { appData.familyHub.backlog = appData.familyHub.comingUp; delete appData.familyHub.comingUp; }
   for (const s of FAMILY_SECTIONS) if (!appData.familyHub[s]) appData.familyHub[s] = [];
   // Apply local additions
   let added;
@@ -264,36 +264,38 @@ function renderFamilyHub() {
     container.innerHTML = sorted.map(item => {
       const isDecision = section === 'decisions';
       const assignee = item.assignee || '';
-      const assigneeHtml = assignee
-        ? `<span class="family-owner ${assignee === 'Amir' ? 'owner-amir' : 'owner-arielle'}" data-section="${section}" data-text="${escapeHtml(item.text)}">${assignee}'s got this</span>`
-        : `<span class="family-owner owner-none" data-section="${section}" data-text="${escapeHtml(item.text)}">who's got this?</span>`;
+      const ownerClass = assignee === 'Amir' ? 'owner-amir' : assignee === 'Arielle' ? 'owner-arielle' : assignee === 'Both' ? 'owner-both' : 'owner-none';
+      const ownerLabel = assignee || '—';
       const deadlineHtml = item.deadline
-        ? `<span class="family-item-deadline">by ${new Date(item.deadline + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`
+        ? `<span class="family-item-deadline">${new Date(item.deadline + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`
         : '';
-      const flaggedBy = item.addedBy ? `<span class="family-flagged">flagged by ${item.addedBy}</span>` : '';
+      const hasComment = item.comment && item.comment.trim();
+      const commentToggle = `<span class="family-comment-toggle${hasComment ? ' has-comment' : ''}" data-section="${section}" data-text="${escapeHtml(item.text)}" title="${hasComment ? 'View note' : 'Add note'}">&#9998;</span>`;
       const moveOptions = otherSections.map(s =>
         `<span class="family-move-option" data-to="${s}" data-from="${section}" data-text="${escapeHtml(item.text)}">${FAMILY_LABELS[s]}</span>`
       ).join('');
 
-      return `<div class="family-item${item.done ? ' done' : ''}">
+      const commentHtml = item._showComment ? (
+        `<div class="family-item-comment" data-section="${section}" data-text="${escapeHtml(item.text)}">${escapeHtml(item.comment || '')}</div>`
+      ) : '';
+
+      return `<div class="family-item-wrapper"><div class="family-item${item.done ? ' done' : ''}">
         <div class="family-item-check${isDecision ? ' decision' : ''}" data-section="${section}" data-text="${escapeHtml(item.text)}">${item.done ? '&#10003;' : ''}</div>
         <div class="family-item-body">
           <span class="family-item-text" data-section="${section}" data-text="${escapeHtml(item.text)}">${escapeHtml(item.text)}</span>
+          <span class="family-owner ${ownerClass}" data-section="${section}" data-text="${escapeHtml(item.text)}">${ownerLabel}</span>
           ${deadlineHtml}
-          <div class="family-item-meta">
-            ${assigneeHtml}
-            ${flaggedBy}
-          </div>
         </div>
         <div class="family-item-actions">
-          <span class="family-item-date-btn" data-section="${section}" data-text="${escapeHtml(item.text)}" title="Set deadline">&#128197;</span>
+          ${commentToggle}
+          <span class="family-item-date-btn" data-section="${section}" data-text="${escapeHtml(item.text)}" title="Date">&#128197;</span>
           <span class="family-item-move-btn" data-section="${section}" data-text="${escapeHtml(item.text)}" title="Move">&#8596;</span>
           <div class="family-move-menu" style="display:none;">
             ${moveOptions}
-            <span class="family-move-option move-to-amir" data-to="_amirTasks" data-from="${section}" data-text="${escapeHtml(item.text)}">Amir's personal tasks</span>
+            <span class="family-move-option move-to-amir" data-to="_amirTasks" data-from="${section}" data-text="${escapeHtml(item.text)}">Amir's tasks</span>
           </div>
         </div>
-      </div>`;
+      </div>${commentHtml}</div>`;
     }).join('');
 
     // --- Events ---
@@ -348,7 +350,7 @@ function renderFamilyHub() {
         const text = el.dataset.text;
         const item = (hub[section] || []).find(i => i.text === text);
         if (!item) return;
-        const cycle = ['Amir', 'Arielle', ''];
+        const cycle = ['Amir', 'Arielle', 'Both', ''];
         const idx = cycle.indexOf(item.assignee || '');
         item.assignee = cycle[(idx + 1) % cycle.length];
         saveFamilyChange('assign', { section, text, assignee: item.assignee });
@@ -412,6 +414,46 @@ function renderFamilyHub() {
         renderFamilyHub();
       });
     });
+
+    // Comment toggle
+    container.querySelectorAll('.family-comment-toggle').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = el.dataset.text;
+        const item = (hub[section] || []).find(i => i.text === text);
+        if (!item) return;
+        item._showComment = !item._showComment;
+        renderFamilyHub();
+      });
+    });
+
+    // Comment edit
+    container.querySelectorAll('.family-item-comment').forEach(el => {
+      el.addEventListener('click', () => {
+        if (el.querySelector('textarea')) return;
+        const text = el.dataset.text;
+        const item = (hub[section] || []).find(i => i.text === text);
+        const ta = document.createElement('textarea');
+        ta.className = 'family-item-comment-edit';
+        ta.value = item ? (item.comment || '') : '';
+        ta.rows = 2;
+        el.style.display = 'none';
+        el.parentElement.insertBefore(ta, el.nextSibling);
+        ta.focus();
+        const save = () => {
+          const val = ta.value.trim();
+          if (item) item.comment = val;
+          saveFamilyChange('comment', { section, text, comment: val });
+          ta.remove();
+          renderFamilyHub();
+        };
+        ta.addEventListener('blur', save);
+        ta.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); save(); }
+          if (ev.key === 'Escape') { ta.remove(); renderFamilyHub(); }
+        });
+      });
+    });
   }
 
   // Add item inputs
@@ -446,99 +488,52 @@ function renderFamilyHub() {
     });
   }
 
-  // Render reference sections
-  renderFamilyCalendar();
-  renderFamilyKids();
-  renderFamilyPeople();
+  // Render weekends
+  renderFamilyWeekends();
 }
 
-function renderFamilyCalendar() {
-  const container = document.getElementById('familyCalendar');
+function renderFamilyWeekends() {
+  const container = document.getElementById('familyWeekends');
   if (!container) return;
   const events = (appData && appData.calendarEvents) || {};
-  const today = getTodayStr();
-  const { weekStart } = getWeekRange();
-  const days = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + i);
-    days.push(formatDateStr(d));
+  const weekendEvents = (appData && appData.familyHub && appData.familyHub.weekendNotes) || {};
+
+  // Find next 4 weekends (Sat+Sun)
+  const today = new Date();
+  const weekends = [];
+  const d = new Date(today);
+  // Advance to next Saturday
+  while (d.getDay() !== 6) d.setDate(d.getDate() + 1);
+  for (let w = 0; w < 4; w++) {
+    const sat = new Date(d);
+    const sun = new Date(d);
+    sun.setDate(sat.getDate() + 1);
+    weekends.push({ sat: formatDateStr(sat), sun: formatDateStr(sun), weekNum: w });
+    d.setDate(d.getDate() + 7);
   }
-  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  container.innerHTML = days.map((dateStr, i) => {
-    const dayEvents = events[dateStr] || [];
-    const isToday = dateStr === today;
-    const eventsHtml = dayEvents.length === 0
-      ? '<span class="family-cal-empty">—</span>'
-      : dayEvents.map(e =>
-          `<div class="family-cal-event"><span class="family-cal-dot" style="background:${e.color}"></span><span class="family-cal-time">${e.time}</span>${escapeHtml(e.summary)}</div>`
-        ).join('');
-    return `<div class="family-cal-day"><span class="family-cal-day-label${isToday ? ' today' : ''}">${dayNames[i]}</span><div class="family-cal-events">${eventsHtml}</div></div>`;
+
+  container.innerHTML = weekends.map((wk, i) => {
+    const label = i === 0 ? 'This Weekend' : i === 1 ? 'Next Weekend' : new Date(wk.sat + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const labelClass = i === 0 ? ' this-weekend' : '';
+    const satEvents = events[wk.sat] || [];
+    const sunEvents = events[wk.sun] || [];
+    const note = weekendEvents[wk.sat] || '';
+
+    let eventsHtml = '';
+    if (satEvents.length === 0 && sunEvents.length === 0 && !note) {
+      eventsHtml = '<div class="family-weekend-empty">Nothing planned</div>';
+    } else {
+      eventsHtml = satEvents.map(e =>
+        `<div class="family-weekend-event"><span class="family-weekend-day">Sat</span><span class="family-weekend-dot" style="background:${e.color}"></span>${escapeHtml(e.summary)}</div>`
+      ).join('');
+      eventsHtml += sunEvents.map(e =>
+        `<div class="family-weekend-event"><span class="family-weekend-day">Sun</span><span class="family-weekend-dot" style="background:${e.color}"></span>${escapeHtml(e.summary)}</div>`
+      ).join('');
+      if (note) eventsHtml += `<div class="family-weekend-event" style="color:#e8a87c;font-style:italic;">${escapeHtml(note)}</div>`;
+    }
+
+    return `<div class="family-weekend-block"><div class="family-weekend-label${labelClass}">${label}</div><div class="family-weekend-events">${eventsHtml}</div></div>`;
   }).join('');
-}
-
-function renderFamilyKids() {
-  const container = document.getElementById('familyKids');
-  if (!container) return;
-  const kids = (appData && appData.familyHub && appData.familyHub.kids) || [];
-  if (kids.length === 0) {
-    container.innerHTML = '<p class="empty-state family-empty">Add kids\' info during check-in.</p>';
-    return;
-  }
-  container.innerHTML = kids.map(kid => {
-    const details = [];
-    if (kid.age) details.push({ label: 'Age', value: kid.age });
-    if (kid.school) details.push({ label: 'School', value: kid.school });
-    if (kid.sizes) details.push({ label: 'Sizes', value: kid.sizes });
-    if (kid.allergies) details.push({ label: 'Allergies', value: kid.allergies });
-    if (kid.doctor) details.push({ label: 'Doctor', value: kid.doctor });
-    if (kid.activities) details.push({ label: 'Activities', value: kid.activities });
-    if (kid.notes) details.push({ label: 'Notes', value: kid.notes });
-    const detailsHtml = details.map(d =>
-      `<div class="family-kid-detail"><span class="family-kid-label">${d.label}</span><span>${escapeHtml(d.value)}</span></div>`
-    ).join('');
-    return `<div class="family-kid"><div class="family-kid-name">${escapeHtml(kid.name)}</div><div class="family-kid-details">${detailsHtml}</div></div>`;
-  }).join('');
-}
-
-function renderFamilyPeople() {
-  const container = document.getElementById('familyPeople');
-  if (!container) return;
-  const people = (appData && appData.familyHub && appData.familyHub.people) || {};
-  const birthdays = people.birthdays || [];
-  const babysitters = people.babysitters || [];
-  let html = '';
-
-  if (birthdays.length > 0) {
-    const today = new Date();
-    const sorted = [...birthdays].sort((a, b) => {
-      const aDate = new Date(today.getFullYear(), parseInt(a.month) - 1, parseInt(a.day));
-      const bDate = new Date(today.getFullYear(), parseInt(b.month) - 1, parseInt(b.day));
-      if (aDate < today) aDate.setFullYear(aDate.getFullYear() + 1);
-      if (bDate < today) bDate.setFullYear(bDate.getFullYear() + 1);
-      return aDate - bDate;
-    });
-    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    html += '<div class="family-people-group"><div class="family-people-group-label">Birthdays</div>';
-    html += sorted.map(b => {
-      const bDate = new Date(today.getFullYear(), parseInt(b.month) - 1, parseInt(b.day));
-      if (bDate < today) bDate.setFullYear(bDate.getFullYear() + 1);
-      const daysUntil = Math.ceil((bDate - today) / 86400000);
-      const soonClass = daysUntil <= 30 ? ' family-birthday-soon' : '';
-      const soonLabel = daysUntil <= 7 ? ' — this week!' : daysUntil <= 30 ? ` — ${daysUntil}d` : '';
-      return `<div class="family-birthday"><span class="family-birthday-name">${escapeHtml(b.name)}</span><span class="family-birthday-date${soonClass}">${monthNames[parseInt(b.month)-1]} ${b.day}${soonLabel}</span></div>`;
-    }).join('');
-    html += '</div>';
-  }
-
-  if (babysitters.length > 0) {
-    html += '<div class="family-people-group"><div class="family-people-group-label">Babysitters</div>';
-    html += babysitters.map(b => `<div class="family-birthday"><span class="family-birthday-name">${escapeHtml(b.name)}</span><span class="family-birthday-date">${escapeHtml(b.phone || '')}</span></div>`).join('');
-    html += '</div>';
-  }
-
-  if (!html) html = '<p class="empty-state family-empty">Add birthdays & contacts during check-in.</p>';
-  container.innerHTML = html;
 }
 
 // --- Notes for Claude (via Gmail) ---

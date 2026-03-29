@@ -279,7 +279,7 @@
       { "text": "Stuff to sell — manage pickups and Venmo", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Amir", "done": false, "deadline": null },
       { "text": "Send links to Arielle to make Google Slides to sell", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Arielle", "done": false, "deadline": null }
     ],
-    "comingUp": [
+    "backlog": [
       { "text": "Guest room closet cleanup + bins downstairs", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
       { "text": "Organize office", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Amir", "done": false, "deadline": null },
       { "text": "Figure out bikes for kids", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
@@ -287,37 +287,11 @@
       { "text": "Prep outside pots, swing", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null }
     ],
     "decisions": [
-      { "text": "Hebrew plan for kids", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
-      { "text": "Summer travels", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null }
+      { "text": "Hebrew plan for kids", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Both", "done": false, "deadline": null },
+      { "text": "Summer travels", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Both", "done": false, "deadline": null }
     ],
-    "trips": [],
-    "someday": [],
-    "kids": [
-      {
-        "name": "Alma",
-        "age": "",
-        "school": "",
-        "sizes": "",
-        "allergies": "",
-        "doctor": "",
-        "activities": "Pre-Ballet, Hebrew school, Sport, Music",
-        "notes": ""
-      },
-      {
-        "name": "Carmeli",
-        "age": "",
-        "school": "",
-        "sizes": "",
-        "allergies": "",
-        "doctor": "",
-        "activities": "Music",
-        "notes": ""
-      }
-    ],
-    "people": {
-      "birthdays": [],
-      "babysitters": []
-    }
+    "purchases": [],
+    "weekendNotes": {}
   },
   "checkins": [
     {
