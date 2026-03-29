@@ -355,21 +355,20 @@ body {
   padding: 4px;
   z-index: 25;
 }
-.family-add-row { margin-top: 10px; }
+.family-add-row { margin-top: 12px; }
 .family-add-input {
   width: 100%;
-  border: none;
-  border-bottom: 1px dashed #e0ddd8;
-  border-radius: 0;
-  padding: 8px 4px;
-  font-size: 0.85rem;
+  border: 1px dashed #d0cdc8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
   font-family: inherit;
   color: #2d2d2d;
-  background: transparent;
-  transition: border-color 0.15s;
+  background: #fafaf8;
+  transition: border-color 0.15s, background 0.15s;
 }
-.family-add-input:focus { outline: none; border-color: #7db87d; border-bottom-style: solid; }
-.family-add-input::placeholder { color: #ddd; }
+.family-add-input:focus { outline: none; border-color: #7db87d; border-style: solid; background: #fff; }
+.family-add-input::placeholder { color: #bbb; }
 .family-empty { font-size: 0.85rem; color: #ccc; }
 
 /* Weekends section */
