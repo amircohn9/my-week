@@ -140,43 +140,53 @@
   </div><!-- end tabDashboard -->
 
   <div class="tab-pane" id="tabFamily">
-  <div class="container">
-    <header>
-      <div class="family-header-row">
-        <div>
-          <h1>Amir & Arielle</h1>
-          <p class="subtitle" id="familySummary"></p>
-        </div>
-        <button class="family-sync-btn" id="familySyncBtn" style="display:none;">
-          Sync Changes <span class="family-sync-count" id="familySyncCount"></span>
-        </button>
+  <div class="container family-container">
+    <div class="family-header-row">
+      <div>
+        <h1>Amir & Arielle</h1>
+        <p class="subtitle" id="familySummary">Our family brain</p>
       </div>
-    </header>
+      <button class="family-sync-btn" id="familySyncBtn" style="display:none;">
+        Sync Changes <span class="family-sync-count" id="familySyncCount"></span>
+      </button>
+    </div>
 
     <div id="familyHandled" class="family-handled"></div>
 
-    <div class="family-sections">
+    <div class="family-grid">
+      <!-- Row 1: This Week + Calendar + Kids -->
       <section class="card family-section" data-section="thisWeek">
         <h2 class="family-section-header">This Week</h2>
         <div id="familyThisWeek" class="family-items"></div>
         <p class="empty-state family-empty" id="familyThisWeekEmpty">Clear week.</p>
         <div class="family-add-row">
-          <input type="text" class="family-add-input" data-section="thisWeek" placeholder="+ add something for this week">
+          <input type="text" class="family-add-input" data-section="thisWeek" placeholder="+ add something">
         </div>
       </section>
 
-      <section class="card family-section" data-section="comingUp">
-        <h2 class="family-section-header">Coming Up</h2>
-        <div id="familyComingUp" class="family-items"></div>
-        <p class="empty-state family-empty" id="familyComingUpEmpty">Nothing on the horizon.</p>
+      <section class="card family-section family-cal-section">
+        <h2 class="family-section-header">Calendar</h2>
+        <div id="familyCalendar" class="family-cal"></div>
+      </section>
+
+      <section class="card family-section family-kids-section">
+        <h2 class="family-section-header">Kids</h2>
+        <div id="familyKids" class="family-kids"></div>
+      </section>
+
+      <!-- Row 2: Trips & Events + Decisions + People & Dates -->
+      <section class="card family-section" data-section="trips">
+        <h2 class="family-section-header">Trips & Events</h2>
+        <div id="familyTrips" class="family-items"></div>
+        <p class="empty-state family-empty" id="familyTripsEmpty">Nothing planned yet.</p>
         <div class="family-add-row">
-          <input type="text" class="family-add-input" data-section="comingUp" placeholder="+ add something coming up">
+          <input type="text" class="family-add-input" data-section="trips" placeholder="+ add trip or event">
         </div>
       </section>
 
       <section class="card family-section family-section-decisions" data-section="decisions">
         <h2 class="family-section-header">Decisions</h2>
-        <p class="family-section-desc">Things we need to figure out together</p>
+        <p class="family-section-desc">Things to figure out together</p>
         <div id="familyDecisions" class="family-items"></div>
         <p class="empty-state family-empty" id="familyDecisionsEmpty">No open decisions.</p>
         <div class="family-add-row">
@@ -184,13 +194,28 @@
         </div>
       </section>
 
+      <section class="card family-section family-people-section">
+        <h2 class="family-section-header">People & Dates</h2>
+        <div id="familyPeople" class="family-people"></div>
+      </section>
+
+      <!-- Row 3: Coming Up + Someday -->
+      <section class="card family-section" data-section="comingUp">
+        <h2 class="family-section-header">Coming Up</h2>
+        <div id="familyComingUp" class="family-items"></div>
+        <p class="empty-state family-empty" id="familyComingUpEmpty">Nothing on the horizon.</p>
+        <div class="family-add-row">
+          <input type="text" class="family-add-input" data-section="comingUp" placeholder="+ add something">
+        </div>
+      </section>
+
       <section class="card family-section family-section-someday" data-section="someday">
         <h2 class="family-section-header">Someday</h2>
         <p class="family-section-desc">Out of our heads, no pressure</p>
         <div id="familySomeday" class="family-items"></div>
-        <p class="empty-state family-empty" id="familySomedayEmpty">Nothing parked here yet.</p>
+        <p class="empty-state family-empty" id="familySomedayEmpty">Nothing parked.</p>
         <div class="family-add-row">
-          <input type="text" class="family-add-input" data-section="someday" placeholder="+ park something here">
+          <input type="text" class="family-add-input" data-section="someday" placeholder="+ park something">
         </div>
       </section>
     </div>

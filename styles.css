@@ -155,29 +155,19 @@ body {
   text-decoration: line-through;
   text-decoration-color: #c5e0c5;
 }
-.family-sections {
+.family-container { max-width: 1400px; }
+.family-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    "thisWeek comingUp"
-    "decisions someday";
-  gap: 16px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
 }
-.family-section[data-section="thisWeek"] { grid-area: thisWeek; }
-.family-section[data-section="comingUp"] { grid-area: comingUp; }
-.family-section[data-section="decisions"] { grid-area: decisions; }
-.family-section[data-section="someday"] { grid-area: someday; }
 .family-section { align-self: start; }
 
-@media (max-width: 768px) {
-  .family-sections {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "thisWeek"
-      "comingUp"
-      "decisions"
-      "someday";
-  }
+@media (max-width: 1000px) {
+  .family-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .family-grid { grid-template-columns: 1fr; }
 }
 .family-section-header {
   font-size: 1rem;
@@ -353,6 +343,92 @@ body {
 .family-add-input:focus { outline: none; border-color: #7db87d; border-bottom-style: solid; }
 .family-add-input::placeholder { color: #ddd; }
 .family-empty { font-size: 0.85rem; color: #ccc; }
+
+/* Calendar section */
+.family-cal-day {
+  display: flex;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f5f4f1;
+  font-size: 0.82rem;
+}
+.family-cal-day:last-child { border-bottom: none; }
+.family-cal-day-label {
+  font-weight: 600;
+  color: #1a1a1a;
+  min-width: 36px;
+  flex-shrink: 0;
+}
+.family-cal-day-label.today { color: #7db87d; }
+.family-cal-events { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.family-cal-event {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #555;
+  font-size: 0.78rem;
+}
+.family-cal-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.family-cal-time { color: #bbb; font-size: 0.72rem; min-width: 52px; }
+.family-cal-empty { color: #ddd; font-style: italic; font-size: 0.78rem; }
+
+/* Kids section */
+.family-kid {
+  margin-bottom: 14px;
+}
+.family-kid:last-child { margin-bottom: 0; }
+.family-kid-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.family-kid-emoji { font-size: 1rem; }
+.family-kid-details {
+  font-size: 0.78rem;
+  color: #888;
+  line-height: 1.6;
+}
+.family-kid-detail {
+  display: flex;
+  gap: 6px;
+}
+.family-kid-label {
+  color: #bbb;
+  min-width: 65px;
+  flex-shrink: 0;
+}
+
+/* People & Dates section */
+.family-birthday {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #f5f4f1;
+  font-size: 0.82rem;
+}
+.family-birthday:last-child { border-bottom: none; }
+.family-birthday-name { color: #2d2d2d; }
+.family-birthday-date { color: #bbb; font-size: 0.75rem; }
+.family-birthday-soon { color: #b45309; font-weight: 500; }
+.family-people-group {
+  margin-bottom: 12px;
+}
+.family-people-group-label {
+  font-size: 0.7rem;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
 
 @media (max-width: 768px) {
   .family-item-actions { opacity: 1; }

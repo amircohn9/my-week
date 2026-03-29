@@ -290,7 +290,34 @@
       { "text": "Hebrew plan for kids", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
       { "text": "Summer travels", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null }
     ],
-    "someday": []
+    "trips": [],
+    "someday": [],
+    "kids": [
+      {
+        "name": "Alma",
+        "age": "",
+        "school": "",
+        "sizes": "",
+        "allergies": "",
+        "doctor": "",
+        "activities": "Pre-Ballet, Hebrew school, Sport, Music",
+        "notes": ""
+      },
+      {
+        "name": "Carmeli",
+        "age": "",
+        "school": "",
+        "sizes": "",
+        "allergies": "",
+        "doctor": "",
+        "activities": "Music",
+        "notes": ""
+      }
+    ],
+    "people": {
+      "birthdays": [],
+      "babysitters": []
+    }
   },
   "checkins": [
     {

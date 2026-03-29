@@ -94,8 +94,8 @@ function setupTabRail() {
   });
 }
 
-const FAMILY_SECTIONS = ['thisWeek', 'comingUp', 'decisions', 'someday'];
-const FAMILY_LABELS = { thisWeek: 'This Week', comingUp: 'Coming Up', decisions: 'Decisions', someday: 'Someday' };
+const FAMILY_SECTIONS = ['thisWeek', 'comingUp', 'decisions', 'someday', 'trips'];
+const FAMILY_LABELS = { thisWeek: 'This Week', comingUp: 'Coming Up', decisions: 'Decisions', someday: 'Someday', trips: 'Trips & Events' };
 
 function getFamilyHub() {
   if (!appData.familyHub) appData.familyHub = {};
@@ -445,6 +445,100 @@ function renderFamilyHub() {
       }
     });
   }
+
+  // Render reference sections
+  renderFamilyCalendar();
+  renderFamilyKids();
+  renderFamilyPeople();
+}
+
+function renderFamilyCalendar() {
+  const container = document.getElementById('familyCalendar');
+  if (!container) return;
+  const events = (appData && appData.calendarEvents) || {};
+  const today = getTodayStr();
+  const { weekStart } = getWeekRange();
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    days.push(formatDateStr(d));
+  }
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  container.innerHTML = days.map((dateStr, i) => {
+    const dayEvents = events[dateStr] || [];
+    const isToday = dateStr === today;
+    const eventsHtml = dayEvents.length === 0
+      ? '<span class="family-cal-empty">—</span>'
+      : dayEvents.map(e =>
+          `<div class="family-cal-event"><span class="family-cal-dot" style="background:${e.color}"></span><span class="family-cal-time">${e.time}</span>${escapeHtml(e.summary)}</div>`
+        ).join('');
+    return `<div class="family-cal-day"><span class="family-cal-day-label${isToday ? ' today' : ''}">${dayNames[i]}</span><div class="family-cal-events">${eventsHtml}</div></div>`;
+  }).join('');
+}
+
+function renderFamilyKids() {
+  const container = document.getElementById('familyKids');
+  if (!container) return;
+  const kids = (appData && appData.familyHub && appData.familyHub.kids) || [];
+  if (kids.length === 0) {
+    container.innerHTML = '<p class="empty-state family-empty">Add kids\' info during check-in.</p>';
+    return;
+  }
+  container.innerHTML = kids.map(kid => {
+    const details = [];
+    if (kid.age) details.push({ label: 'Age', value: kid.age });
+    if (kid.school) details.push({ label: 'School', value: kid.school });
+    if (kid.sizes) details.push({ label: 'Sizes', value: kid.sizes });
+    if (kid.allergies) details.push({ label: 'Allergies', value: kid.allergies });
+    if (kid.doctor) details.push({ label: 'Doctor', value: kid.doctor });
+    if (kid.activities) details.push({ label: 'Activities', value: kid.activities });
+    if (kid.notes) details.push({ label: 'Notes', value: kid.notes });
+    const detailsHtml = details.map(d =>
+      `<div class="family-kid-detail"><span class="family-kid-label">${d.label}</span><span>${escapeHtml(d.value)}</span></div>`
+    ).join('');
+    return `<div class="family-kid"><div class="family-kid-name">${escapeHtml(kid.name)}</div><div class="family-kid-details">${detailsHtml}</div></div>`;
+  }).join('');
+}
+
+function renderFamilyPeople() {
+  const container = document.getElementById('familyPeople');
+  if (!container) return;
+  const people = (appData && appData.familyHub && appData.familyHub.people) || {};
+  const birthdays = people.birthdays || [];
+  const babysitters = people.babysitters || [];
+  let html = '';
+
+  if (birthdays.length > 0) {
+    const today = new Date();
+    const sorted = [...birthdays].sort((a, b) => {
+      const aDate = new Date(today.getFullYear(), parseInt(a.month) - 1, parseInt(a.day));
+      const bDate = new Date(today.getFullYear(), parseInt(b.month) - 1, parseInt(b.day));
+      if (aDate < today) aDate.setFullYear(aDate.getFullYear() + 1);
+      if (bDate < today) bDate.setFullYear(bDate.getFullYear() + 1);
+      return aDate - bDate;
+    });
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    html += '<div class="family-people-group"><div class="family-people-group-label">Birthdays</div>';
+    html += sorted.map(b => {
+      const bDate = new Date(today.getFullYear(), parseInt(b.month) - 1, parseInt(b.day));
+      if (bDate < today) bDate.setFullYear(bDate.getFullYear() + 1);
+      const daysUntil = Math.ceil((bDate - today) / 86400000);
+      const soonClass = daysUntil <= 30 ? ' family-birthday-soon' : '';
+      const soonLabel = daysUntil <= 7 ? ' — this week!' : daysUntil <= 30 ? ` — ${daysUntil}d` : '';
+      return `<div class="family-birthday"><span class="family-birthday-name">${escapeHtml(b.name)}</span><span class="family-birthday-date${soonClass}">${monthNames[parseInt(b.month)-1]} ${b.day}${soonLabel}</span></div>`;
+    }).join('');
+    html += '</div>';
+  }
+
+  if (babysitters.length > 0) {
+    html += '<div class="family-people-group"><div class="family-people-group-label">Babysitters</div>';
+    html += babysitters.map(b => `<div class="family-birthday"><span class="family-birthday-name">${escapeHtml(b.name)}</span><span class="family-birthday-date">${escapeHtml(b.phone || '')}</span></div>`).join('');
+    html += '</div>';
+  }
+
+  if (!html) html = '<p class="empty-state family-empty">Add birthdays & contacts during check-in.</p>';
+  container.innerHTML = html;
 }
 
 // --- Notes for Claude (via Gmail) ---
