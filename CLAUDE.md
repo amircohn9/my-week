@@ -15,7 +15,7 @@ This project is a conversational time-tracking system. Amir opens this folder in
 When Amir says something like "let's check in," "daily check-in," or "how was my day" — start the check-in.
 
 **How it works:**
-- **Before starting questions**, pull Google Calendar events for the current week (Mon–Fri) using `mcp__claude_ai_Google_Calendar__gcal_list_events` and update `data.json` `calendarEvents` with the results. Format: `{ "YYYY-MM-DD": [{ "time": "H:MM AM", "summary": "...", "color": "#..." }] }`. Use color `#7986CB` for kids, `#33B679` for meals/walks, `#039BE5` for meetings, `#616161` for focus time.
+- **Before starting questions**, pull Google Calendar events for the current week (Mon–Sun) AND the next 4 weekends (Sat+Sun) using `mcp__claude_ai_Google_Calendar__gcal_list_events` and update `data.json` `calendarEvents` with the results. Include ALL days — weekdays AND weekends. Pull 4 weeks forward so the family hub Weekends section has data. Format: `{ "YYYY-MM-DD": [{ "time": "H:MM AM", "summary": "...", "color": "#..." }] }`. Use color `#7986CB` for kids, `#33B679` for meals/walks, `#039BE5` for meetings, `#616161` for focus time.
 - Ask ONE question at a time. Wait for the answer before moving on.
 - Follow up naturally if something interesting or important comes up. Don't be robotic.
 - Keep the whole thing to ~5 minutes. Don't over-probe.

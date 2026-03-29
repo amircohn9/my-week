@@ -277,7 +277,9 @@
       { "text": "Stuff to sell — big baby stuff, toys/books, shoes", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Amir", "done": false, "deadline": null },
       { "text": "Stuff to sell — take pics, find prices/URLs, make FB posts", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Amir", "done": true, "doneDate": "2026-03-28", "deadline": null },
       { "text": "Stuff to sell — manage pickups and Venmo", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Amir", "done": true, "doneDate": "2026-03-28", "deadline": null },
-      { "text": "Send links to Arielle to make Google Slides to sell", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Arielle", "done": false, "deadline": null }
+      { "text": "Send links to Arielle to make Google Slides to sell", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Arielle", "done": false, "deadline": null },
+      { "text": "RBC Docs", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": true, "doneDate": "2026-03-28", "deadline": null },
+      { "text": "Give docs for taxes 2025", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": true, "doneDate": "2026-03-28", "deadline": null }
     ],
     "backlog": [
       { "text": "Guest room closet cleanup + bins downstairs", "date": "2026-03-28", "addedBy": "Amir", "assignee": "", "done": false, "deadline": null },
@@ -1041,6 +1043,10 @@
               "text": "Share all files with attorney",
               "done": true,
               "thisWeek": true
+            },
+            {
+              "text": "files from email",
+              "done": false
             }
           ]
         },
