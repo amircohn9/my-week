@@ -158,23 +158,11 @@ body {
 .family-container { max-width: 100%; padding: 20px 8px; }
 .family-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 10px;
   align-items: start;
 }
 .family-section.card { padding: 14px 12px; }
-.family-section { min-width: 0; }
-.family-section .card { padding: 16px; }
-
-@media (max-width: 1200px) {
-  .family-grid { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 800px) {
-  .family-grid { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 550px) {
-  .family-grid { grid-template-columns: 1fr; }
-}
 .family-section-header {
   font-size: 1rem;
   font-weight: 600;
