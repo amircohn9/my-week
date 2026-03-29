@@ -17,7 +17,7 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 64px;
+  width: 48px;
   height: 100vh;
   background: #fff;
   border-right: 1px solid #eee;
@@ -32,15 +32,15 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   background: none;
   border: none;
-  padding: 10px 8px;
-  border-radius: 10px;
+  padding: 8px 4px;
+  border-radius: 8px;
   cursor: pointer;
   color: #bbb;
   transition: all 0.15s;
-  width: 56px;
+  width: 42px;
 }
 .tab-rail-btn:hover { color: #888; background: #f5f4f1; }
 .tab-rail-btn.active { color: #2d2d2d; background: #f0efec; }
@@ -50,7 +50,7 @@ body {
   letter-spacing: 0.2px;
 }
 .tab-content {
-  margin-left: 64px;
+  margin-left: 48px;
 }
 .tab-pane { display: none; }
 .tab-pane.active { display: block; }
@@ -155,13 +155,14 @@ body {
   text-decoration: line-through;
   text-decoration-color: #c5e0c5;
 }
-.family-container { max-width: 100%; padding: 30px 20px; }
+.family-container { max-width: 100%; padding: 20px 8px; }
 .family-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  gap: 10px;
   align-items: start;
 }
+.family-section.card { padding: 14px 12px; }
 .family-section { min-width: 0; }
 .family-section .card { padding: 16px; }
 
