@@ -156,9 +156,28 @@ body {
   text-decoration-color: #c5e0c5;
 }
 .family-sections {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "thisWeek comingUp"
+    "decisions someday";
   gap: 16px;
+}
+.family-section[data-section="thisWeek"] { grid-area: thisWeek; }
+.family-section[data-section="comingUp"] { grid-area: comingUp; }
+.family-section[data-section="decisions"] { grid-area: decisions; }
+.family-section[data-section="someday"] { grid-area: someday; }
+.family-section { align-self: start; }
+
+@media (max-width: 768px) {
+  .family-sections {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "thisWeek"
+      "comingUp"
+      "decisions"
+      "someday";
+  }
 }
 .family-section-header {
   font-size: 1rem;
