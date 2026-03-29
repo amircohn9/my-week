@@ -124,9 +124,13 @@ function saveFamilyChange(type, payload) {
 }
 
 function countFamilyChanges() {
-  let count = 0;
-  try { count += (JSON.parse(localStorage.getItem('family-hub-changes')) || []).length; } catch {}
-  try { count += (JSON.parse(localStorage.getItem('family-hub-added')) || []).length; } catch {}
+  const deduped = deduplicateFamilyChanges();
+  let count = deduped.length;
+  try {
+    const added = JSON.parse(localStorage.getItem('family-hub-added')) || [];
+    const seen = new Set();
+    for (const a of added) { const k = a.section + '::' + a.item.text; if (!seen.has(k)) { seen.add(k); count++; } }
+  } catch {}
   return count;
 }
 
@@ -143,23 +147,44 @@ function updateFamilySyncBtn() {
   }
 }
 
+function deduplicateFamilyChanges() {
+  let changes;
+  try { changes = JSON.parse(localStorage.getItem('family-hub-changes')) || []; } catch { return []; }
+  // For toggles, assigns, deadlines, comments — only keep the latest per item
+  const latest = {};
+  const ordered = [];
+  for (const c of changes) {
+    const key = c.type + '::' + (c.section || c.from || '') + '::' + c.text;
+    if (['toggle', 'assign', 'deadline', 'comment'].includes(c.type)) {
+      latest[key] = c;
+    } else {
+      ordered.push(c);
+    }
+  }
+  return [...ordered, ...Object.values(latest)];
+}
+
 function generateFamilySyncSummary() {
   const lines = ['FAMILY HUB SYNC — ' + new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }), ''];
-  try {
-    const changes = JSON.parse(localStorage.getItem('family-hub-changes')) || [];
-    for (const c of changes) {
-      if (c.type === 'toggle') lines.push((c.done ? 'HANDLED' : 'REOPENED') + ': ' + c.text + ' [' + c.section + ']');
-      else if (c.type === 'add') lines.push('ADDED to ' + c.section + ': ' + c.text);
-      else if (c.type === 'edit') lines.push('EDITED [' + c.section + ']: "' + c.oldText + '" → "' + c.newText + '"');
-      else if (c.type === 'assign') lines.push('ASSIGNED [' + c.section + ']: ' + c.text + ' → ' + (c.assignee || 'unassigned'));
-      else if (c.type === 'deadline') lines.push('DEADLINE [' + c.section + ']: ' + c.text + ' → ' + (c.deadline || 'removed'));
-      else if (c.type === 'move') lines.push('MOVED: "' + c.text + '" from ' + c.from + ' → ' + c.to);
-      else if (c.type === 'moveToAmir') lines.push('→ AMIR\'S TASKS: ' + c.text + ' (from ' + c.section + ')');
-    }
-  } catch {}
+  const changes = deduplicateFamilyChanges();
+  for (const c of changes) {
+    if (c.type === 'toggle') lines.push((c.done ? 'HANDLED' : 'REOPENED') + ': ' + c.text + ' [' + c.section + ']');
+    else if (c.type === 'add') lines.push('ADDED to ' + c.section + ': ' + c.text);
+    else if (c.type === 'edit') lines.push('EDITED [' + c.section + ']: "' + c.oldText + '" → "' + c.newText + '"');
+    else if (c.type === 'assign') lines.push('ASSIGNED [' + c.section + ']: ' + c.text + ' → ' + (c.assignee || 'unassigned'));
+    else if (c.type === 'deadline') lines.push('DEADLINE [' + c.section + ']: ' + c.text + ' → ' + (c.deadline || 'removed'));
+    else if (c.type === 'move') lines.push('MOVED: "' + c.text + '" from ' + c.from + ' → ' + c.to);
+    else if (c.type === 'moveToAmir') lines.push('→ AMIR\'S TASKS: ' + c.text + ' (from ' + c.section + ')');
+    else if (c.type === 'comment') lines.push('NOTE [' + c.section + ']: ' + c.text + ' → "' + (c.comment || '') + '"');
+  }
   try {
     const added = JSON.parse(localStorage.getItem('family-hub-added')) || [];
-    for (const a of added) lines.push('ADDED to ' + a.section + ': ' + a.item.text);
+    // Deduplicate adds
+    const seen = new Set();
+    for (const a of added) {
+      const key = a.section + '::' + a.item.text;
+      if (!seen.has(key)) { seen.add(key); lines.push('ADDED to ' + a.section + ': ' + a.item.text); }
+    }
   } catch {}
   return lines.join('\n');
 }
