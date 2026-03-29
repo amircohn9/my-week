@@ -29,8 +29,15 @@
   <div class="tab-pane active" id="tabDashboard">
   <div class="container">
     <header>
-      <h1>Stay Focused — Keep Moving</h1>
-      <p class="subtitle" id="dateRange"></p>
+      <div class="family-header-row">
+        <div>
+          <h1>Stay Focused — Keep Moving</h1>
+          <p class="subtitle" id="dateRange"></p>
+        </div>
+        <button class="sync-btn" id="syncBtn" style="display:none;">
+          Sync Changes (<span id="syncCount">0</span>)
+        </button>
+      </div>
       <div class="momentum-dots" id="momentumDots"></div>
       <p class="encouragement" id="encouragement"></p>
       <p class="last-updated" id="lastUpdated"></p>
@@ -100,12 +107,7 @@
       </section>
 
       <section class="card backlog-card" style="grid-area: backlog;">
-        <div class="section-header-with-toggle">
-          <h2>Backlog</h2>
-          <button class="sync-btn" id="syncBtn" style="display:none;">
-            Sync Changes (<span id="syncCount">0</span>)
-          </button>
-        </div>
+        <h2>Backlog</h2>
         <div id="taskList"></div>
       </section>
 
