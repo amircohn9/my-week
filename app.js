@@ -173,11 +173,28 @@ function setupFamilySync() {
     const subject = encodeURIComponent('Family Hub Sync — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
     const body = encodeURIComponent(summary);
     window.open('https://mail.google.com/mail/?view=cm&to=' + NOTES_EMAIL + '&su=' + subject + '&body=' + body, '_blank');
-    // Clear local changes after sending
-    localStorage.removeItem('family-hub-changes');
-    localStorage.removeItem('family-hub-added');
-    updateFamilySyncBtn();
-    updateSyncButton();
+    // Show confirm/undo strip
+    btn.style.display = 'none';
+    let strip = document.getElementById('familySyncConfirm');
+    if (!strip) {
+      strip = document.createElement('div');
+      strip.id = 'familySyncConfirm';
+      strip.className = 'family-sync-confirm';
+      btn.parentElement.appendChild(strip);
+    }
+    strip.innerHTML = '<span>Did you send it?</span><button class="family-sync-yes">Yes, clear queue</button><button class="family-sync-no">No, keep changes</button>';
+    strip.style.display = 'flex';
+    strip.querySelector('.family-sync-yes').addEventListener('click', () => {
+      localStorage.removeItem('family-hub-changes');
+      localStorage.removeItem('family-hub-added');
+      strip.style.display = 'none';
+      updateFamilySyncBtn();
+      updateSyncButton();
+    });
+    strip.querySelector('.family-sync-no').addEventListener('click', () => {
+      strip.style.display = 'none';
+      btn.style.display = '';
+    });
   });
   updateFamilySyncBtn();
 }

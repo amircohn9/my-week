@@ -106,6 +106,38 @@ body {
   font-size: 0.75rem;
   margin-left: 6px;
 }
+.family-sync-confirm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #555;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.family-sync-yes {
+  background: #7db87d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.family-sync-yes:hover { background: #6aa86a; }
+.family-sync-no {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  color: #999;
+  cursor: pointer;
+}
+.family-sync-no:hover { border-color: #bbb; color: #666; }
 .family-handled {
   margin-bottom: 20px;
 }
