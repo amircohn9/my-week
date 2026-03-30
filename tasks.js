@@ -77,7 +77,7 @@ function updateSyncButton() {
   if (!btn) return;
   const count = countSyncChanges();
   if (count > 0) {
-    btn.innerHTML = `Sync Changes (${count})`;
+    btn.innerHTML = `Sync Changes <span class="sync-count">${count}</span>`;
     btn.style.display = '';
   } else {
     btn.innerHTML = 'Sync Changes';
@@ -543,41 +543,33 @@ function renderBacklog(tasks) {
   });
 
   // Sync button
+  function clearAllSyncState() {
+    localStorage.removeItem('myweek-tasks');
+    localStorage.removeItem('myweek-task-edits');
+    localStorage.removeItem('myweek-task-moves');
+    localStorage.removeItem('myweek-this-week');
+    localStorage.removeItem('myweek-weight-updates');
+    localStorage.removeItem('myweek-daily-focus-edit');
+    localStorage.removeItem('family-hub-changes');
+    localStorage.removeItem('family-hub-added');
+    saveDailyFocusEdit('');
+    updateSyncButton();
+    if (typeof updateFamilySyncBtn === 'function') updateFamilySyncBtn();
+  }
+
+  // Click = sync via Gmail + auto-clear
   document.getElementById('syncBtn').onclick = () => {
     const summary = generateSyncSummary();
     const subject = encodeURIComponent('Dashboard Sync — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
     const body = encodeURIComponent(summary);
     window.open('https://mail.google.com/mail/?view=cm&to=' + NOTES_EMAIL + '&su=' + subject + '&body=' + body, '_blank');
-
-    const btn = document.getElementById('syncBtn');
-    btn.style.display = 'none';
-    let strip = document.getElementById('dashSyncConfirm');
-    if (!strip) {
-      strip = document.createElement('div');
-      strip.id = 'dashSyncConfirm';
-      strip.className = 'family-sync-confirm';
-      btn.parentElement.appendChild(strip);
-    }
-    strip.innerHTML = '<span>Did you send it?</span><button class="family-sync-yes">Yes, clear</button><button class="family-sync-no">No, keep</button>';
-    strip.style.display = 'flex';
-    strip.querySelector('.family-sync-yes').addEventListener('click', () => {
-      // Clear all sync-related localStorage
-      localStorage.removeItem('myweek-tasks');
-      localStorage.removeItem('myweek-task-edits');
-      localStorage.removeItem('myweek-task-moves');
-      localStorage.removeItem('myweek-this-week');
-      localStorage.removeItem('myweek-weight-updates');
-      localStorage.removeItem('myweek-daily-focus-edit');
-      localStorage.removeItem('family-hub-changes');
-      localStorage.removeItem('family-hub-added');
-      saveDailyFocusEdit('');
-      strip.style.display = 'none';
-      updateSyncButton();
-      updateFamilySyncBtn && updateFamilySyncBtn();
-    });
-    strip.querySelector('.family-sync-no').addEventListener('click', () => {
-      strip.style.display = 'none';
-      btn.style.display = '';
-    });
+    clearAllSyncState();
   };
+
+  // Right-click or long-press = dismiss without sending
+  const syncBtn = document.getElementById('syncBtn');
+  syncBtn.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (confirm('Clear sync queue without sending?')) clearAllSyncState();
+  });
 }
