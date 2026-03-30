@@ -198,28 +198,12 @@ function setupFamilySync() {
     const subject = encodeURIComponent('Family Hub Sync — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
     const body = encodeURIComponent(summary);
     window.open('https://mail.google.com/mail/?view=cm&to=' + NOTES_EMAIL + '&su=' + subject + '&body=' + body, '_blank');
-    // Show confirm/undo strip
+    // Auto-clear queue after opening Gmail
+    localStorage.removeItem('family-hub-changes');
+    localStorage.removeItem('family-hub-added');
     btn.style.display = 'none';
-    let strip = document.getElementById('familySyncConfirm');
-    if (!strip) {
-      strip = document.createElement('div');
-      strip.id = 'familySyncConfirm';
-      strip.className = 'family-sync-confirm';
-      btn.parentElement.appendChild(strip);
-    }
-    strip.innerHTML = '<span>Did you send it?</span><button class="family-sync-yes">Yes, clear queue</button><button class="family-sync-no">No, keep changes</button>';
-    strip.style.display = 'flex';
-    strip.querySelector('.family-sync-yes').addEventListener('click', () => {
-      localStorage.removeItem('family-hub-changes');
-      localStorage.removeItem('family-hub-added');
-      strip.style.display = 'none';
-      updateFamilySyncBtn();
-      updateSyncButton();
-    });
-    strip.querySelector('.family-sync-no').addEventListener('click', () => {
-      strip.style.display = 'none';
-      btn.style.display = '';
-    });
+    updateFamilySyncBtn();
+    updateSyncButton();
   });
   updateFamilySyncBtn();
 }
@@ -227,11 +211,12 @@ function setupFamilySync() {
 function renderFamilyHandled(hub) {
   const container = document.getElementById('familyHandled');
   const allDone = [];
+  const { weekStart } = getWeekRange();
   for (const s of FAMILY_SECTIONS) {
     for (const item of (hub[s] || [])) {
       if (item.done && item.doneDate) {
-        const age = (Date.now() - new Date(item.doneDate + 'T12:00:00').getTime()) / 86400000;
-        if (age <= 7) allDone.push(item);
+        const doneTime = new Date(item.doneDate + 'T12:00:00');
+        if (doneTime >= weekStart) allDone.push(item);
       }
     }
   }
@@ -252,6 +237,7 @@ function renderFamilyHandled(hub) {
 
 function renderFamilyHub() {
   const hub = getFamilyHub();
+  const { weekStart } = getWeekRange();
 
   // Tag done items with their section for the handled summary
   for (const s of FAMILY_SECTIONS) {
@@ -265,13 +251,12 @@ function renderFamilyHub() {
     const container = document.getElementById('family' + capSection);
     const empty = document.getElementById('family' + capSection + 'Empty');
 
-    // Filter: hide done items older than 2 days (they fade out)
-    const now = Date.now();
+    // Filter: hide done items from before this week (Mon-Sun)
     const visible = items.filter(i => {
       if (!i.done) return true;
       if (!i.doneDate) return true;
-      const age = (now - new Date(i.doneDate + 'T12:00:00').getTime()) / 86400000;
-      return age <= 2;
+      const doneTime = new Date(i.doneDate + 'T12:00:00');
+      return doneTime >= weekStart;
     });
     const active = visible.filter(i => !i.done);
     const done = visible.filter(i => i.done);
