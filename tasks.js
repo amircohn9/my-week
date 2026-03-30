@@ -49,7 +49,7 @@ function countSyncChanges() {
   const moves = getTaskMoves();
   let count = 0;
   for (const [k, v] of Object.entries(state)) {
-    if (k === '_addedSubs' || k === '_deletedSubs' || k === '_added' || k === '_synced') continue;
+    if (k === '_addedSubs' || k === '_deletedSubs' || k === '_added' || k === '_synced' || k === '_addedProjects' || k === '_completedProjects') continue;
     if (v) count++;
   }
   count += Object.keys(edits).length;
@@ -58,6 +58,7 @@ function countSyncChanges() {
   if (state._deletedSubs) for (const key of Object.keys(state._deletedSubs)) count += state._deletedSubs[key].length;
   if (state._added) for (const cat of Object.keys(state._added)) count += state._added[cat].length;
   if (state._addedProjects) count += state._addedProjects.length;
+  if (state._completedProjects) count += state._completedProjects.length;
   const hidden = getHiddenHabits();
   count += hidden.length;
   try { const wu = JSON.parse(localStorage.getItem('myweek-weight-updates')) || []; count += wu.length; } catch {}
@@ -133,6 +134,13 @@ function generateSyncSummary() {
   if (state._addedProjects && state._addedProjects.length) {
     lines.push('ADDED PROJECTS:');
     state._addedProjects.forEach(p => lines.push('  [' + p.category + '] ' + p.text));
+    lines.push('');
+  }
+
+  // Completed projects
+  if (state._completedProjects && state._completedProjects.length) {
+    lines.push('COMPLETED PROJECTS (archive these):');
+    state._completedProjects.forEach(p => lines.push('  [' + p.category + '] ' + p.text + ' (completed ' + p.date + ')'));
     lines.push('');
   }
 

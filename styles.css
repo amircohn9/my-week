@@ -1123,24 +1123,33 @@ header h1 {
 
 .proj-add-trigger:hover { color: #888; }
 
+.proj-actions-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.proj-complete {
+  font-size: 0.75rem;
+  color: #7db87d;
+  cursor: pointer;
+  font-weight: 500;
+}
+.proj-complete:hover { color: #4a9c4a; }
+
 .proj-move-backlog {
   font-size: 0.75rem;
   color: #bbb;
   cursor: pointer;
-  margin-top: 12px;
-  padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
 }
-
 .proj-move-backlog:hover { color: #888; }
 
 .proj-delete-added {
   font-size: 0.75rem;
   color: #e27070;
   cursor: pointer;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid #f0f0f0;
 }
 .proj-delete-added:hover { color: #c0392b; }
 

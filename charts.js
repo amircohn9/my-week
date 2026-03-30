@@ -868,11 +868,13 @@ function renderProjectsAgenda(tasks) {
 
   const projects = [];
   const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
+  const completedProjects = getTaskState()._completedProjects || [];
+  const isCompleted = (cat, text) => completedProjects.some(p => p.category === cat && p.text === text);
 
   for (const cat of CATEGORY_ORDER) {
     const { now: nowItems } = getResolvedItems(tasks, cat);
     nowItems.forEach((item) => {
-      if (item.done) return;
+      if (item.done || isCompleted(cat, item.text)) return;
       projects.push({
         text: item.text,
         category: cat,
@@ -999,8 +1001,11 @@ function renderProjectsAgenda(tasks) {
           <span class="proj-add-trigger" data-parent="${parentKey}">+ add subtask</span>
           <input type="text" class="proj-add-subtask-input" data-parent="${parentKey}" placeholder="Add subtask and press Enter..." style="display:none;">
         </div>
-        <div class="proj-move-backlog" data-cat="${proj.category}" data-text="${escapeHtml(proj.text)}" data-move-to="backlog">Move to Backlog</div>
-        ${proj.isAdded ? `<div class="proj-delete-added" data-proj-text="${escapeHtml(proj.text)}" data-proj-cat="${proj.category}">Delete Project</div>` : ''}
+        <div class="proj-actions-row">
+          <div class="proj-complete" data-cat="${proj.category}" data-text="${escapeHtml(proj.text)}">&#10003; Complete Project</div>
+          <div class="proj-move-backlog" data-cat="${proj.category}" data-text="${escapeHtml(proj.text)}" data-move-to="backlog">Move to Backlog</div>
+          ${proj.isAdded ? `<div class="proj-delete-added" data-proj-text="${escapeHtml(proj.text)}" data-proj-cat="${proj.category}">Delete Project</div>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -1182,6 +1187,20 @@ function renderProjectsAgenda(tasks) {
         renderProjectsAgenda(tasks);
         updateSyncButton();
       }
+    });
+  });
+
+  // Complete project
+  container.querySelectorAll('.proj-complete').forEach(el => {
+    el.addEventListener('click', () => {
+      const st = getTaskState();
+      if (!st._completedProjects) st._completedProjects = [];
+      st._completedProjects.push({ category: el.dataset.cat, text: el.dataset.text, date: getTodayStr() });
+      saveTaskState(st);
+      _expandedProjIdx = null;
+      renderProjectsAgenda(tasks);
+      renderWeeklyObjectives(tasks);
+      updateSyncButton();
     });
   });
 
