@@ -513,8 +513,9 @@ function renderFamilyHub() {
     });
   }
 
-  // Render weekends
+  // Render weekends + ahead
   renderFamilyWeekends();
+  renderFamilyAhead();
 }
 
 function renderFamilyWeekends() {
@@ -559,6 +560,129 @@ function renderFamilyWeekends() {
 
     return `<div class="family-weekend-block"><div class="family-weekend-label${labelClass}">${label}</div><div class="family-weekend-events">${eventsHtml}</div></div>`;
   }).join('');
+}
+
+// --- Anticipation Engine ---
+
+let _aheadPrompts = null;
+
+async function loadAheadPrompts() {
+  if (_aheadPrompts) return _aheadPrompts;
+  try {
+    const res = await fetch('prompts.json');
+    const data = await res.json();
+    _aheadPrompts = data.prompts || [];
+  } catch { _aheadPrompts = []; }
+  return _aheadPrompts;
+}
+
+function getAheadCompleted() {
+  try { return JSON.parse(localStorage.getItem('ahead-completed')) || {}; } catch { return {}; }
+}
+
+function markAheadCompleted(id) {
+  const c = getAheadCompleted();
+  c[id + '-' + new Date().getFullYear()] = getTodayStr();
+  localStorage.setItem('ahead-completed', JSON.stringify(c));
+}
+
+function isAheadCompleted(id) {
+  const c = getAheadCompleted();
+  return !!c[id + '-' + new Date().getFullYear()];
+}
+
+function getActivePrompts(prompts) {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const completed = getAheadCompleted();
+  const year = now.getFullYear();
+
+  return prompts.filter(p => {
+    // Date window check
+    const start = p.month;
+    const end = p.endMonth || p.month;
+    let inWindow;
+    if (start <= end) {
+      inWindow = month >= start && month <= end;
+    } else {
+      inWindow = month >= start || month <= end;
+    }
+    if (!inWindow) return false;
+
+    // Already completed this year?
+    if (completed[p.id + '-' + year]) return false;
+
+    return true;
+  });
+}
+
+async function renderFamilyAhead() {
+  const container = document.getElementById('familyAhead');
+  if (!container) return;
+
+  const prompts = await loadAheadPrompts();
+  const active = getActivePrompts(prompts);
+
+  if (active.length === 0) {
+    container.innerHTML = '<p class="empty-state family-empty">Nothing to think about right now.</p>';
+    return;
+  }
+
+  // Sort: act first, then think, then routine
+  const order = { act: 0, think: 1, routine: 2 };
+  active.sort((a, b) => (order[a.urgency] || 9) - (order[b.urgency] || 9));
+
+  const urgencyLabels = { act: 'Act Now', think: 'Think Ahead', routine: 'Routine' };
+  const urgencyIcons = { act: '🔴', think: '🟡', routine: '🟢' };
+
+  let lastUrgency = '';
+  let html = '';
+  for (const p of active) {
+    if (p.urgency !== lastUrgency) {
+      lastUrgency = p.urgency;
+      html += `<div class="ahead-urgency-label">${urgencyIcons[p.urgency] || ''} ${urgencyLabels[p.urgency] || ''}</div>`;
+    }
+    html += `<div class="ahead-item">
+      <div class="ahead-item-content">
+        <div class="ahead-item-title">${escapeHtml(p.title)}</div>
+        <div class="ahead-item-desc">${escapeHtml(p.desc)}</div>
+      </div>
+      <div class="ahead-item-actions">
+        <button class="ahead-add-btn" data-id="${p.id}" data-text="${escapeHtml(p.title)}" data-section="thisWeek" title="Add to This Week">+TW</button>
+        <button class="ahead-add-btn" data-id="${p.id}" data-text="${escapeHtml(p.title)}" data-section="backlog" title="Add to Backlog">+BL</button>
+        <button class="ahead-done-btn" data-id="${p.id}" title="Done / dismiss">✓</button>
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+
+  // Add to section
+  container.querySelectorAll('.ahead-add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const section = btn.dataset.section;
+      const text = btn.dataset.text;
+      const id = btn.dataset.id;
+      const hub = getFamilyHub();
+      if (!hub[section]) hub[section] = [];
+      const item = { text, date: getTodayStr(), addedBy: 'Ahead', assignee: '', done: false, deadline: null };
+      hub[section].push(item);
+      let added;
+      try { added = JSON.parse(localStorage.getItem('family-hub-added')) || []; } catch { added = []; }
+      added.push({ section, item });
+      localStorage.setItem('family-hub-added', JSON.stringify(added));
+      saveFamilyChange('add', { section, text });
+      markAheadCompleted(id);
+      renderFamilyHub();
+    });
+  });
+
+  // Dismiss
+  container.querySelectorAll('.ahead-done-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      markAheadCompleted(btn.dataset.id);
+      renderFamilyAhead();
+    });
+  });
 }
 
 // --- Notes for Claude (via Gmail) ---

@@ -414,6 +414,69 @@ body {
   padding: 2px 0;
 }
 
+/* Ahead / Anticipation Engine */
+.family-ahead-section { border-left: 3px solid #7db87d; }
+.ahead-urgency-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #999;
+  margin: 10px 0 4px;
+}
+.ahead-urgency-label:first-child { margin-top: 0; }
+.ahead-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f4f1;
+}
+.ahead-item:last-child { border-bottom: none; }
+.ahead-item-content { flex: 1; min-width: 0; }
+.ahead-item-title {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #2d2d2d;
+  line-height: 1.3;
+}
+.ahead-item-desc {
+  font-size: 0.72rem;
+  color: #999;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+.ahead-item-actions {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+  align-self: center;
+}
+.ahead-add-btn {
+  background: none;
+  border: 1px solid #e0ddd8;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 0.62rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: #999;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ahead-add-btn:hover { border-color: #7db87d; color: #7db87d; }
+.ahead-done-btn {
+  background: none;
+  border: 1px solid #e0ddd8;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 0.65rem;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ahead-done-btn:hover { border-color: #7db87d; color: #7db87d; }
+
 @media (max-width: 768px) {
   .family-item-actions { opacity: 1; }
 }
