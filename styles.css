@@ -407,6 +407,16 @@ body {
 .upcoming-alert .upcoming-text { font-weight: 500; }
 .upcoming-travel { color: #7c3aed; }
 .upcoming-travel .upcoming-text { font-weight: 500; }
+.upcoming-highlighted { background: #fffbeb; border-radius: 4px; padding: 4px 6px; margin: 0 -6px; }
+.upcoming-highlighted .upcoming-text { font-weight: 600; }
+.upcoming-highlighted .upcoming-day { color: #d97706; }
+.upcoming-actions { display: none; gap: 4px; flex-shrink: 0; margin-left: 4px; }
+.upcoming-event:hover .upcoming-actions { display: flex; }
+.upcoming-star { cursor: pointer; font-size: 0.75rem; color: #ddd; transition: color 0.15s; }
+.upcoming-star:hover { color: #f59e0b; }
+.upcoming-star.active { color: #f59e0b; }
+.upcoming-hide { cursor: pointer; font-size: 0.85rem; color: #ddd; line-height: 1; transition: color 0.15s; }
+.upcoming-hide:hover { color: #ef4444; }
 
 /* Ahead / Anticipation Engine */
 .family-ahead-section { border-left: 3px solid #7db87d; }

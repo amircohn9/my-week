@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     appData.diet.weights = [...(archiveData.diet.weights || []), ...(appData.diet.weights || [])];
   }
 
+  // Clear stale sync queue (>7 days old)
+  cleanStaleFamilyChanges();
+
   // Render all sections
   renderDateRange();
   renderMomentumDots(appData.checkins);
@@ -503,17 +506,57 @@ function renderFamilyHub() {
   renderFamilyAhead();
 }
 
+// --- Stale sync cleanup ---
+
+function cleanStaleFamilyChanges() {
+  const cutoff = Date.now() - 7 * 86400000;
+  try {
+    const changes = JSON.parse(localStorage.getItem('family-hub-changes')) || [];
+    const fresh = changes.filter(c => c.timestamp && c.timestamp > cutoff);
+    if (fresh.length < changes.length) {
+      if (fresh.length === 0) localStorage.removeItem('family-hub-changes');
+      else localStorage.setItem('family-hub-changes', JSON.stringify(fresh));
+    }
+  } catch { localStorage.removeItem('family-hub-changes'); }
+  try {
+    const added = JSON.parse(localStorage.getItem('family-hub-added')) || [];
+    const freshAdded = added.filter(a => {
+      if (!a.item || !a.item.date) return false;
+      const age = (Date.now() - new Date(a.item.date + 'T12:00:00').getTime()) / 86400000;
+      return age <= 7;
+    });
+    if (freshAdded.length < added.length) {
+      if (freshAdded.length === 0) localStorage.removeItem('family-hub-added');
+      else localStorage.setItem('family-hub-added', JSON.stringify(freshAdded));
+    }
+  } catch { localStorage.removeItem('family-hub-added'); }
+}
+
+// --- Upcoming events: hide/highlight ---
+
+function getUpcomingHidden() {
+  try { return JSON.parse(localStorage.getItem('family-upcoming-hidden')) || []; } catch { return []; }
+}
+
+function getUpcomingHighlighted() {
+  try { return JSON.parse(localStorage.getItem('family-upcoming-highlighted')) || []; } catch { return []; }
+}
+
+function upcomingKey(evt) { return evt.date + '::' + evt.summary; }
+
 function renderFamilyUpcoming() {
   const container = document.getElementById('familyUpcoming');
   if (!container) return;
   const events = (appData && appData.familyHub && appData.familyHub.upcomingEvents) || [];
+  const hidden = getUpcomingHidden();
+  const highlighted = getUpcomingHighlighted();
 
   if (events.length === 0) {
     container.innerHTML = '<p class="empty-state family-empty">Calendar events will appear here after next check-in.</p>';
     return;
   }
 
-  // Group by week
+  // Group by week, skip hidden and past
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const groups = {};
@@ -521,6 +564,7 @@ function renderFamilyUpcoming() {
   for (const evt of events) {
     const d = new Date(evt.date + 'T12:00:00');
     if (d < today) continue;
+    if (hidden.includes(upcomingKey(evt))) continue;
     const daysOut = Math.floor((d - today) / 86400000);
     let groupLabel;
     if (daysOut <= 0) groupLabel = 'Today';
@@ -540,16 +584,55 @@ function renderFamilyUpcoming() {
     for (const evt of evts) {
       const d = new Date(evt.date + 'T12:00:00');
       const dayName = dayNames[d.getDay()];
+      const key = upcomingKey(evt);
+      const isHighlighted = highlighted.includes(key);
       const typeClass = evt.type === 'daycare-closed' ? ' upcoming-alert' : evt.type === 'travel' ? ' upcoming-travel' : '';
-      html += `<div class="upcoming-event${typeClass}">
+      const hlClass = isHighlighted ? ' upcoming-highlighted' : '';
+      html += `<div class="upcoming-event${typeClass}${hlClass}" data-key="${escapeHtml(key)}">
         <span class="upcoming-day">${dayName}</span>
         <span class="upcoming-text">${escapeHtml(evt.summary)}</span>
         ${evt.time ? `<span class="upcoming-time">${evt.time}</span>` : ''}
+        <span class="upcoming-actions">
+          <span class="upcoming-star${isHighlighted ? ' active' : ''}" data-key="${escapeHtml(key)}" title="Highlight">&#9733;</span>
+          <span class="upcoming-hide" data-key="${escapeHtml(key)}" title="Hide">&times;</span>
+        </span>
       </div>`;
     }
     html += '</div>';
   }
   container.innerHTML = html;
+
+  // Highlight toggle
+  container.querySelectorAll('.upcoming-star').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = el.dataset.key;
+      const hl = getUpcomingHighlighted();
+      const idx = hl.indexOf(key);
+      if (idx === -1) {
+        hl.push(key);
+        saveFamilyChange('highlight-event', { key });
+      } else {
+        hl.splice(idx, 1);
+        saveFamilyChange('unhighlight-event', { key });
+      }
+      localStorage.setItem('family-upcoming-highlighted', JSON.stringify(hl));
+      renderFamilyUpcoming();
+    });
+  });
+
+  // Hide
+  container.querySelectorAll('.upcoming-hide').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = el.dataset.key;
+      const h = getUpcomingHidden();
+      h.push(key);
+      localStorage.setItem('family-upcoming-hidden', JSON.stringify(h));
+      saveFamilyChange('hide-event', { key });
+      renderFamilyUpcoming();
+    });
+  });
 }
 
 // --- Anticipation Engine ---
