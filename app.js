@@ -513,53 +513,58 @@ function renderFamilyHub() {
     });
   }
 
-  // Render weekends + ahead
-  renderFamilyWeekends();
+  // Render upcoming + ahead
+  renderFamilyUpcoming();
   renderFamilyAhead();
 }
 
-function renderFamilyWeekends() {
-  const container = document.getElementById('familyWeekends');
+function renderFamilyUpcoming() {
+  const container = document.getElementById('familyUpcoming');
   if (!container) return;
-  const events = (appData && appData.calendarEvents) || {};
-  const weekendEvents = (appData && appData.familyHub && appData.familyHub.weekendNotes) || {};
+  const events = (appData && appData.familyHub && appData.familyHub.upcomingEvents) || [];
 
-  // Find next 4 weekends (Sat+Sun)
-  const today = new Date();
-  const weekends = [];
-  const d = new Date(today);
-  // Advance to next Saturday
-  while (d.getDay() !== 6) d.setDate(d.getDate() + 1);
-  for (let w = 0; w < 4; w++) {
-    const sat = new Date(d);
-    const sun = new Date(d);
-    sun.setDate(sat.getDate() + 1);
-    weekends.push({ sat: formatDateStr(sat), sun: formatDateStr(sun), weekNum: w });
-    d.setDate(d.getDate() + 7);
+  if (events.length === 0) {
+    container.innerHTML = '<p class="empty-state family-empty">Calendar events will appear here after next check-in.</p>';
+    return;
   }
 
-  container.innerHTML = weekends.map((wk, i) => {
-    const label = i === 0 ? 'This Weekend' : i === 1 ? 'Next Weekend' : new Date(wk.sat + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const labelClass = i === 0 ? ' this-weekend' : '';
-    const satEvents = events[wk.sat] || [];
-    const sunEvents = events[wk.sun] || [];
-    const note = weekendEvents[wk.sat] || '';
+  // Group by week
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const groups = {};
 
-    let eventsHtml = '';
-    if (satEvents.length === 0 && sunEvents.length === 0 && !note) {
-      eventsHtml = '<div class="family-weekend-empty">Nothing planned</div>';
-    } else {
-      eventsHtml = satEvents.map(e =>
-        `<div class="family-weekend-event"><span class="family-weekend-day">Sat</span><span class="family-weekend-dot" style="background:${e.color}"></span>${escapeHtml(e.summary)}</div>`
-      ).join('');
-      eventsHtml += sunEvents.map(e =>
-        `<div class="family-weekend-event"><span class="family-weekend-day">Sun</span><span class="family-weekend-dot" style="background:${e.color}"></span>${escapeHtml(e.summary)}</div>`
-      ).join('');
-      if (note) eventsHtml += `<div class="family-weekend-event" style="color:#e8a87c;font-style:italic;">${escapeHtml(note)}</div>`;
+  for (const evt of events) {
+    const d = new Date(evt.date + 'T12:00:00');
+    if (d < today) continue;
+    const daysOut = Math.floor((d - today) / 86400000);
+    let groupLabel;
+    if (daysOut <= 0) groupLabel = 'Today';
+    else if (daysOut <= 1) groupLabel = 'Tomorrow';
+    else if (daysOut <= 7) groupLabel = 'This Week';
+    else if (daysOut <= 14) groupLabel = 'Next Week';
+    else groupLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' week';
+    if (!groups[groupLabel]) groups[groupLabel] = [];
+    groups[groupLabel].push(evt);
+  }
+
+  let html = '';
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  for (const [label, evts] of Object.entries(groups)) {
+    const isThisWeek = label === 'Today' || label === 'Tomorrow' || label === 'This Week';
+    html += `<div class="upcoming-group"><div class="upcoming-group-label${isThisWeek ? ' upcoming-soon' : ''}">${label}</div>`;
+    for (const evt of evts) {
+      const d = new Date(evt.date + 'T12:00:00');
+      const dayName = dayNames[d.getDay()];
+      const typeClass = evt.type === 'daycare-closed' ? ' upcoming-alert' : evt.type === 'travel' ? ' upcoming-travel' : '';
+      html += `<div class="upcoming-event${typeClass}">
+        <span class="upcoming-day">${dayName}</span>
+        <span class="upcoming-text">${escapeHtml(evt.summary)}</span>
+        ${evt.time ? `<span class="upcoming-time">${evt.time}</span>` : ''}
+      </div>`;
     }
-
-    return `<div class="family-weekend-block"><div class="family-weekend-label${labelClass}">${label}</div><div class="family-weekend-events">${eventsHtml}</div></div>`;
-  }).join('');
+    html += '</div>';
+  }
+  container.innerHTML = html;
 }
 
 // --- Anticipation Engine ---

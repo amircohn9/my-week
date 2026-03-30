@@ -371,48 +371,42 @@ body {
 .family-add-input::placeholder { color: #bbb; }
 .family-empty { font-size: 0.85rem; color: #ccc; }
 
-/* Weekends section */
-.family-weekend-block {
-  margin-bottom: 12px;
-}
-.family-weekend-block:last-child { margin-bottom: 0; }
-.family-weekend-label {
-  font-size: 0.72rem;
+/* Upcoming Events section */
+.family-upcoming-section { border-left: 3px solid #60a5fa; }
+.upcoming-group { margin-bottom: 10px; }
+.upcoming-group:last-child { margin-bottom: 0; }
+.upcoming-group-label {
+  font-size: 0.7rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: 4px;
 }
-.family-weekend-label.this-weekend { color: #7db87d; }
-.family-weekend-events {
+.upcoming-group-label.upcoming-soon { color: #60a5fa; }
+.upcoming-event {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 0.8rem;
+  color: #2d2d2d;
+  border-bottom: 1px solid #f8f7f4;
 }
-.family-weekend-event {
-  font-size: 0.78rem;
-  color: #555;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 0;
-}
-.family-weekend-day {
-  color: #bbb;
+.upcoming-event:last-child { border-bottom: none; }
+.upcoming-day {
   font-size: 0.7rem;
+  color: #bbb;
   min-width: 28px;
   flex-shrink: 0;
+  font-weight: 500;
 }
-.family-weekend-dot {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.family-weekend-empty {
-  font-size: 0.75rem;
-  color: #ddd;
-  font-style: italic;
-  padding: 2px 0;
-}
+.upcoming-text { flex: 1; }
+.upcoming-time { font-size: 0.68rem; color: #bbb; flex-shrink: 0; }
+.upcoming-alert { color: #dc2626; }
+.upcoming-alert .upcoming-text { font-weight: 500; }
+.upcoming-travel { color: #7c3aed; }
+.upcoming-travel .upcoming-text { font-weight: 500; }
 
 /* Ahead / Anticipation Engine */
 .family-ahead-section { border-left: 3px solid #7db87d; }

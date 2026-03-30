@@ -293,7 +293,7 @@
       { "text": "Summer travels", "date": "2026-03-28", "addedBy": "Amir", "assignee": "Both", "done": false, "deadline": null }
     ],
     "purchases": [],
-    "weekendNotes": {}
+    "upcomingEvents": []
   },
   "checkins": [
     {

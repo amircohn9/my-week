@@ -15,7 +15,16 @@ This project is a conversational time-tracking system. Amir opens this folder in
 When Amir says something like "let's check in," "daily check-in," or "how was my day" — start the check-in.
 
 **How it works:**
-- **Before starting questions**, pull Google Calendar events for the current week (Mon–Sun) AND the next 4 weekends (Sat+Sun) using `mcp__claude_ai_Google_Calendar__gcal_list_events` and update `data.json` `calendarEvents` with the results. Include ALL days — weekdays AND weekends. Pull 4 weeks forward so the family hub Weekends section has data. Format: `{ "YYYY-MM-DD": [{ "time": "H:MM AM", "summary": "...", "color": "#..." }] }`. Use color `#7986CB` for kids, `#33B679` for meals/walks, `#039BE5` for meetings, `#616161` for focus time.
+- **Before starting questions**, pull Google Calendar events:
+  1. **For the main dashboard** (`calendarEvents`): Pull current week Mon–Sun using `mcp__claude_ai_Google_Calendar__gcal_list_events`. Format: `{ "YYYY-MM-DD": [{ "time": "H:MM AM", "summary": "...", "color": "#..." }] }`.
+  2. **For the family hub** (`familyHub.upcomingEvents`): Pull ALL calendars (main, ACC daycare, Blattner Cohn, Deadlines) for the next 6 weeks. Filter with judgment — only include events relevant to the family:
+     - **INCLUDE**: anything with "Alma" or "Carmel" in the name; anything involving Arielle; family events; kids' appointments (doctor, dentist, pediatrician); travel/trips/flights; daycare closures from ACC calendar; relevant deadlines; weekend family plans; birthday parties; school events
+     - **EXCLUDE**: Amir-only stuff (networking, personal meetings, workouts, focus time, job search); Lili walks; lunch blocks; solo tasks
+     - **ACC daycare closures**: always include, mark as `"type": "daycare-closed"`
+     - **Travel/trips**: mark as `"type": "travel"`
+     - **All others**: `"type": "event"`
+     - Format: `[{ "date": "YYYY-MM-DD", "summary": "...", "time": "H:MM AM" or null for all-day, "type": "event|daycare-closed|travel", "calendar": "main|acc|blattner|deadlines" }]`
+     - Sort chronologically. This powers the "Upcoming" section on the A&A dashboard.
 - Ask ONE question at a time. Wait for the answer before moving on.
 - Follow up naturally if something interesting or important comes up. Don't be robotic.
 - Keep the whole thing to ~5 minutes. Don't over-probe.
