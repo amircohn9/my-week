@@ -274,7 +274,28 @@ const db = {
     if ('hidden' in fields) mapped.hidden = fields.hidden;
     if ('sessions' in fields) mapped.sessions = fields.sessions;
     if ('next_session' in fields) mapped.next_session = fields.next_session;
+    if ('text' in fields) mapped.text = fields.text;
+    if ('recurring' in fields) mapped.recurring = fields.recurring;
     const { error } = await supabaseClient.from('habits').update(mapped).eq('id', id);
+    if (error) throw error;
+  },
+
+  async insertHabit(habit) {
+    const { data, error } = await supabaseClient.from('habits').insert({
+      user_id: (await this.getSession()).user.id,
+      text: habit.text,
+      category: habit.category,
+      recurring: habit.recurring || 'weekly',
+      hidden: false,
+      sessions: [],
+      sort_order: habit.sort_order || 0,
+    }).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteHabit(id) {
+    const { error } = await supabaseClient.from('habits').delete().eq('id', id);
     if (error) throw error;
   },
 

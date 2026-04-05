@@ -305,6 +305,12 @@ function renderWeeklyObjectives(tasks) {
   const list = document.getElementById('weeklyObjectives');
   if (!list) return;
 
+  // Handle different weeks based on viewWeekOffset
+  if (viewWeekOffset === -1) {
+    list.innerHTML = '<li class="empty-state" style="list-style:none;padding:12px 0;color:#999;font-style:italic;">Last week\'s objectives are in the Day by Day section below.</li>';
+    return;
+  }
+
   const objectives = [];
   const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
 
@@ -347,7 +353,10 @@ function renderWeeklyObjectives(tasks) {
   });
 
   if (filtered.length === 0) {
-    list.innerHTML = '<li class="empty-state">Mark subtasks as "this week" in your projects to populate objectives.</li>';
+    const emptyMsg = viewWeekOffset === 1
+      ? 'Mark subtasks as "this week" in your projects to plan next week.'
+      : 'Mark subtasks as "this week" in your projects to populate objectives.';
+    list.innerHTML = '<li class="empty-state">' + emptyMsg + '</li>';
     return;
   }
 
@@ -357,7 +366,11 @@ function renderWeeklyObjectives(tasks) {
   const sorted = [...incomplete, ...complete];
   const hasBoth = incomplete.length > 0 && complete.length > 0;
 
-  list.innerHTML = sorted.map((obj, i) => {
+  const nextWeekHeader = viewWeekOffset === 1
+    ? '<li class="obj-next-week-header" style="list-style:none;padding:0 0 8px;font-size:0.78rem;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;">Planning next week</li>'
+    : '';
+
+  list.innerHTML = nextWeekHeader + sorted.map((obj, i) => {
     const divider = (hasBoth && i === incomplete.length) ? '<li class="obj-divider"><span>completed</span></li>' : '';
     return divider + `<li class="${obj.done ? 'obj-done' : ''}">
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
@@ -985,9 +998,15 @@ function renderProjectsAgenda(tasks) {
     });
   }
 
+  // Always show the add project row
+  const addProjectRow = document.getElementById('addProjectRow');
+  if (addProjectRow) addProjectRow.style.display = '';
+
   if (projects.length === 0) {
     container.style.display = 'none';
     if (empty) empty.style.display = 'block';
+    // Still bind the add project form even with 0 projects
+    _bindAddProjectForm(tasks);
     return;
   }
   if (empty) empty.style.display = 'none';
@@ -1341,6 +1360,10 @@ function renderProjectsAgenda(tasks) {
   });
 
   // Add project form
+  _bindAddProjectForm(tasks);
+}
+
+function _bindAddProjectForm(tasks) {
   const addTrigger = document.getElementById('addProjectTrigger');
   const addForm = document.getElementById('addProjectForm');
   const addInput = document.getElementById('addProjectInput');
@@ -1366,10 +1389,8 @@ function renderProjectsAgenda(tasks) {
       const text = addInput.value.trim();
       if (!text) return;
       const category = addCat.value;
-      // Insert into Supabase and get the new record with its id
       try {
         const newTask = await db.insertTask({ text, category, list: 'now', subtasks: [] });
-        // Add to local data
         if (!tasks[category]) tasks[category] = { now: [], backlog: [], recurring: [] };
         tasks[category].now.push({
           id: newTask.id,
@@ -1420,9 +1441,7 @@ function renderRecurringHabits(tasks) {
     const group = tasks[cat];
     if (!group || !group.recurring) continue;
     for (const item of group.recurring) {
-      // Skip "ongoing" items (no trackable sessions)
       if (item.recurring === 'ongoing') continue;
-      // Skip hidden habits
       if (item.hidden) continue;
 
       let target = 1;
@@ -1437,23 +1456,24 @@ function renderRecurringHabits(tasks) {
         }).length;
       }
 
+      // Check if already logged today
+      const todayStr = getTodayStr();
+      const loggedToday = item.sessions ? item.sessions.some(s => s.date === todayStr) : false;
+
       habits.push({
         id: item.id,
         text: item.text,
         category: cat,
         target,
         count: thisWeekCount,
-        complete: thisWeekCount >= target
+        complete: thisWeekCount >= target,
+        loggedToday,
+        sessions: item.sessions || [],
       });
     }
   }
 
-  if (habits.length === 0) {
-    container.innerHTML = '<p class="empty-state">No recurring habits defined.</p>';
-    return;
-  }
-
-  // Count hidden habits for the "show all" button
+  // Count hidden habits
   let hiddenCount = 0;
   for (const cat of CATEGORY_ORDER) {
     const group = tasks[cat];
@@ -1464,36 +1484,177 @@ function renderRecurringHabits(tasks) {
     }
   }
 
-  container.innerHTML = habits.map((h, i) => {
-    const r = 18;
-    const circumference = 2 * Math.PI * r;
-    const fill = Math.min(1, h.count / h.target) * circumference;
-    const gap = circumference - fill;
-    const strokeColor = h.complete ? '#7db87d' : '#f59e0b';
-    const textColor = h.complete ? '#065f46' : '#333';
+  let html = '';
 
-    // Short name: remove parenthetical details
-    const shortName = h.text.replace(/\s*\(.*?\)\s*/g, '').replace(/\s*—\s*.*/g, '').replace(/\s*\d+x\/week/i, '').trim();
+  if (habits.length === 0 && hiddenCount === 0) {
+    html = '<p class="empty-state">No recurring habits defined.</p>';
+  } else {
+    html = habits.map((h, i) => {
+      const r = 18;
+      const circumference = 2 * Math.PI * r;
+      const fill = Math.min(1, h.count / h.target) * circumference;
+      const gap = circumference - fill;
+      const strokeColor = h.complete ? '#7db87d' : '#f59e0b';
+      const textColor = h.complete ? '#065f46' : '#333';
+      const shortName = h.text.replace(/\s*\(.*?\)\s*/g, '').replace(/\s*—\s*.*/g, '').replace(/\s*\d+x\/week/i, '').trim();
 
-    return `<div class="habit-card ${h.complete ? 'habit-card-complete' : ''}" data-habit-idx="${i}">
-      <button class="habit-hide-btn" title="Hide this habit">&times;</button>
-      <svg width="48" height="48" viewBox="0 0 48 48" class="habit-ring">
-        <circle cx="24" cy="24" r="${r}" fill="none" stroke="#e8e8e8" stroke-width="3"/>
-        <circle cx="24" cy="24" r="${r}" fill="none" stroke="${strokeColor}" stroke-width="3"
-          stroke-dasharray="${fill} ${gap}" stroke-linecap="round" transform="rotate(-90 24 24)"/>
-        <text x="24" y="24" text-anchor="middle" dominant-baseline="central"
-          font-size="11" font-weight="600" fill="${textColor}">${h.count}/${h.target}</text>
-      </svg>
-      <div class="habit-name">${escapeHtml(shortName)}</div>
-    </div>`;
-  }).join('');
+      return `<div class="habit-card ${h.complete ? 'habit-card-complete' : ''}${h.loggedToday ? ' habit-logged-today' : ''}" data-habit-idx="${i}" data-habit-id="${h.id}">
+        <button class="habit-hide-btn" data-habit-id="${h.id}" title="Hide this habit">&times;</button>
+        <button class="habit-delete-btn" data-habit-id="${h.id}" title="Delete habit">&#128465;</button>
+        <div class="habit-ring-area" data-habit-id="${h.id}" title="${h.loggedToday ? 'Already logged today' : 'Log session for today'}">
+          <svg width="48" height="48" viewBox="0 0 48 48" class="habit-ring">
+            <circle cx="24" cy="24" r="${r}" fill="none" stroke="#e8e8e8" stroke-width="3"/>
+            <circle cx="24" cy="24" r="${r}" fill="none" stroke="${strokeColor}" stroke-width="3"
+              stroke-dasharray="${fill} ${gap}" stroke-linecap="round" transform="rotate(-90 24 24)"/>
+            <text x="24" y="24" text-anchor="middle" dominant-baseline="central"
+              font-size="11" font-weight="600" fill="${textColor}">${h.count}/${h.target}</text>
+          </svg>
+        </div>
+        <div class="habit-name" data-habit-id="${h.id}">${escapeHtml(shortName)}</div>
+      </div>`;
+    }).join('');
+  }
 
+  // Hidden habits toggle
   if (hiddenCount > 0) {
-    container.innerHTML += `<div class="habits-show-hidden">
-      <button class="habits-unhide-btn">${hiddenCount} hidden — show all</button>
+    html += `<div class="habits-show-hidden">
+      <button class="habits-unhide-btn">${hiddenCount} hidden</button>
     </div>`;
-    container.querySelector('.habits-unhide-btn').addEventListener('click', async () => {
-      // Unhide all hidden habits
+  }
+
+  // Add habit button
+  html += `<div class="habit-add-area">
+    <button class="habit-add-btn" id="habitAddBtn">+ add habit</button>
+    <div class="habit-add-form" id="habitAddForm" style="display:none;">
+      <input type="text" class="habit-add-input" id="habitAddInput" placeholder="Habit name...">
+      <select class="habit-add-cat" id="habitAddCat">
+        <option value="Career">Career</option>
+        <option value="Self">Self</option>
+        <option value="Home Duties">Home Duties</option>
+        <option value="Family">Family</option>
+      </select>
+      <select class="habit-add-freq" id="habitAddFreq">
+        <option value="weekly">Weekly</option>
+        <option value="daily">Daily</option>
+      </select>
+      <button class="habit-add-submit" id="habitAddSubmit">Add</button>
+      <button class="habit-add-cancel" id="habitAddCancel">&times;</button>
+    </div>
+  </div>`;
+
+  container.innerHTML = html;
+
+  // --- Event listeners ---
+
+  // Click ring to log session for today
+  container.querySelectorAll('.habit-ring-area').forEach(el => {
+    el.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const habitId = el.dataset.habitId;
+      // Find the habit data in tasks
+      let item = null;
+      for (const cat of CATEGORY_ORDER) {
+        const group = tasks[cat];
+        if (!group || !group.recurring) continue;
+        item = group.recurring.find(r => r.id === habitId);
+        if (item) break;
+      }
+      if (!item) return;
+      const todayStr = getTodayStr();
+      const alreadyLogged = (item.sessions || []).some(s => s.date === todayStr);
+      if (alreadyLogged) {
+        // Remove today's session (undo)
+        item.sessions = (item.sessions || []).filter(s => s.date !== todayStr);
+      } else {
+        if (!item.sessions) item.sessions = [];
+        item.sessions.push({ date: todayStr, note: '' });
+      }
+      renderRecurringHabits(tasks);
+      await db.updateHabit(habitId, { sessions: item.sessions });
+    });
+  });
+
+  // Double-click habit name to edit
+  container.querySelectorAll('.habit-name').forEach(el => {
+    el.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      const habitId = el.dataset.habitId;
+      let item = null;
+      for (const cat of CATEGORY_ORDER) {
+        const group = tasks[cat];
+        if (!group || !group.recurring) continue;
+        item = group.recurring.find(r => r.id === habitId);
+        if (item) break;
+      }
+      if (!item) return;
+      const current = item.text;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = current;
+      input.className = 'habit-edit-input';
+      el.textContent = '';
+      el.appendChild(input);
+      input.focus();
+      input.select();
+      const save = async () => {
+        const newVal = input.value.trim();
+        if (newVal && newVal !== current) {
+          item.text = newVal;
+          await db.updateHabit(habitId, { text: newVal });
+        }
+        renderRecurringHabits(tasks);
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = current; input.blur(); }
+      });
+    });
+  });
+
+  // Hide habit
+  container.querySelectorAll('.habit-hide-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const habitId = btn.dataset.habitId;
+      for (const cat of CATEGORY_ORDER) {
+        const group = tasks[cat];
+        if (!group || !group.recurring) continue;
+        const item = group.recurring.find(r => r.id === habitId);
+        if (item) {
+          item.hidden = true;
+          break;
+        }
+      }
+      renderRecurringHabits(tasks);
+      await db.updateHabit(habitId, { hidden: true });
+    });
+  });
+
+  // Delete habit
+  container.querySelectorAll('.habit-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const habitId = btn.dataset.habitId;
+      if (!confirm('Delete this habit permanently?')) return;
+      for (const cat of CATEGORY_ORDER) {
+        const group = tasks[cat];
+        if (!group || !group.recurring) continue;
+        const idx = group.recurring.findIndex(r => r.id === habitId);
+        if (idx >= 0) {
+          group.recurring.splice(idx, 1);
+          break;
+        }
+      }
+      renderRecurringHabits(tasks);
+      await db.deleteHabit(habitId);
+    });
+  });
+
+  // Unhide all
+  const unhideBtn = container.querySelector('.habits-unhide-btn');
+  if (unhideBtn) {
+    unhideBtn.addEventListener('click', async () => {
       for (const cat of CATEGORY_ORDER) {
         const group = tasks[cat];
         if (!group || !group.recurring) continue;
@@ -1508,25 +1669,63 @@ function renderRecurringHabits(tasks) {
     });
   }
 
-  container.querySelectorAll('.habit-hide-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const idx = parseInt(btn.closest('.habit-card').dataset.habitIdx);
-      const habit = habits[idx];
-      // Update local data
-      for (const cat of CATEGORY_ORDER) {
-        const group = tasks[cat];
-        if (!group || !group.recurring) continue;
-        const item = group.recurring.find(r => r.id === habit.id);
-        if (item) {
-          item.hidden = true;
-          break;
-        }
-      }
-      renderRecurringHabits(tasks);
-      db.updateHabit(habit.id, { hidden: true });
+  // Add habit form
+  const addBtn = container.querySelector('#habitAddBtn');
+  const addForm = container.querySelector('#habitAddForm');
+  const addInput = container.querySelector('#habitAddInput');
+  const addCat = container.querySelector('#habitAddCat');
+  const addFreq = container.querySelector('#habitAddFreq');
+  const addSubmit = container.querySelector('#habitAddSubmit');
+  const addCancel = container.querySelector('#habitAddCancel');
+
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      addBtn.style.display = 'none';
+      addForm.style.display = 'flex';
+      addInput.focus();
     });
-  });
+  }
+  if (addCancel) {
+    addCancel.addEventListener('click', () => {
+      addForm.style.display = 'none';
+      addBtn.style.display = '';
+      addInput.value = '';
+    });
+  }
+
+  const submitHabit = async () => {
+    const text = addInput.value.trim();
+    if (!text) return;
+    const category = addCat.value;
+    const recurring = addFreq.value;
+    try {
+      const newHabit = await db.insertHabit({ text, category, recurring });
+      if (!tasks[category]) tasks[category] = { now: [], backlog: [], recurring: [] };
+      if (!tasks[category].recurring) tasks[category].recurring = [];
+      tasks[category].recurring.push({
+        id: newHabit.id,
+        text: newHabit.text,
+        recurring: newHabit.recurring,
+        nextSession: newHabit.next_session,
+        hidden: false,
+        sessions: [],
+      });
+    } catch (err) {
+      console.error('Failed to add habit:', err);
+    }
+    addInput.value = '';
+    addForm.style.display = 'none';
+    addBtn.style.display = '';
+    renderRecurringHabits(tasks);
+  };
+
+  if (addSubmit) addSubmit.addEventListener('click', submitHabit);
+  if (addInput) {
+    addInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); submitHabit(); }
+      if (e.key === 'Escape') { addCancel.click(); }
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------

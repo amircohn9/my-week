@@ -463,7 +463,7 @@ function renderFamilyHub() {
 
 // --- Upcoming events ---
 
-function upcomingKey(evt) { return evt.date + '::' + evt.summary; }
+let _showRecurringUpcoming = false;
 
 function renderFamilyUpcoming() {
   const container = document.getElementById('familyUpcoming');
@@ -475,85 +475,104 @@ function renderFamilyUpcoming() {
     return;
   }
 
-  // Count summary occurrences to detect recurring events
-  const summaryCounts = {};
+  // Filter: visible (not hidden) and future only
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const visible = events.filter(e => !e.hidden);
-  for (const evt of visible) {
+  const future = visible.filter(e => {
+    const d = new Date(e.date + 'T12:00:00');
+    return d >= today;
+  });
+
+  if (future.length === 0) {
+    container.innerHTML = '<p class="empty-state family-empty">No upcoming events.</p>';
+    return;
+  }
+
+  // Detect recurring: summary appears 3+ times
+  const summaryCounts = {};
+  for (const evt of future) {
     const key = (evt.summary || '').trim().toLowerCase();
     summaryCounts[key] = (summaryCounts[key] || 0) + 1;
   }
 
-  // Group by week, skip hidden and past
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const groups = {};
-  const groupOrder = [];
+  const isRecurring = (evt) => {
+    const key = (evt.summary || '').trim().toLowerCase();
+    return (summaryCounts[key] || 0) >= 3;
+  };
 
-  for (const evt of visible) {
+  // Split: flagged, one-off, recurring
+  const flagged = future.filter(e => e.highlighted);
+  const nonFlagged = future.filter(e => !e.highlighted);
+  const oneOff = nonFlagged.filter(e => !isRecurring(e));
+  const recurring = nonFlagged.filter(e => isRecurring(e));
+
+  // Sort chronologically
+  const byDate = (a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || '');
+  flagged.sort(byDate);
+  oneOff.sort(byDate);
+  recurring.sort(byDate);
+
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  const renderRow = (evt) => {
     const d = new Date(evt.date + 'T12:00:00');
-    if (d < today) continue;
-    const daysOut = Math.floor((d - today) / 86400000);
-    let groupLabel;
-    if (daysOut <= 0) groupLabel = 'Today';
-    else if (daysOut <= 1) groupLabel = 'Tomorrow';
-    else if (daysOut <= 7) groupLabel = 'This Week';
-    else if (daysOut <= 14) groupLabel = 'Next Week';
-    else groupLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' week';
-    if (!groups[groupLabel]) { groups[groupLabel] = []; groupOrder.push(groupLabel); }
-    groups[groupLabel].push(evt);
-  }
+    const dayName = dayNames[d.getDay()];
+    const dateLabel = months[d.getMonth()] + ' ' + d.getDate();
+    const typeClass = evt.type === 'daycare-closed' ? ' upcoming-alert' : evt.type === 'travel' ? ' upcoming-travel' : '';
+    const isHL = evt.highlighted;
 
-  const nearGroups = new Set(['Today', 'Tomorrow', 'This Week']);
+    return `<div class="upcoming-row${typeClass}${isHL ? ' upcoming-row-flagged' : ''}" data-id="${evt.id}">
+      <span class="upcoming-row-date">${dateLabel}</span>
+      <span class="upcoming-row-day">${dayName}</span>
+      <span class="upcoming-row-summary">${escapeHtml(evt.summary)}</span>
+      ${evt.time ? `<span class="upcoming-row-time">${evt.time}</span>` : '<span class="upcoming-row-time"></span>'}
+      <span class="upcoming-row-actions">
+        <span class="upcoming-star${isHL ? ' active' : ''}" data-id="${evt.id}" title="${isHL ? 'Unflag' : 'Flag'}">&#9733;</span>
+        <span class="upcoming-hide" data-id="${evt.id}" title="Hide">&times;</span>
+      </span>
+    </div>`;
+  };
 
   let html = '';
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  for (const label of groupOrder) {
-    const evts = groups[label];
-    const isNear = nearGroups.has(label);
-    const isFar = !isNear;
-    const collapseKey = 'upcoming-collapse-' + label;
-    const storedCollapse = localStorage.getItem(collapseKey);
-    const isCollapsed = isFar && (storedCollapse !== 'false');
 
-    html += `<div class="upcoming-group${isFar ? ' upcoming-collapsible' : ''}${isCollapsed ? ' upcoming-collapsed' : ''}" data-group-label="${label}">`;
-    html += `<div class="upcoming-group-label${isNear ? ' upcoming-soon' : ''}${isFar ? ' upcoming-group-toggle' : ''}" data-group-label="${label}">${label}${isFar ? ` <span class="upcoming-expand-hint">(${evts.length})</span>` : ''}</div>`;
-
-    html += `<div class="upcoming-group-items">`;
-    for (const evt of evts) {
-      const d = new Date(evt.date + 'T12:00:00');
-      const dayName = dayNames[d.getDay()];
-      const isHighlighted = evt.highlighted;
-      const typeClass = evt.type === 'daycare-closed' ? ' upcoming-alert' : evt.type === 'travel' ? ' upcoming-travel' : '';
-      const hlClass = isHighlighted ? ' upcoming-highlighted' : '';
-
-      // Recurring vs one-off styling
-      const summaryKey = (evt.summary || '').trim().toLowerCase();
-      const isRecurring = (summaryCounts[summaryKey] || 0) >= 3;
-      const recurClass = isRecurring ? ' upcoming-recurring' : ' upcoming-oneoff';
-
-      html += `<div class="upcoming-event${typeClass}${hlClass}${recurClass}" data-id="${evt.id}">
-        <span class="upcoming-day">${dayName}</span>
-        <span class="upcoming-text">${escapeHtml(evt.summary)}</span>
-        ${evt.time ? `<span class="upcoming-time">${evt.time}</span>` : ''}
-        <span class="upcoming-actions">
-          <span class="upcoming-star${isHighlighted ? ' active' : ''}" data-id="${evt.id}" title="Highlight">&#9733;</span>
-          <span class="upcoming-hide" data-id="${evt.id}" title="Hide">&times;</span>
-        </span>
-      </div>`;
-    }
-    html += '</div></div>';
+  // Flagged section
+  if (flagged.length > 0) {
+    html += '<div class="upcoming-section-label upcoming-needs-attention">Needs Attention</div>';
+    html += flagged.map(renderRow).join('');
   }
+
+  // Coming up (one-off, non-recurring)
+  html += '<div class="upcoming-section-label">Coming Up</div>';
+  if (oneOff.length > 0) {
+    html += oneOff.map(renderRow).join('');
+  } else {
+    html += '<p class="empty-state family-empty" style="padding:4px 0;font-size:0.8rem;">Only recurring events ahead.</p>';
+  }
+
+  // Recurring toggle
+  if (recurring.length > 0) {
+    if (_showRecurringUpcoming) {
+      html += `<div class="upcoming-recurring-toggle"><button class="upcoming-recurring-btn" id="upcomingRecurringToggle">Hide ${recurring.length} recurring events</button></div>`;
+      html += recurring.map(renderRow).join('');
+    } else {
+      html += `<div class="upcoming-recurring-toggle"><button class="upcoming-recurring-btn" id="upcomingRecurringToggle">Show ${recurring.length} recurring events</button></div>`;
+    }
+  }
+
   container.innerHTML = html;
 
-  // Toggle collapsed far groups
-  container.querySelectorAll('.upcoming-group-toggle').forEach(el => {
-    el.addEventListener('click', () => {
-      const group = el.closest('.upcoming-group');
-      const label = group.dataset.groupLabel;
-      group.classList.toggle('upcoming-collapsed');
-      localStorage.setItem('upcoming-collapse-' + label, group.classList.contains('upcoming-collapsed'));
+  // --- Event listeners ---
+
+  // Recurring toggle
+  const recurToggle = container.querySelector('#upcomingRecurringToggle');
+  if (recurToggle) {
+    recurToggle.addEventListener('click', () => {
+      _showRecurringUpcoming = !_showRecurringUpcoming;
+      renderFamilyUpcoming();
     });
-  });
+  }
 
   // Highlight toggle
   container.querySelectorAll('.upcoming-star').forEach(el => {
