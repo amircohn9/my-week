@@ -2449,6 +2449,7 @@ footer {
   .habit-delete-btn { opacity: 1; }
   .proj-subtask-delete { opacity: 1; }
   .delete-added-task-btn { opacity: 1; }
+  .delete-task-btn { opacity: 1; }
 
   /* ─── Backlog task list → single column ─── */
   #taskList { grid-template-columns: 1fr; }
@@ -2692,3 +2693,42 @@ footer {
 }
 .trip-add-input:focus { border-bottom-color: #7c3aed; border-bottom-style: solid; }
 .trip-add-input::placeholder { color: #ccc; }
+
+/* ─── Delete task button in backlog ─── */
+.delete-task-btn {
+  border: none;
+  background: none;
+  color: #ddd;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0 3px;
+  margin-left: 2px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  line-height: 1;
+}
+.task-item:hover .delete-task-btn { opacity: 1; }
+.delete-task-btn:hover { color: #ef4444; }
+
+/* ─── Defer button in objectives ─── */
+.obj-defer-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #aaa;
+  line-height: 1;
+}
+.obj-defer-btn:hover { color: #f97316; background: #fff7ed; }
+
+/* ─── Calendar sync note ─── */
+.upcoming-sync-note {
+  font-size: 0.7rem;
+  color: #bbb;
+  font-style: italic;
+  margin: 2px 0 8px;
+  padding: 0;
+}

@@ -314,7 +314,7 @@ function renderWeeklyObjectives(tasks) {
     return;
   }
 
-  // Next week: show only planning input, not this week's objectives
+  // Next week: show planning input plus existing thisWeek objectives
   if (viewWeekOffset === 1) {
     // Build project options from all active (non-done) now items
     let projectOptions = '<option value="">No project (standalone)</option>';
@@ -327,6 +327,36 @@ function renderWeeklyObjectives(tasks) {
       }
     }
 
+    // Gather existing thisWeek objectives for preview
+    const existingObjs = [];
+    const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
+    for (const cat of CATEGORY_ORDER) {
+      const group = tasks[cat];
+      if (!group) continue;
+      for (const item of (group.now || [])) {
+        if (item.done) continue;
+        if (item.subtasks && item.subtasks.length > 0) {
+          item.subtasks.forEach((sub, si) => {
+            if (sub.thisWeek && !sub.done) {
+              existingObjs.push({ text: sub.text, project: item.text, color: colors[cat] });
+            }
+          });
+        } else if (item.thisWeek && !item.done) {
+          existingObjs.push({ text: item.text, project: null, color: colors[cat] });
+        }
+      }
+    }
+
+    let existingHtml = '';
+    if (existingObjs.length > 0) {
+      existingHtml = `<li style="list-style:none;padding:8px 0 4px;font-size:0.72rem;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.5px;">Current objectives (${existingObjs.length})</li>` +
+        existingObjs.map(obj => `<li style="list-style:none;display:flex;align-items:center;gap:8px;padding:4px 0;font-size:0.82rem;color:#888;">
+          <span class="obj-cat-dot" style="background:${obj.color}"></span>
+          <span>${escapeHtml(obj.text)}</span>
+          ${obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : ''}
+        </li>`).join('');
+    }
+
     list.innerHTML = `<li class="obj-next-week-header" style="list-style:none;padding:0 0 8px;font-size:0.78rem;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;">Planning next week</li>
       <li class="empty-state" style="list-style:none;color:#999;font-style:italic;padding:4px 0 8px;">Add objectives you want to tackle next week.</li>
       <li style="list-style:none;padding:8px 0;">
@@ -334,7 +364,7 @@ function renderWeeklyObjectives(tasks) {
         <select class="obj-project-select" style="width:100%;margin-top:6px;border:1px solid #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;color:#666;">
           ${projectOptions}
         </select>
-      </li>`;
+      </li>${existingHtml}`;
     _bindObjAddInput(list, tasks);
     return;
   }
@@ -388,10 +418,16 @@ function renderWeeklyObjectives(tasks) {
   // Sort: incomplete first, done items sink to bottom
   const incomplete = filtered.filter(o => !o.done);
   const complete = filtered.filter(o => o.done);
+
+  // Show subtitle for in-progress objectives
+  let subtitleHtml = '';
+  if (incomplete.length > 0) {
+    subtitleHtml = `<li class="obj-in-progress-note" style="list-style:none;padding:0 0 6px;font-size:0.72rem;color:#999;font-style:italic;">${incomplete.length} objective${incomplete.length > 1 ? 's' : ''} in progress</li>`;
+  }
   const sorted = [...incomplete, ...complete];
   const hasBoth = incomplete.length > 0 && complete.length > 0;
 
-  list.innerHTML = sorted.map((obj, i) => {
+  list.innerHTML = subtitleHtml + sorted.map((obj, i) => {
     const divider = (hasBoth && i === incomplete.length) ? '<li class="obj-divider"><span>completed</span></li>' : '';
     return divider + `<li class="${obj.done ? 'obj-done' : ''}">
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
@@ -400,6 +436,7 @@ function renderWeeklyObjectives(tasks) {
       ${obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : ''}
       <span class="obj-actions">
         <button class="obj-today-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Move to today">&#9650;</button>
+        <button class="obj-defer-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Defer (remove from this week, keep in project)">&#8595;</button>
         <button class="obj-unstar-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Remove from this week">&#9734;</button>
         <button class="obj-delete-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Delete task">&times;</button>
       </span>
@@ -496,6 +533,32 @@ function renderWeeklyObjectives(tasks) {
       } else {
         await db.updateTask(taskId, { today: true });
       }
+    });
+  });
+
+  // Defer: remove from this week but keep in project
+  list.querySelectorAll('.obj-defer-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        task.subtasks[subIdx].thisWeek = false;
+        task.subtasks[subIdx].today = false;
+        db.updateTask(taskId, { subtasks: task.subtasks });
+      } else {
+        task.thisWeek = false;
+        task.today = false;
+        db.updateTask(taskId, { thisWeek: false, today: false });
+      }
+
+      renderWeeklyObjectives(tasks);
+      renderProjectsAgenda(appData.tasks);
+      renderTodayTasks(appData);
     });
   });
 
@@ -1032,13 +1095,72 @@ function renderDailyFocus(data) {
     empty.textContent = 'No focus set for today.';
   }
 
-  // Overarching goal breadcrumb
+  // Overarching goal breadcrumb (double-click to edit)
   if (breadcrumb) {
     if (data.dailyFocus) {
-      breadcrumb.innerHTML = `<div class="yesterday-reminder"><div class="yesterday-reminder-label">Overarching goal</div><div class="yesterday-reminder-text">${escapeHtml(data.dailyFocus)}</div></div>`;
+      breadcrumb.innerHTML = `<div class="yesterday-reminder"><div class="yesterday-reminder-label">Overarching goal</div><div class="yesterday-reminder-text" title="Double-click to edit">${escapeHtml(data.dailyFocus)}</div></div>`;
       breadcrumb.style.display = 'block';
+      const goalText = breadcrumb.querySelector('.yesterday-reminder-text');
+      if (goalText) {
+        goalText.style.cursor = 'text';
+        goalText.addEventListener('dblclick', () => {
+          const current = data.dailyFocus;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = current;
+          input.className = 'task-edit-input';
+          input.style.width = '100%';
+          input.style.fontSize = '0.88rem';
+          goalText.textContent = '';
+          goalText.appendChild(input);
+          input.focus();
+          input.select();
+          const save = async () => {
+            const newVal = input.value.trim();
+            if (newVal && newVal !== current) {
+              data.dailyFocus = newVal;
+              await db.updateSettings({ dailyFocus: newVal });
+            }
+            renderDailyFocus(data);
+          };
+          input.addEventListener('blur', save);
+          input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+            if (ev.key === 'Escape') { input.value = current; input.blur(); }
+          });
+        });
+      }
     } else {
-      breadcrumb.style.display = 'none';
+      breadcrumb.innerHTML = `<div class="yesterday-reminder"><div class="yesterday-reminder-label">Overarching goal</div><div class="yesterday-reminder-text" style="color:#ccc;font-style:italic;cursor:text;" title="Double-click to set">Click to set an overarching goal...</div></div>`;
+      breadcrumb.style.display = 'block';
+      const goalText = breadcrumb.querySelector('.yesterday-reminder-text');
+      if (goalText) {
+        goalText.addEventListener('dblclick', () => {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = '';
+          input.className = 'task-edit-input';
+          input.style.width = '100%';
+          input.style.fontSize = '0.88rem';
+          input.placeholder = 'Enter your overarching goal...';
+          goalText.textContent = '';
+          goalText.appendChild(input);
+          input.focus();
+          const save = async () => {
+            const newVal = input.value.trim();
+            if (newVal) {
+              data.dailyFocus = newVal;
+              await db.updateSettings({ dailyFocus: newVal });
+            }
+            renderDailyFocus(data);
+          };
+          input.addEventListener('blur', save);
+          input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+            if (ev.key === 'Escape') { renderDailyFocus(data); }
+          });
+        });
+      }
     }
   }
 
@@ -1159,6 +1281,7 @@ function renderProjectsAgenda(tasks) {
         <div class="proj-actions-row">
           <div class="proj-complete" data-task-id="${proj.id}">&#10003; Complete Project</div>
           <div class="proj-move-backlog" data-task-id="${proj.id}">Move to Backlog</div>
+          <div class="proj-delete-added" data-task-id="${proj.id}">&#128465; Delete</div>
         </div>
       </div>
     </div>`;
@@ -1509,6 +1632,27 @@ function renderProjectsAgenda(tasks) {
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
       db.updateTask(taskId, { done: true });
+    });
+  });
+
+  // Delete project
+  container.querySelectorAll('.proj-delete-added').forEach(el => {
+    el.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const taskId = el.dataset.taskId;
+      if (!confirm('Delete this project permanently?')) return;
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const group = tasks[found.category];
+      const list = group[found.list];
+      const idx = list.findIndex(t => t.id === taskId);
+      if (idx >= 0) list.splice(idx, 1);
+      _expandedProjId = null;
+      renderProjectsAgenda(tasks);
+      renderWeeklyObjectives(tasks);
+      renderBacklog(tasks);
+      if (typeof renderKPIStrip === 'function') renderKPIStrip(appData);
+      await db.deleteTask(taskId);
     });
   });
 

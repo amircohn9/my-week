@@ -32,6 +32,7 @@ function renderTaskItem(item, cat, section, moveTarget) {
   const moveLabel = moveTarget === 'now' ? '\u2191' : '\u2193';
   const moveTitle = moveTarget === 'now' ? 'Move to Agenda' : 'Move to Backlog';
   const moveBtn = `<button class="move-btn" data-id="${item.id}" data-move-to="${moveTarget}" title="${moveTitle}">${moveLabel}</button>`;
+  const deleteBtn = `<button class="delete-task-btn" data-id="${item.id}" title="Delete project">&#128465;</button>`;
 
   const allSubs = item.subtasks || [];
   const hasSubtasks = allSubs.length > 0;
@@ -57,13 +58,13 @@ function renderTaskItem(item, cat, section, moveTarget) {
     const toggleBtn = `<button class="subtask-toggle-btn" data-id="${item.id}" title="Show subtasks">${allSubs.length}</button>`;
     return `<div class="task-item ${doneClass} ${urgentClass}" data-id="${item.id}">
       <input type="checkbox" class="task-checkbox parent-checkbox" data-id="${item.id}" ${item.done ? 'checked' : ''}>
-      ${textHtml}${deadlineHtml}${toggleBtn}${moveBtn}
+      ${textHtml}${deadlineHtml}${toggleBtn}${moveBtn}${deleteBtn}
     </div>${subtasksHtml}`;
   }
 
   return `<div class="task-item ${doneClass} ${urgentClass}" data-id="${item.id}">
     <input type="checkbox" class="task-checkbox parent-checkbox" data-id="${item.id}" ${item.done ? 'checked' : ''}>
-    ${textHtml}${deadlineHtml}${moveBtn}
+    ${textHtml}${deadlineHtml}${moveBtn}${deleteBtn}
   </div>`;
 }
 
@@ -374,6 +375,26 @@ function renderBacklog(tasks) {
         const trigger = input.closest('.add-subtask-row').querySelector('.add-subtask-trigger');
         if (trigger) trigger.style.display = '';
       }
+    });
+  });
+
+  // Delete task (project)
+  container.querySelectorAll('.delete-task-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (!confirm('Delete this project permanently?')) return;
+      const result = findTaskById(tasks, id);
+      if (!result) return;
+      const group = tasks[result.category];
+      const list = group[result.list];
+      const idx = list.findIndex(t => t.id === id);
+      if (idx >= 0) list.splice(idx, 1);
+      renderBacklog(tasks);
+      if (typeof renderProjectsAgenda === 'function') renderProjectsAgenda(tasks);
+      if (typeof renderWeeklyObjectives === 'function') renderWeeklyObjectives(tasks);
+      if (typeof renderKPIStrip === 'function') renderKPIStrip(appData);
+      await db.deleteTask(id);
     });
   });
 

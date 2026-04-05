@@ -3,6 +3,7 @@
 // SQL required for Trips feature (run once in Supabase SQL editor):
 // ALTER TABLE family_hub_items DROP CONSTRAINT family_hub_items_section_check;
 // ALTER TABLE family_hub_items ADD CONSTRAINT family_hub_items_section_check CHECK (section IN ('thisWeek','backlog','decisions','purchases','trips'));
+// Note: 'purchases' items are treated as 'decisions' in the app (merged into Decisions & Purchases)
 
 let appData = null;
 
@@ -15,6 +16,16 @@ async function initApp() {
 
   appData = await db.loadAll();
   appData._completedPrompts = await db.getCompletedPrompts();
+
+  // Ensure an A&A project exists
+  const hasAA = Object.values(appData.tasks).some(cat =>
+    (cat.now || []).concat(cat.backlog || []).some(t => t.text === 'A&A' || t.text === 'Amir & Arielle')
+  );
+  if (!hasAA) {
+    const newTask = await db.insertTask({ text: 'A&A', category: 'Family', list: 'now', subtasks: [] });
+    if (!appData.tasks.Family) appData.tasks.Family = { description: '', now: [], backlog: [], recurring: [] };
+    appData.tasks.Family.now.push({ id: newTask.id, text: 'A&A', done: false, deadline: null, link: null, thisWeek: false, today: false, subtasks: [] });
+  }
 
   // Render all sections
   renderDateRange();
@@ -146,8 +157,8 @@ function setupTabRail() {
   });
 }
 
-const FAMILY_SECTIONS = ['thisWeek', 'backlog', 'decisions', 'purchases', 'trips'];
-const FAMILY_LABELS = { thisWeek: 'This Week', backlog: 'Backlog', decisions: 'Decisions', purchases: 'Purchases', trips: 'Upcoming Trips' };
+const FAMILY_SECTIONS = ['thisWeek', 'backlog', 'decisions', 'trips'];
+const FAMILY_LABELS = { thisWeek: 'This Week', backlog: 'Backlog', decisions: 'Decisions & Purchases', trips: 'Upcoming Trips' };
 
 function getFamilyHub() {
   if (!appData.familyHub) appData.familyHub = {};
@@ -398,11 +409,11 @@ function renderFamilyHub() {
             await db.insertTask({ text: item.text, category: 'Home Duties', list: 'backlog' });
           }
 
-          await db.deleteFamilyItem(id);
-          // Remove from in-memory array
-          const fromList = hub[from] || [];
-          const idx = fromList.findIndex(i => i.id === id);
-          if (idx !== -1) fromList.splice(idx, 1);
+          // Mark the family item as moved (don't delete it)
+          const todayStr = getTodayStr();
+          item.comment = (item.comment ? item.comment + ' | ' : '') + 'Moved to dashboard ' + todayStr;
+          item.assignee = 'Amir';
+          await db.updateFamilyItem(id, { assignee: 'Amir', comment: item.comment });
           renderFamilyHub();
           return;
         }
@@ -719,24 +730,26 @@ function renderFamilyUpcoming() {
   if (upcomingSection) {
     const header = upcomingSection.querySelector('.family-section-header');
     if (header) {
-      // Remove old sync indicator if present
+      // Remove old sync note if present
       const oldSync = header.querySelector('.upcoming-sync-indicator');
       if (oldSync) oldSync.remove();
-      // Find latest event date as proxy for last sync
-      if (events.length > 0) {
-        const sortedDates = events.map(e => e.date).sort();
-        const latestDate = sortedDates[sortedDates.length - 1];
-        // Show the most recent check-in date as "last synced"
-        const lastCheckin = (appData.checkins || []).map(c => c.date).sort().pop();
-        const syncLabel = lastCheckin
-          ? new Date(lastCheckin + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-          : 'never';
-        const syncSpan = document.createElement('span');
-        syncSpan.className = 'upcoming-sync-indicator';
-        syncSpan.textContent = `Synced ${syncLabel}`;
-        syncSpan.title = 'Calendar events are updated during check-ins';
-        header.appendChild(syncSpan);
-      }
+      const oldNote = upcomingSection.querySelector('.upcoming-sync-note');
+      if (oldNote) oldNote.remove();
+      // Show the most recent check-in date as "last synced"
+      const lastCheckin = (appData.checkins || []).map(c => c.date).sort().pop();
+      const syncLabel = lastCheckin
+        ? new Date(lastCheckin + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : 'never';
+      const syncSpan = document.createElement('span');
+      syncSpan.className = 'upcoming-sync-indicator';
+      syncSpan.textContent = `Synced ${syncLabel}`;
+      syncSpan.title = 'Calendar synced during check-ins';
+      header.appendChild(syncSpan);
+      // Add prominent sync note below header
+      const noteEl = document.createElement('p');
+      noteEl.className = 'upcoming-sync-note';
+      noteEl.textContent = `Calendar synced during check-ins. Last sync: ${syncLabel}`;
+      header.insertAdjacentElement('afterend', noteEl);
     }
   }
 
