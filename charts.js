@@ -307,7 +307,27 @@ function renderWeeklyObjectives(tasks) {
 
   // Handle different weeks based on viewWeekOffset
   if (viewWeekOffset === -1) {
-    list.innerHTML = '<li class="empty-state" style="list-style:none;padding:12px 0;color:#999;font-style:italic;">Last week\'s objectives are in the Day by Day section below.</li>';
+    // Show last week's completed items as accomplishments summary
+    const { weekStart, weekEnd } = getViewWeekRange();
+    const lastWeekItems = (appData.completedItems || []).filter(i => {
+      const d = new Date(i.date + 'T12:00:00');
+      return d >= weekStart && d <= weekEnd;
+    });
+    if (lastWeekItems.length === 0) {
+      list.innerHTML = '<li class="empty-state" style="list-style:none;padding:12px 0;color:#999;font-style:italic;">No completed items recorded for last week.</li>';
+    } else {
+      const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
+      list.innerHTML = '<li class="obj-last-week-header" style="list-style:none;padding:0 0 8px;font-size:0.78rem;font-weight:600;color:#7db87d;text-transform:uppercase;letter-spacing:0.5px;">Last week you accomplished</li>' +
+        lastWeekItems.map(item => {
+          const color = colors[item.category] || '#ccc';
+          return `<li style="list-style:none;display:flex;align-items:center;gap:8px;padding:5px 0;font-size:0.85rem;color:#888;">
+            <span class="obj-cat-dot" style="background:${color}"></span>
+            <span style="color:#7db87d;font-weight:600;">&#10003;</span>
+            <span>${escapeHtml(item.text)}</span>
+            ${item.hours ? `<span style="margin-left:auto;font-size:0.75rem;color:#bbb;">${item.hours}h</span>` : ''}
+          </li>`;
+        }).join('');
+    }
     return;
   }
 
@@ -354,9 +374,16 @@ function renderWeeklyObjectives(tasks) {
 
   if (filtered.length === 0) {
     const emptyMsg = viewWeekOffset === 1
-      ? 'Mark subtasks as "this week" in your projects to plan next week.'
+      ? 'Mark subtasks as "this week" in your projects, or add an objective below.'
       : 'Mark subtasks as "this week" in your projects to populate objectives.';
-    list.innerHTML = '<li class="empty-state">' + emptyMsg + '</li>';
+    let emptyHtml = '<li class="empty-state">' + emptyMsg + '</li>';
+    if (viewWeekOffset === 1) {
+      emptyHtml += `<li style="list-style:none;padding:8px 0;">
+        <input type="text" class="obj-add-input" placeholder="+ add objective for next week" style="width:100%;border:1px dashed #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;">
+      </li>`;
+    }
+    list.innerHTML = emptyHtml;
+    _bindObjAddInput(list, tasks);
     return;
   }
 
@@ -383,7 +410,12 @@ function renderWeeklyObjectives(tasks) {
         <button class="obj-delete-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Delete task">&times;</button>
       </span>
     </li>`;
-  }).join('');
+  }).join('') + (viewWeekOffset === 1 ? `<li style="list-style:none;padding:8px 0;">
+    <input type="text" class="obj-add-input" placeholder="+ add objective for next week" style="width:100%;border:1px dashed #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;">
+  </li>` : '');
+
+  // Bind next-week add input
+  _bindObjAddInput(list, tasks);
 
   // Wire up checkboxes — toggle done
   list.querySelectorAll('.obj-checkbox').forEach(cb => {
@@ -460,15 +492,21 @@ function renderWeeklyObjectives(tasks) {
 
       if (subIdx >= 0 && task.subtasks[subIdx]) {
         task.subtasks[subIdx].today = true;
-        db.updateTask(taskId, { subtasks: task.subtasks });
       } else {
         task.today = true;
-        db.updateTask(taskId, { today: true });
       }
 
+      // Re-render all affected views first (optimistic UI)
       renderWeeklyObjectives(tasks);
       renderTodayTasks(appData);
       renderProjectsAgenda(appData.tasks);
+
+      // Then persist to Supabase
+      if (subIdx >= 0) {
+        await db.updateTask(taskId, { subtasks: task.subtasks });
+      } else {
+        await db.updateTask(taskId, { today: true });
+      }
     });
   });
 
@@ -522,6 +560,44 @@ function renderWeeklyObjectives(tasks) {
       renderWeeklyObjectives(tasks);
       renderProjectsAgenda(appData.tasks);
     });
+  });
+}
+
+// Helper: bind the "add objective" input for next week planning
+function _bindObjAddInput(container, tasks) {
+  const input = container.querySelector('.obj-add-input');
+  if (!input) return;
+  input.addEventListener('keydown', async (e) => {
+    if (e.key !== 'Enter') return;
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    // Create a new task in Career (default) with thisWeek=true
+    const newRow = await db.insertTask({ text, category: 'Career', list: 'now', thisWeek: true, subtasks: [] });
+    if (!tasks['Career']) tasks['Career'] = { description: '', now: [], backlog: [], recurring: [] };
+    tasks['Career'].now.push({
+      id: newRow.id,
+      text: newRow.text,
+      done: false,
+      deadline: null,
+      link: null,
+      thisWeek: true,
+      today: false,
+      subtasks: [],
+    });
+    renderWeeklyObjectives(tasks);
+    renderProjectsAgenda(tasks);
+  });
+  input.addEventListener('focus', () => {
+    input.style.borderColor = '#60a5fa';
+    input.style.borderStyle = 'solid';
+    input.style.background = '#fff';
+    input.style.outline = 'none';
+  });
+  input.addEventListener('blur', () => {
+    input.style.borderColor = '#d0cdc8';
+    input.style.borderStyle = 'dashed';
+    input.style.background = '#fafaf8';
   });
 }
 
@@ -1364,15 +1440,30 @@ function renderProjectsAgenda(tasks) {
 }
 
 function _bindAddProjectForm(tasks) {
-  const addTrigger = document.getElementById('addProjectTrigger');
-  const addForm = document.getElementById('addProjectForm');
-  const addInput = document.getElementById('addProjectInput');
-  const addCat = document.getElementById('addProjectCat');
-  const addSubmit = document.getElementById('addProjectSubmit');
-  const addCancel = document.getElementById('addProjectCancel');
+  // Clone-replace elements to remove any stale event listeners
+  const oldTrigger = document.getElementById('addProjectTrigger');
+  const oldSubmit = document.getElementById('addProjectSubmit');
+  const oldCancel = document.getElementById('addProjectCancel');
+  const oldInput = document.getElementById('addProjectInput');
 
-  if (addTrigger && !addTrigger._bound) {
-    addTrigger._bound = true;
+  if (!oldTrigger) return;
+
+  const addTrigger = oldTrigger.cloneNode(true);
+  oldTrigger.parentNode.replaceChild(addTrigger, oldTrigger);
+
+  const addForm = document.getElementById('addProjectForm');
+  const addCat = document.getElementById('addProjectCat');
+
+  const addSubmit = oldSubmit.cloneNode(true);
+  oldSubmit.parentNode.replaceChild(addSubmit, oldSubmit);
+
+  const addCancel = oldCancel.cloneNode(true);
+  oldCancel.parentNode.replaceChild(addCancel, oldCancel);
+
+  const addInput = oldInput.cloneNode(true);
+  oldInput.parentNode.replaceChild(addInput, oldInput);
+
+  {
     addTrigger.addEventListener('click', () => {
       addTrigger.style.display = 'none';
       addForm.style.display = 'flex';
@@ -1563,12 +1654,26 @@ function renderRecurringHabits(tasks) {
       const todayStr = getTodayStr();
       const alreadyLogged = (item.sessions || []).some(s => s.date === todayStr);
       if (alreadyLogged) {
-        // Remove today's session (undo)
-        item.sessions = (item.sessions || []).filter(s => s.date !== todayStr);
-      } else {
-        if (!item.sessions) item.sessions = [];
-        item.sessions.push({ date: todayStr, note: '' });
+        // Show brief "Already logged" tooltip instead of toggling
+        const card = el.closest('.habit-card');
+        if (card && !card.querySelector('.habit-undo-tooltip')) {
+          const tip = document.createElement('div');
+          tip.className = 'habit-undo-tooltip';
+          tip.innerHTML = 'Already logged. <span class="habit-undo-link">Undo?</span>';
+          card.appendChild(tip);
+          const undoLink = tip.querySelector('.habit-undo-link');
+          undoLink.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            item.sessions = (item.sessions || []).filter(s => s.date !== todayStr);
+            renderRecurringHabits(tasks);
+            await db.updateHabit(habitId, { sessions: item.sessions });
+          });
+          setTimeout(() => { if (tip.parentElement) tip.remove(); }, 3000);
+        }
+        return;
       }
+      if (!item.sessions) item.sessions = [];
+      item.sessions.push({ date: todayStr, note: '' });
       renderRecurringHabits(tasks);
       await db.updateHabit(habitId, { sessions: item.sessions });
     });

@@ -1,4 +1,8 @@
 // app.js — Init, data loading, collapsible sections (Supabase backend)
+//
+// SQL required for Trips feature (run once in Supabase SQL editor):
+// ALTER TABLE family_hub_items DROP CONSTRAINT family_hub_items_section_check;
+// ALTER TABLE family_hub_items ADD CONSTRAINT family_hub_items_section_check CHECK (section IN ('thisWeek','backlog','decisions','purchases','trips'));
 
 let appData = null;
 
@@ -133,8 +137,8 @@ function setupTabRail() {
   });
 }
 
-const FAMILY_SECTIONS = ['thisWeek', 'backlog', 'decisions', 'purchases'];
-const FAMILY_LABELS = { thisWeek: 'This Week', backlog: 'Backlog', decisions: 'Decisions', purchases: 'Purchases' };
+const FAMILY_SECTIONS = ['thisWeek', 'backlog', 'decisions', 'purchases', 'trips'];
+const FAMILY_LABELS = { thisWeek: 'This Week', backlog: 'Backlog', decisions: 'Decisions', purchases: 'Purchases', trips: 'Upcoming Trips' };
 
 function getFamilyHub() {
   if (!appData.familyHub) appData.familyHub = {};
@@ -180,6 +184,12 @@ function renderFamilyHub() {
   renderFamilyHandled(hub);
 
   for (const section of FAMILY_SECTIONS) {
+    // Trips section has its own special renderer
+    if (section === 'trips') {
+      renderFamilyTrips(hub);
+      continue;
+    }
+
     const items = hub[section] || [];
     const capSection = section.charAt(0).toUpperCase() + section.slice(1);
     const container = document.getElementById('family' + capSection);
@@ -461,6 +471,207 @@ function renderFamilyHub() {
   renderFamilyAhead();
 }
 
+// --- Trips section ---
+
+function renderFamilyTrips(hub) {
+  const container = document.getElementById('familyTrips');
+  const empty = document.getElementById('familyTripsEmpty');
+  if (!container) return;
+
+  const items = hub.trips || [];
+
+  if (items.length === 0) {
+    container.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+  } else {
+    if (empty) empty.style.display = 'none';
+    container.style.display = 'block';
+  }
+
+  container.innerHTML = items.map(item => {
+    // Parse checklist from comment field
+    let checklist = [];
+    try { checklist = JSON.parse(item.comment || '[]'); } catch (e) { checklist = []; }
+    if (!Array.isArray(checklist)) checklist = [];
+
+    const checklistHtml = checklist.map((cl, ci) => {
+      return `<div class="trip-checklist-item ${cl.done ? 'trip-cl-done' : ''}">
+        <input type="checkbox" class="trip-cl-checkbox" data-id="${item.id}" data-cl-idx="${ci}" ${cl.done ? 'checked' : ''}>
+        <span class="trip-cl-text">${escapeHtml(cl.text)}</span>
+        <button class="trip-cl-delete" data-id="${item.id}" data-cl-idx="${ci}" title="Remove">&times;</button>
+      </div>`;
+    }).join('');
+
+    const deadlineHtml = item.deadline
+      ? `<span class="trip-dates">${new Date(item.deadline + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>`
+      : '<span class="trip-dates-empty">No date set</span>';
+
+    const doneCount = checklist.filter(c => c.done).length;
+    const totalCount = checklist.length;
+    const progressHtml = totalCount > 0 ? `<span class="trip-progress">${doneCount}/${totalCount}</span>` : '';
+
+    return `<div class="trip-card" data-id="${item.id}">
+      <div class="trip-card-header">
+        <span class="trip-name" data-id="${item.id}">${escapeHtml(item.text)}</span>
+        ${progressHtml}
+        <button class="trip-expand-btn" data-id="${item.id}" title="Expand/collapse">&#9662;</button>
+        <button class="trip-delete-btn" data-id="${item.id}" title="Delete trip">&times;</button>
+      </div>
+      <div class="trip-date-row">
+        <span class="trip-date-icon">&#128197;</span>
+        ${deadlineHtml}
+        <button class="trip-date-btn" data-id="${item.id}" title="Set date">edit</button>
+      </div>
+      <div class="trip-checklist" data-id="${item.id}" style="display:none;">
+        ${checklistHtml}
+        <div class="trip-add-row">
+          <input type="text" class="trip-add-input" data-id="${item.id}" placeholder="+ add checklist item">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // --- Event listeners ---
+
+  // Expand/collapse checklist
+  container.querySelectorAll('.trip-expand-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const cl = container.querySelector(`.trip-checklist[data-id="${id}"]`);
+      if (!cl) return;
+      const isHidden = cl.style.display === 'none';
+      cl.style.display = isHidden ? 'block' : 'none';
+      btn.innerHTML = isHidden ? '&#9652;' : '&#9662;';
+    });
+  });
+
+  // Checklist checkbox toggle
+  container.querySelectorAll('.trip-cl-checkbox').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const id = cb.dataset.id;
+      const clIdx = parseInt(cb.dataset.clIdx);
+      const item = (hub.trips || []).find(i => i.id === id);
+      if (!item) return;
+      let checklist = [];
+      try { checklist = JSON.parse(item.comment || '[]'); } catch (e) { checklist = []; }
+      if (!Array.isArray(checklist) || !checklist[clIdx]) return;
+      checklist[clIdx].done = cb.checked;
+      item.comment = JSON.stringify(checklist);
+      renderFamilyTrips(hub);
+      await db.updateFamilyItem(id, { comment: item.comment });
+    });
+  });
+
+  // Delete checklist item
+  container.querySelectorAll('.trip-cl-delete').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const clIdx = parseInt(btn.dataset.clIdx);
+      const item = (hub.trips || []).find(i => i.id === id);
+      if (!item) return;
+      let checklist = [];
+      try { checklist = JSON.parse(item.comment || '[]'); } catch (e) { checklist = []; }
+      if (!Array.isArray(checklist)) return;
+      checklist.splice(clIdx, 1);
+      item.comment = JSON.stringify(checklist);
+      renderFamilyTrips(hub);
+      await db.updateFamilyItem(id, { comment: item.comment });
+    });
+  });
+
+  // Add checklist item
+  container.querySelectorAll('.trip-add-input').forEach(input => {
+    input.addEventListener('keydown', async (e) => {
+      if (e.key !== 'Enter') return;
+      const text = input.value.trim();
+      if (!text) return;
+      const id = input.dataset.id;
+      const item = (hub.trips || []).find(i => i.id === id);
+      if (!item) return;
+      let checklist = [];
+      try { checklist = JSON.parse(item.comment || '[]'); } catch (e) { checklist = []; }
+      if (!Array.isArray(checklist)) checklist = [];
+      checklist.push({ text, done: false });
+      item.comment = JSON.stringify(checklist);
+      input.value = '';
+      renderFamilyTrips(hub);
+      await db.updateFamilyItem(id, { comment: item.comment });
+    });
+  });
+
+  // Edit trip name (click)
+  container.querySelectorAll('.trip-name').forEach(el => {
+    el.addEventListener('click', () => {
+      if (el.querySelector('input')) return;
+      const id = el.dataset.id;
+      const item = (hub.trips || []).find(i => i.id === id);
+      if (!item) return;
+      const oldText = item.text;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'family-inline-edit';
+      input.value = oldText;
+      el.textContent = '';
+      el.appendChild(input);
+      input.focus();
+      input.select();
+      const save = async () => {
+        const newText = input.value.trim();
+        if (newText && newText !== oldText) {
+          item.text = newText;
+          await db.updateFamilyItem(id, { text: newText });
+        }
+        renderFamilyTrips(hub);
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); save(); }
+        if (ev.key === 'Escape') renderFamilyTrips(hub);
+      });
+    });
+  });
+
+  // Set trip date
+  container.querySelectorAll('.trip-date-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const item = (hub.trips || []).find(i => i.id === id);
+      const picker = document.createElement('input');
+      picker.type = 'date';
+      picker.className = 'family-date-picker';
+      picker.value = item && item.deadline ? item.deadline : '';
+      btn.parentElement.appendChild(picker);
+      picker.focus();
+      if (picker.showPicker) picker.showPicker();
+      const finish = async () => {
+        const val = picker.value;
+        if (item) item.deadline = val || null;
+        picker.remove();
+        renderFamilyTrips(hub);
+        await db.updateFamilyItem(id, { deadline: val || null });
+      };
+      picker.addEventListener('change', finish);
+      picker.addEventListener('blur', () => setTimeout(() => picker.remove(), 200));
+    });
+  });
+
+  // Delete trip
+  container.querySelectorAll('.trip-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (!confirm('Delete this trip?')) return;
+      const idx = (hub.trips || []).findIndex(i => i.id === id);
+      if (idx >= 0) hub.trips.splice(idx, 1);
+      renderFamilyTrips(hub);
+      await db.deleteFamilyItem(id);
+    });
+  });
+}
+
 // --- Upcoming events ---
 
 let _showRecurringUpcoming = false;
@@ -475,10 +686,15 @@ function renderFamilyUpcoming() {
     return;
   }
 
-  // Filter: visible (not hidden) and future only
+  // Filter: visible (not hidden), exclude sensitive keywords, and future only
+  const EXCLUDED_KEYWORDS = ['sylvia', 'nina', 'chemo'];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const visible = events.filter(e => !e.hidden);
+  const visible = events.filter(e => {
+    if (e.hidden) return false;
+    const lower = (e.summary || '').toLowerCase();
+    return !EXCLUDED_KEYWORDS.some(kw => lower.includes(kw));
+  });
   const future = visible.filter(e => {
     const d = new Date(e.date + 'T12:00:00');
     return d >= today;

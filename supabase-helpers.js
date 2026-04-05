@@ -140,6 +140,7 @@ const db = {
       backlog: familyItems.filter(i => i.section === 'backlog').map(this._mapFamilyItem),
       decisions: familyItems.filter(i => i.section === 'decisions').map(this._mapFamilyItem),
       purchases: familyItems.filter(i => i.section === 'purchases').map(this._mapFamilyItem),
+      trips: familyItems.filter(i => i.section === 'trips').map(this._mapFamilyItem),
       upcomingEvents: familyEvents.map(e => ({
         id: e.id,
         date: e.date,
