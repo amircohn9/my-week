@@ -1084,9 +1084,10 @@ function renderProjectsAgenda(tasks) {
   }
 
   if (projects.length === 0) {
-    container.style.display = 'none';
+    container.style.display = 'block';
+    container.innerHTML = '';
     if (empty) empty.style.display = 'block';
-    // Still append the add project form even with 0 projects
+    // Append the add project form — container must be visible so users can add their first project
     _appendAddProjectUI(container, tasks);
     return;
   }

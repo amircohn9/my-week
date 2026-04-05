@@ -212,7 +212,9 @@ function renderAll() {
   renderKPIStrip(appData);
   renderDailyFocus(appData);
   renderWeeklyObjectives(appData.tasks);
-  renderWinsAndTime(appData, 'today');
+  const activeWinsToggle = document.querySelector('#mainToggle .toggle-btn.active');
+  const winsRange = activeWinsToggle ? activeWinsToggle.dataset.range : 'today';
+  renderWinsAndTime(appData, winsRange);
   renderWeightCard(appData.diet);
   renderProjectsAgenda(appData.tasks);
   renderRecurringHabits(appData.tasks);
