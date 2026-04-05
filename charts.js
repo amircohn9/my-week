@@ -1003,6 +1003,7 @@ function renderProjectsAgenda(tasks) {
         <span class="proj-subtask-text" data-editable="true" data-task-id="${proj.id}" data-sub-idx="${si}">${escapeHtml(sub.text)}</span>
         ${todayBtn}
         <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-task-id="${proj.id}" data-sub-idx="${si}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
+        <button class="proj-subtask-delete" data-task-id="${proj.id}" data-sub-idx="${si}" title="Delete subtask">&times;</button>
       </div>`;
     }).join('');
 
@@ -1097,6 +1098,22 @@ function renderProjectsAgenda(tasks) {
       }
       cb.closest('.proj-subtask').classList.toggle('proj-subtask-done', cb.checked);
 
+      renderProjectsAgenda(tasks);
+      renderWeeklyObjectives(tasks);
+      db.updateTask(taskId, { subtasks: task.subtasks });
+    });
+  });
+
+  // Delete subtask
+  container.querySelectorAll('.proj-subtask-delete').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+      task.subtasks.splice(subIdx, 1);
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
       db.updateTask(taskId, { subtasks: task.subtasks });
