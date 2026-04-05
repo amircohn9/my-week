@@ -28,9 +28,51 @@ async function initApp() {
   renderDayByDay(appData.checkins, appData.diet ? appData.diet.entries : []);
   renderIdentityVotes(appData);
   setupToggle();
+  setupWeekToggle();
   setupCollapsibleSections();
   setupTabRail();
   setupCheckinForm();
+}
+
+// --- Weekend Week Toggle ---
+
+function setupWeekToggle() {
+  const toggle = document.getElementById('weekToggle');
+  if (!toggle) return;
+
+  // Show toggle on weekends
+  if (isWeekend()) {
+    toggle.style.display = 'flex';
+    // Default to "Last Week" on weekends
+    viewWeekOffset = -1;
+    toggle.querySelectorAll('.week-toggle-btn').forEach(b => b.classList.remove('active'));
+    const lastWeekBtn = toggle.querySelector('.week-toggle-btn[data-offset="-1"]');
+    if (lastWeekBtn) lastWeekBtn.classList.add('active');
+    // Re-render affected sections with last week's data
+    reRenderWeekSections();
+  }
+
+  toggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('.week-toggle-btn');
+    if (!btn) return;
+    toggle.querySelectorAll('.week-toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    viewWeekOffset = parseInt(btn.dataset.offset);
+    reRenderWeekSections();
+  });
+}
+
+function reRenderWeekSections() {
+  if (!appData) return;
+  renderDateRange();
+  renderKPIStrip(appData);
+  renderMomentumDots(appData.checkins);
+  renderDayByDay(appData.checkins, appData.diet ? appData.diet.entries : []);
+  renderWeeklyObjectives(appData.tasks);
+  // Re-render wins with the currently active toggle range
+  const activeToggle = document.querySelector('#mainToggle .toggle-btn.active');
+  const range = activeToggle ? activeToggle.dataset.range : 'week';
+  renderWinsAndTime(appData, range);
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
@@ -38,11 +80,11 @@ document.addEventListener('DOMContentLoaded', initApp);
 // --- Header ---
 
 function renderDateRange() {
-  const { weekStart } = getWeekRange();
+  const { weekStart } = getViewWeekRange();
   const fri = new Date(weekStart);
   fri.setDate(weekStart.getDate() + 4);
   const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  document.getElementById('dateRange').textContent = `${fmt(weekStart)} – ${fmt(fri)}, ${new Date().getFullYear()}`;
+  document.getElementById('dateRange').textContent = `${fmt(weekStart)} – ${fmt(fri)}, ${weekStart.getFullYear()}`;
 }
 
 function renderLastUpdated(data) {
@@ -433,12 +475,20 @@ function renderFamilyUpcoming() {
     return;
   }
 
+  // Count summary occurrences to detect recurring events
+  const summaryCounts = {};
+  const visible = events.filter(e => !e.hidden);
+  for (const evt of visible) {
+    const key = (evt.summary || '').trim().toLowerCase();
+    summaryCounts[key] = (summaryCounts[key] || 0) + 1;
+  }
+
   // Group by week, skip hidden and past
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const groups = {};
+  const groupOrder = [];
 
-  const visible = events.filter(e => !e.hidden);
   for (const evt of visible) {
     const d = new Date(evt.date + 'T12:00:00');
     if (d < today) continue;
@@ -449,22 +499,39 @@ function renderFamilyUpcoming() {
     else if (daysOut <= 7) groupLabel = 'This Week';
     else if (daysOut <= 14) groupLabel = 'Next Week';
     else groupLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' week';
-    if (!groups[groupLabel]) groups[groupLabel] = [];
+    if (!groups[groupLabel]) { groups[groupLabel] = []; groupOrder.push(groupLabel); }
     groups[groupLabel].push(evt);
   }
 
+  const nearGroups = new Set(['Today', 'Tomorrow', 'This Week']);
+
   let html = '';
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  for (const [label, evts] of Object.entries(groups)) {
-    const isThisWeek = label === 'Today' || label === 'Tomorrow' || label === 'This Week';
-    html += `<div class="upcoming-group"><div class="upcoming-group-label${isThisWeek ? ' upcoming-soon' : ''}">${label}</div>`;
+  for (const label of groupOrder) {
+    const evts = groups[label];
+    const isNear = nearGroups.has(label);
+    const isFar = !isNear;
+    const collapseKey = 'upcoming-collapse-' + label;
+    const storedCollapse = localStorage.getItem(collapseKey);
+    const isCollapsed = isFar && (storedCollapse !== 'false');
+
+    html += `<div class="upcoming-group${isFar ? ' upcoming-collapsible' : ''}${isCollapsed ? ' upcoming-collapsed' : ''}" data-group-label="${label}">`;
+    html += `<div class="upcoming-group-label${isNear ? ' upcoming-soon' : ''}${isFar ? ' upcoming-group-toggle' : ''}" data-group-label="${label}">${label}${isFar ? ` <span class="upcoming-expand-hint">(${evts.length})</span>` : ''}</div>`;
+
+    html += `<div class="upcoming-group-items">`;
     for (const evt of evts) {
       const d = new Date(evt.date + 'T12:00:00');
       const dayName = dayNames[d.getDay()];
       const isHighlighted = evt.highlighted;
       const typeClass = evt.type === 'daycare-closed' ? ' upcoming-alert' : evt.type === 'travel' ? ' upcoming-travel' : '';
       const hlClass = isHighlighted ? ' upcoming-highlighted' : '';
-      html += `<div class="upcoming-event${typeClass}${hlClass}" data-id="${evt.id}">
+
+      // Recurring vs one-off styling
+      const summaryKey = (evt.summary || '').trim().toLowerCase();
+      const isRecurring = (summaryCounts[summaryKey] || 0) >= 3;
+      const recurClass = isRecurring ? ' upcoming-recurring' : ' upcoming-oneoff';
+
+      html += `<div class="upcoming-event${typeClass}${hlClass}${recurClass}" data-id="${evt.id}">
         <span class="upcoming-day">${dayName}</span>
         <span class="upcoming-text">${escapeHtml(evt.summary)}</span>
         ${evt.time ? `<span class="upcoming-time">${evt.time}</span>` : ''}
@@ -474,9 +541,19 @@ function renderFamilyUpcoming() {
         </span>
       </div>`;
     }
-    html += '</div>';
+    html += '</div></div>';
   }
   container.innerHTML = html;
+
+  // Toggle collapsed far groups
+  container.querySelectorAll('.upcoming-group-toggle').forEach(el => {
+    el.addEventListener('click', () => {
+      const group = el.closest('.upcoming-group');
+      const label = group.dataset.groupLabel;
+      group.classList.toggle('upcoming-collapsed');
+      localStorage.setItem('upcoming-collapse-' + label, group.classList.contains('upcoming-collapsed'));
+    });
+  });
 
   // Highlight toggle
   container.querySelectorAll('.upcoming-star').forEach(el => {

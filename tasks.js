@@ -120,6 +120,84 @@ function renderBacklog(tasks) {
     </div>`;
   }).join('');
 
+  // --- Completed Projects section ---
+  const completedContainer = document.getElementById('completedProjects');
+  if (completedContainer) {
+    const completedByCategory = {};
+    let totalCompleted = 0;
+    for (const cat of CATEGORY_ORDER) {
+      const group = tasks[cat];
+      if (!group) continue;
+      const doneItems = (group.now || []).filter(t => t.done);
+      if (doneItems.length > 0) {
+        completedByCategory[cat] = doneItems;
+        totalCompleted += doneItems.length;
+      }
+    }
+
+    if (totalCompleted > 0) {
+      const isExpanded = localStorage.getItem('completed-projects-expanded') === 'true';
+      let cpHtml = `<div class="completed-projects-wrapper${isExpanded ? '' : ' cp-collapsed'}">
+        <div class="completed-projects-header">
+          <span class="completed-projects-arrow">${isExpanded ? '&#9662;' : '&#9656;'}</span>
+          <span class="completed-projects-title">Completed Projects</span>
+          <span class="task-count">${totalCompleted}</span>
+          <button class="completed-projects-clear" title="Clear all completed projects">Clear completed</button>
+        </div>
+        <div class="completed-projects-items">`;
+      for (const cat of CATEGORY_ORDER) {
+        if (!completedByCategory[cat]) continue;
+        const tagClass = categoryTagClass(cat);
+        for (const item of completedByCategory[cat]) {
+          cpHtml += `<div class="completed-project-item">
+            <span class="cp-check">&#10003;</span>
+            <span class="category-tag ${tagClass} cp-cat-badge">${cat}</span>
+            <span class="cp-text">${escapeHtml(item.text)}</span>
+          </div>`;
+        }
+      }
+      cpHtml += `</div></div>`;
+      completedContainer.innerHTML = cpHtml;
+
+      // Collapse/expand toggle
+      const header = completedContainer.querySelector('.completed-projects-header');
+      if (header) {
+        header.addEventListener('click', (e) => {
+          if (e.target.closest('.completed-projects-clear')) return;
+          const wrapper = completedContainer.querySelector('.completed-projects-wrapper');
+          wrapper.classList.toggle('cp-collapsed');
+          const collapsed = wrapper.classList.contains('cp-collapsed');
+          header.querySelector('.completed-projects-arrow').innerHTML = collapsed ? '&#9656;' : '&#9662;';
+          localStorage.setItem('completed-projects-expanded', !collapsed);
+        });
+      }
+
+      // Clear completed button
+      const clearBtn = completedContainer.querySelector('.completed-projects-clear');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (!confirm('Remove all completed projects from the agenda?')) return;
+          for (const cat of CATEGORY_ORDER) {
+            const group = tasks[cat];
+            if (!group) continue;
+            const doneItems = (group.now || []).filter(t => t.done);
+            for (const item of doneItems) {
+              const idx = group.now.findIndex(t => t.id === item.id);
+              if (idx >= 0) group.now.splice(idx, 1);
+              db.deleteTask(item.id);
+            }
+          }
+          renderBacklog(tasks);
+          if (typeof renderProjectsAgenda === 'function') renderProjectsAgenda(tasks);
+          if (typeof renderKPIStrip === 'function') renderKPIStrip(appData);
+        });
+      }
+    } else {
+      completedContainer.innerHTML = '';
+    }
+  }
+
   // --- Event listeners ---
 
   // Collapse toggle (UI-only, stays in localStorage)

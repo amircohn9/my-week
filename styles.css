@@ -1917,6 +1917,143 @@ footer {
 .checkin-toggle-label { cursor: pointer; }
 .checkin-toggle-label .chevron { font-size: 0.7rem; margin-left: 4px; }
 
+/* ─── Week Toggle ─── */
+.week-toggle {
+  display: flex;
+  background: #f0f0f0;
+  border-radius: 8px;
+  padding: 2px;
+  margin-top: 8px;
+  width: fit-content;
+}
+
+.week-toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 5px 14px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: #888;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.week-toggle-btn.active {
+  background: #fff;
+  color: #1a1a1a;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.week-toggle-btn:hover:not(.active) { color: #555; }
+
+/* ─── Upcoming: Collapse + Recurring vs One-off ─── */
+.upcoming-collapsible .upcoming-group-label {
+  cursor: pointer;
+  user-select: none;
+}
+.upcoming-collapsible .upcoming-group-label:hover { color: #666; }
+.upcoming-collapsed .upcoming-group-items { display: none; }
+.upcoming-expand-hint {
+  font-size: 0.65rem;
+  color: #bbb;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.upcoming-oneoff {
+  border-left: 3px solid #f59e0b;
+  padding-left: 8px;
+  margin-left: -3px;
+}
+
+.upcoming-recurring .upcoming-text {
+  color: #999;
+}
+
+.upcoming-recurring .upcoming-day {
+  color: #ccc;
+}
+
+/* ─── Completed Projects ─── */
+.completed-projects-section {
+  margin-top: 20px;
+}
+
+.completed-projects-wrapper {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+}
+
+.completed-projects-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px 0;
+  user-select: none;
+}
+
+.completed-projects-arrow {
+  font-size: 1.2rem;
+  color: #888;
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.completed-projects-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #999;
+}
+
+.cp-collapsed .completed-projects-items { display: none; }
+
+.completed-projects-clear {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #e0ddd8;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-family: inherit;
+  color: #bbb;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.completed-projects-clear:hover { border-color: #e74c3c; color: #e74c3c; }
+
+.completed-project-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f8f7f4;
+  font-size: 0.85rem;
+}
+.completed-project-item:last-child { border-bottom: none; }
+
+.cp-check {
+  color: #7db87d;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.cp-cat-badge {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+
+.cp-text {
+  color: #999;
+  text-decoration: line-through;
+  text-decoration-color: #ddd;
+}
+
 /* Mobile adjustments */
 @media (max-width: 600px) {
   .checkin-modal {
@@ -1927,4 +2064,6 @@ footer {
   .checkin-activity-row { flex-wrap: wrap; }
   .checkin-activity-cat { min-width: 100%; }
   .checkin-activity-text { min-width: calc(100% - 90px); }
+  .week-toggle { width: 100%; }
+  .week-toggle-btn { flex: 1; text-align: center; }
 }

@@ -2,6 +2,22 @@
 // Supabase-backed: all state lives on task/habit objects, persisted via db.*
 
 // ---------------------------------------------------------------------------
+// Week view offset (0 = current week, -1 = last week, +1 = next week)
+// ---------------------------------------------------------------------------
+let viewWeekOffset = 0;
+
+function getViewWeekRange() {
+  const { weekStart, weekEnd } = getWeekRange();
+  if (viewWeekOffset === 0) return { weekStart, weekEnd };
+  const offsetMs = viewWeekOffset * 7 * 24 * 60 * 60 * 1000;
+  const newStart = new Date(weekStart.getTime() + offsetMs);
+  newStart.setHours(0, 0, 0, 0);
+  const newEnd = new Date(weekEnd.getTime() + offsetMs);
+  newEnd.setHours(23, 59, 59, 999);
+  return { weekStart: newStart, weekEnd: newEnd };
+}
+
+// ---------------------------------------------------------------------------
 // Helper: weekday-aware streak calculation
 // ---------------------------------------------------------------------------
 function getWeekdayStreak(checkinDates) {
@@ -60,7 +76,7 @@ function findTaskById(tasks, id) {
 // ---------------------------------------------------------------------------
 function renderMomentumDots(checkins) {
   const container = document.getElementById('momentumDots');
-  const { weekStart } = getWeekRange();
+  const { weekStart } = getViewWeekRange();
   const days = ['M', 'T', 'W', 'T', 'F'];
   const today = getTodayStr();
   const checkinMap = {};
@@ -126,35 +142,40 @@ function renderEncouragement(data) {
 // ---------------------------------------------------------------------------
 function renderKPIStrip(data) {
   const container = document.getElementById('kpiStrip');
-  const { weekStart, weekEnd } = getWeekRange();
+  const { weekStart, weekEnd } = getViewWeekRange();
+
+  // 1. Projects completed — count tasks where done=true in all categories' now lists
+  let projectsDone = 0;
+  const tasks = data.tasks || {};
+  for (const cat of CATEGORY_ORDER) {
+    const group = tasks[cat];
+    if (!group) continue;
+    for (const item of (group.now || [])) {
+      if (item.done) projectsDone++;
+    }
+  }
+  const projectsHtml = `<div class="kpi-card"><div class="kpi-value">${projectsDone}</div><div class="kpi-label">projects done</div></div>`;
+
+  // 2. Tasks completed this week — count from completedItems where date is in view week
+  const weekItems = (data.completedItems || []).filter(i => {
+    const d = new Date(i.date + 'T12:00:00');
+    return d >= weekStart && d <= weekEnd;
+  });
+  const winsCount = weekItems.length;
+  const winsHtml = `<div class="kpi-card"><div class="kpi-value">${winsCount}</div><div class="kpi-label">wins this week</div></div>`;
+
+  // 3. Hours tracked (secondary)
   const weekCheckins = (data.checkins || []).filter(c => {
     const d = new Date(c.date + 'T12:00:00');
     return d >= weekStart && d <= weekEnd && isWeekday(c.date);
   });
-
-  const daysActive = weekCheckins.length;
-  const ringRadius = 20;
-  const ringCircumference = 2 * Math.PI * ringRadius;
-  const ringFill = (daysActive / 5) * ringCircumference;
-  const ringGap = ringCircumference - ringFill;
-
-  const daysActiveHtml = `<div class="kpi-card">
-    <div class="kpi-value">
-      <svg width="50" height="50" viewBox="0 0 50 50" class="kpi-ring">
-        <circle cx="25" cy="25" r="${ringRadius}" fill="none" stroke="#e5e7eb" stroke-width="4"/>
-        <circle cx="25" cy="25" r="${ringRadius}" fill="none" stroke="#34d399" stroke-width="4"
-          stroke-dasharray="${ringFill} ${ringGap}" stroke-linecap="round" transform="rotate(-90 25 25)"/>
-        <text x="25" y="25" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="600" fill="#1f2937">${daysActive}/5</text>
-      </svg>
-    </div>
-    <div class="kpi-label">weekdays active</div>
-  </div>`;
-
   let totalHours = 0;
+  const daysActive = weekCheckins.length;
   for (const c of weekCheckins) for (const a of (c.activities || [])) totalHours += a.hours || 0;
   const avgPerDay = daysActive > 0 ? (totalHours / daysActive).toFixed(1) : '0.0';
   const hoursHtml = `<div class="kpi-card"><div class="kpi-value">${totalHours}<span class="kpi-unit">h</span></div><div class="kpi-label">tracked</div><div class="kpi-secondary">avg ${avgPerDay}h/day</div></div>`;
 
+  // 4. Weight progress (last position)
   let weightHtml = '';
   const diet = data.diet;
   if (diet && diet.weights && diet.weights.length > 0) {
@@ -165,14 +186,7 @@ function renderKPIStrip(data) {
     weightHtml = `<div class="kpi-card"><div class="kpi-value">${latest.lbs}<span class="kpi-unit">lbs</span></div><div class="kpi-label">${remaining > 0 ? remaining + ' to goal ' + arrow : 'At goal!'}</div></div>`;
   }
 
-  const allDates = (data.checkins || []).map(c => c.date);
-  const streak = getWeekdayStreak(allDates);
-  const bestStreak = getBestWeekdayStreak(allDates);
-  const flame = streak >= 3 ? ' \uD83D\uDD25' : '';
-  const bestLabel = (streak < bestStreak && bestStreak > 1) ? `<div class="kpi-secondary">best: ${bestStreak}d</div>` : '';
-  const streakHtml = `<div class="kpi-card"><div class="kpi-value">${streak}${flame}</div><div class="kpi-label">weekday streak</div>${bestLabel}</div>`;
-
-  container.innerHTML = daysActiveHtml + hoursHtml + (weightHtml || '') + streakHtml;
+  container.innerHTML = projectsHtml + winsHtml + hoursHtml + (weightHtml || '');
 }
 
 // ---------------------------------------------------------------------------
@@ -184,7 +198,7 @@ function renderWinsAndTime(data, range) {
   const counts = {};
   const activitiesByCat = {};
   for (const cat of CATEGORY_ORDER) { counts[cat] = 0; activitiesByCat[cat] = []; }
-  const { weekStart, weekEnd } = getWeekRange();
+  const { weekStart, weekEnd } = getViewWeekRange();
   const today = getTodayStr();
 
   const allCheckins = data.checkins || [];
@@ -619,8 +633,11 @@ function renderDayByDay(checkins, dietEntries) {
 
   const weekKeys = Object.keys(weekGroups).sort((a, b) => b.localeCompare(a));
   const today = getTodayStr();
+  const viewWeek = getViewWeekRange();
+  const viewWeekKey = formatDateStr(viewWeek.weekStart);
 
   // Use sessionStorage for collapse state (transient UI preference, not data)
+  // When viewWeekOffset is non-zero, auto-expand that week
   container.innerHTML = weekKeys.map(weekKey => {
     const ws = new Date(weekKey + 'T12:00:00');
     const we = new Date(ws);
@@ -629,7 +646,8 @@ function renderDayByDay(checkins, dietEntries) {
     const label = `Week of ${fmt(ws)} – ${fmt(we)}`;
     const collapseKey = `collapse-week-${weekKey}`;
     const stored = sessionStorage.getItem(collapseKey);
-    const isCollapsed = stored !== null ? stored === 'true' : true;
+    const isViewWeek = weekKey === viewWeekKey;
+    const isCollapsed = isViewWeek ? false : (stored !== null ? stored === 'true' : true);
     const days = weekGroups[weekKey];
 
     const daysHtml = days.map(day => {
@@ -1020,7 +1038,7 @@ function renderProjectsAgenda(tasks) {
       <button class="proj-close-btn" data-proj="${pi}">&times;</button>
       <div class="proj-card-header" data-proj="${pi}">
         <span class="category-tag ${tagClass} proj-cat-tag">${proj.category}</span>
-        <span class="proj-title">${escapeHtml(proj.text)}</span>
+        <span class="proj-title" data-editable="true" data-task-id="${proj.id}">${escapeHtml(proj.text)}</span>
         ${deadlineHtml}
         ${taskThisWeekHtml}
         <span class="proj-progress-label">${totalSubs > 0 ? `${doneSubs}/${totalSubs}` : ''}</span>
@@ -1056,7 +1074,7 @@ function renderProjectsAgenda(tasks) {
   // Card expand/collapse
   container.querySelectorAll('.proj-card-header').forEach(header => {
     header.addEventListener('click', (e) => {
-      if (e.target.closest('.this-week-toggle') || e.target.closest('.today-toggle')) return;
+      if (e.target.closest('.this-week-toggle') || e.target.closest('.today-toggle') || e.target.closest('.task-edit-input')) return;
       const card = header.closest('.proj-card');
       const pi = parseInt(card.dataset.proj);
       if (card.classList.contains('proj-card-expanded')) {
@@ -1081,6 +1099,44 @@ function renderProjectsAgenda(tasks) {
       card.classList.remove('proj-card-expanded');
       container.querySelectorAll('.proj-card').forEach(c => c.classList.remove('proj-card-hidden'));
       _expandedProjIdx = null;
+    });
+  });
+
+  // Double-click to edit project title
+  container.querySelectorAll('.proj-title[data-editable]').forEach(span => {
+    span.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      const taskId = span.dataset.taskId;
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const current = found.task.text;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = current;
+      input.className = 'task-edit-input';
+      span.replaceWith(input);
+      input.focus();
+      input.select();
+      const save = async () => {
+        const newVal = input.value.trim();
+        const newSpan = document.createElement('span');
+        newSpan.className = 'proj-title';
+        newSpan.dataset.editable = 'true';
+        newSpan.dataset.taskId = taskId;
+        newSpan.textContent = newVal || current;
+        input.replaceWith(newSpan);
+        if (newVal && newVal !== current) {
+          found.task.text = newVal;
+          renderProjectsAgenda(tasks);
+          renderWeeklyObjectives(tasks);
+          await db.updateTask(taskId, { text: newVal });
+        }
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = current; input.blur(); }
+      });
     });
   });
 
@@ -1479,6 +1535,15 @@ function renderRecurringHabits(tasks) {
 function setupToggle() {
   const mainToggle = document.getElementById('mainToggle');
   if (!mainToggle) return;
+
+  // On weekends, default to "This Week" instead of "Today"
+  if (isWeekend()) {
+    mainToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    const weekBtn = mainToggle.querySelector('.toggle-btn[data-range="week"]');
+    if (weekBtn) weekBtn.classList.add('active');
+    renderWinsAndTime(appData, 'week');
+  }
+
   mainToggle.addEventListener('click', (e) => {
     const btn = e.target.closest('.toggle-btn');
     if (!btn) return;

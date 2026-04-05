@@ -34,6 +34,11 @@
         <div>
           <h1>Stay Focused — Keep Moving</h1>
           <p class="subtitle" id="dateRange"></p>
+          <div id="weekToggle" class="week-toggle" style="display:none;">
+            <button class="week-toggle-btn" data-offset="-1">Last Week</button>
+            <button class="week-toggle-btn active" data-offset="0">This Week</button>
+            <button class="week-toggle-btn" data-offset="1">Next Week</button>
+          </div>
         </div>
         <button class="checkin-trigger-btn" id="checkinTriggerBtn">Check In</button>
       </div>
@@ -106,8 +111,9 @@
       </section>
 
       <section class="card backlog-card" style="grid-area: backlog;">
-        <h2>Backlog</h2>
+        <h2>Backlog Projects</h2>
         <div id="taskList"></div>
+        <div id="completedProjects" class="completed-projects-section"></div>
       </section>
 
       <section class="card daybyday-card" style="grid-area: daybyday;">
