@@ -342,6 +342,12 @@ const db = {
   // ============================================================
   // COMPLETED ITEMS
   // ============================================================
+  async deleteCompletedItemsByDate(date) {
+    const userId = (await this.getSession()).user.id;
+    const { error } = await supabaseClient.from('completed_items').delete().eq('user_id', userId).eq('date', date);
+    if (error) throw error;
+  },
+
   async insertCompletedItem(item) {
     const { error } = await supabaseClient.from('completed_items').insert({
       user_id: (await this.getSession()).user.id,
@@ -390,8 +396,11 @@ const db = {
   // WEIGHT
   // ============================================================
   async insertWeight(date, lbs) {
+    const userId = (await this.getSession()).user.id;
+    // Remove existing entry for this date to prevent duplicates
+    await supabaseClient.from('weight_logs').delete().eq('user_id', userId).eq('date', date);
     const { error } = await supabaseClient.from('weight_logs').insert({
-      user_id: (await this.getSession()).user.id,
+      user_id: userId,
       date,
       lbs,
     });
@@ -507,5 +516,9 @@ const db = {
   async getCompletedPrompts() {
     const { data } = await supabaseClient.from('prompt_completions').select('prompt_id, year');
     return data || [];
+  },
+
+  onAuthStateChange(callback) {
+    supabaseClient.auth.onAuthStateChange(callback);
   },
 };

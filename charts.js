@@ -55,23 +55,6 @@ function getBestWeekdayStreak(checkinDates) {
 }
 
 // ---------------------------------------------------------------------------
-// Helper: find a task object by its id across all categories
-// ---------------------------------------------------------------------------
-function findTaskById(tasks, id) {
-  for (const cat of CATEGORY_ORDER) {
-    const group = tasks[cat];
-    if (!group) continue;
-    for (const item of (group.now || [])) {
-      if (item.id === id) return { task: item, category: cat, list: 'now' };
-    }
-    for (const item of (group.backlog || [])) {
-      if (item.id === id) return { task: item, category: cat, list: 'backlog' };
-    }
-  }
-  return null;
-}
-
-// ---------------------------------------------------------------------------
 // 1. renderMomentumDots(checkins)
 // ---------------------------------------------------------------------------
 function renderMomentumDots(checkins) {
@@ -1044,7 +1027,7 @@ function renderDailyFocus(data) {
 // ---------------------------------------------------------------------------
 // 10. renderProjectsAgenda(tasks) — Card grid with thisWeek toggle
 // ---------------------------------------------------------------------------
-let _expandedProjIdx = null;
+let _expandedProjId = null;
 
 function renderProjectsAgenda(tasks) {
   const container = document.getElementById('projectsAgenda');
@@ -1156,11 +1139,12 @@ function renderProjectsAgenda(tasks) {
   }).join('');
 
   // Restore expanded state after re-render
-  if (_expandedProjIdx !== null) {
+  if (_expandedProjId !== null) {
     const cards = container.querySelectorAll('.proj-card');
-    if (cards[_expandedProjIdx]) {
-      cards[_expandedProjIdx].classList.add('proj-card-expanded');
-      cards.forEach((c, i) => { if (i !== _expandedProjIdx) c.classList.add('proj-card-hidden'); });
+    const expandedProj = projects.findIndex(p => p.id === _expandedProjId);
+    if (expandedProj !== -1 && cards[expandedProj]) {
+      cards[expandedProj].classList.add('proj-card-expanded');
+      cards.forEach((c, i) => { if (i !== expandedProj) c.classList.add('proj-card-hidden'); });
     }
   }
 
@@ -1172,16 +1156,17 @@ function renderProjectsAgenda(tasks) {
       if (e.target.closest('.this-week-toggle') || e.target.closest('.today-toggle') || e.target.closest('.task-edit-input')) return;
       const card = header.closest('.proj-card');
       const pi = parseInt(card.dataset.proj);
+      const projId = projects[pi] ? projects[pi].id : null;
       if (card.classList.contains('proj-card-expanded')) {
         card.classList.remove('proj-card-expanded');
         container.querySelectorAll('.proj-card').forEach(c => c.classList.remove('proj-card-hidden'));
-        _expandedProjIdx = null;
+        _expandedProjId = null;
       } else {
         container.querySelectorAll('.proj-card').forEach(c => {
           if (c !== card) c.classList.add('proj-card-hidden');
         });
         card.classList.add('proj-card-expanded');
-        _expandedProjIdx = pi;
+        _expandedProjId = projId;
       }
     });
   });
@@ -1193,7 +1178,7 @@ function renderProjectsAgenda(tasks) {
       const card = btn.closest('.proj-card');
       card.classList.remove('proj-card-expanded');
       container.querySelectorAll('.proj-card').forEach(c => c.classList.remove('proj-card-hidden'));
-      _expandedProjIdx = null;
+      _expandedProjId = null;
     });
   });
 
@@ -1407,7 +1392,7 @@ function renderProjectsAgenda(tasks) {
       const found = findTaskById(tasks, taskId);
       if (!found) return;
       found.task.done = true;
-      _expandedProjIdx = null;
+      _expandedProjId = null;
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
       db.updateTask(taskId, { done: true });
@@ -1427,7 +1412,7 @@ function renderProjectsAgenda(tasks) {
         const [item] = group.now.splice(idx, 1);
         group.backlog.unshift(item);
       }
-      _expandedProjIdx = null;
+      _expandedProjId = null;
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
       renderBacklog(tasks);
@@ -1838,7 +1823,8 @@ function renderRecurringHabits(tasks) {
 // ---------------------------------------------------------------------------
 function setupToggle() {
   const mainToggle = document.getElementById('mainToggle');
-  if (!mainToggle) return;
+  if (!mainToggle || mainToggle._bound) return;
+  mainToggle._bound = true;
 
   // On weekends, default to "This Week" instead of "Today"
   if (isWeekend()) {

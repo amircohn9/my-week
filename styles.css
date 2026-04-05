@@ -1753,46 +1753,6 @@ header h1 {
   border: 1px solid #6c9bcf; border-radius: 4px; padding: 2px 6px; font-size: inherit; font-family: inherit; color: #333; outline: none; width: 100%; max-width: 400px;
 }
 
-/* ─── Notes for Claude ─── */
-.notes-fab {
-  position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; background: #64748b; color: #fff; border: none; border-radius: 50%; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 3px 12px rgba(0,0,0,0.2); z-index: 100; transition: background 0.2s, transform 0.2s;
-}
-.notes-fab:hover { background: #475569; transform: scale(1.05); }
-
-.notes-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 200; }
-.notes-overlay.open { display: block; }
-
-.notes-panel {
-  position: fixed; bottom: 0; right: 0; width: 380px; max-width: 100vw; max-height: 80vh; background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0 -4px 24px rgba(0,0,0,0.15); z-index: 300; transform: translateY(100%); transition: transform 0.3s ease; padding: 20px 24px 24px; overflow-y: auto;
-}
-.notes-panel.open { transform: translateY(0); }
-
-.notes-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.notes-panel-header h3 { font-size: 1rem; font-weight: 600; color: #1a1a1a; }
-.notes-panel-close { border: none; background: none; font-size: 1.5rem; color: #999; cursor: pointer; padding: 0 4px; line-height: 1; }
-.notes-panel-close:hover { color: #555; }
-
-.notes-desc { font-size: 0.85rem; color: #999; margin-bottom: 12px; }
-.saved-notes { margin-bottom: 12px; }
-
-.note-item { display: flex; align-items: baseline; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
-.note-item:last-child { border-bottom: none; }
-.note-text { flex: 1; color: #444; }
-.note-date { font-size: 0.75rem; color: #aaa; flex-shrink: 0; }
-.note-delete { border: none; background: none; color: #ccc; font-size: 1.1rem; cursor: pointer; padding: 0 4px; flex-shrink: 0; }
-.note-delete:hover { color: #999; }
-
-.notes-input-row { display: flex; gap: 8px; align-items: flex-end; }
-.notes-input {
-  flex: 1; border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; font-family: inherit; color: #444; resize: none; outline: none; transition: border-color 0.2s;
-}
-.notes-input:focus { border-color: #94a3b8; }
-.notes-input::placeholder { color: #ccc; }
-.save-note-btn {
-  border: none; background: #94a3b8; color: #fff; font-family: inherit; font-size: 0.8rem; font-weight: 500; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
-}
-.save-note-btn:hover { background: #64748b; }
-
 /* ─── Identity Votes (footer) ─── */
 .identity-vote {
   font-size: 0.88rem;

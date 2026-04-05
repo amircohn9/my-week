@@ -67,20 +67,6 @@ function renderTaskItem(item, cat, section, moveTarget) {
   </div>`;
 }
 
-// --- Helper: find task object inside appData.tasks by id ---
-
-function findTaskById(tasks, id) {
-  for (const cat of CATEGORY_ORDER) {
-    const group = tasks[cat];
-    if (!group) continue;
-    for (const list of ['now', 'backlog']) {
-      const found = (group[list] || []).find(t => t.id === id);
-      if (found) return { task: found, category: cat, list };
-    }
-  }
-  return null;
-}
-
 // --- Backlog rendering ---
 
 function renderBacklog(tasks) {

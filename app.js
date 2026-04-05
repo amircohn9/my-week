@@ -9,7 +9,7 @@ let appData = null;
 async function initApp() {
   const session = await db.getSession();
   if (!session) {
-    window.addEventListener('authenticated', initApp);
+    window.addEventListener('authenticated', initApp, { once: true });
     return;
   }
 
@@ -80,6 +80,13 @@ function reRenderWeekSections() {
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
+
+db.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    document.getElementById('authOverlay').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+  }
+});
 
 // --- Header ---
 

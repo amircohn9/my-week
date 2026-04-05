@@ -26,14 +26,6 @@ function getTomorrowStr() {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
-function getNextMondayStr() {
-  const d = new Date();
-  const day = d.getDay();
-  if (day === 6) d.setDate(d.getDate() + 2);
-  else if (day === 0) d.setDate(d.getDate() + 1);
-  return formatDateStr(d);
-}
-
 function isWeekend() {
   const day = new Date().getDay();
   return day === 0 || day === 6;
@@ -56,5 +48,17 @@ function formatDateStr(date) {
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
-  return div.innerHTML;
+  return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function findTaskById(tasks, id) {
+  for (const cat of CATEGORY_ORDER) {
+    const group = tasks[cat];
+    if (!group) continue;
+    for (const list of ['now', 'backlog']) {
+      const found = (group[list] || []).find(t => t.id === id);
+      if (found) return { task: found, category: cat, list };
+    }
+  }
+  return null;
 }

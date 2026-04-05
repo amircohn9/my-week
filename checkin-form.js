@@ -164,6 +164,8 @@ async function submitCheckin() {
   await db.upsertCheckin({ date: today, activities, mood, obstacles, wins, summary });
 
   // 2. Insert completed items (one per activity)
+  // Delete existing completed items for today to prevent duplicates on re-submit
+  await db.deleteCompletedItemsByDate(today);
   await db.insertCompletedItems(activities.map(a => ({
     category: a.category,
     text: a.text,
@@ -186,7 +188,7 @@ async function submitCheckin() {
 
   // 5. Tomorrow's focus
   if (focus) {
-    await db.updateSettings({ dailyFocus: focus });
+    await db.updateSettings({ yesterdayNotes: focus });
   }
 }
 
