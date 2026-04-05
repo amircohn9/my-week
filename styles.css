@@ -2259,6 +2259,68 @@ footer {
 .weekend-liked-toggle { cursor: pointer; }
 .weekend-liked-toggle .chevron { font-size: 0.7rem; margin-left: 4px; }
 
+/* ─── Project deadline badge (clickable) ─── */
+.proj-deadline-badge {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.proj-deadline-badge:hover { opacity: 0.7; }
+.proj-set-date {
+  font-size: 0.72rem;
+  color: #ccc;
+  margin-left: 8px;
+  font-style: italic;
+  cursor: pointer;
+}
+.proj-set-date:hover { color: #888; }
+.proj-date-picker {
+  font-size: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 25;
+}
+
+/* ─── Subtask move button & dropdown ─── */
+.proj-subtask-move {
+  border: none; background: none; color: #ccc; font-size: 0.85rem;
+  cursor: pointer; padding: 0 2px; opacity: 0; transition: opacity 0.15s;
+}
+.proj-subtask:hover .proj-subtask-move { opacity: 1; }
+.proj-subtask-move:hover { color: #3b82f6; }
+
+.proj-move-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 4px;
+  z-index: 30;
+  min-width: 160px;
+}
+.proj-move-option {
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #555;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+.proj-move-option:hover { background: #f5f4f1; }
+
+/* ─── Upcoming sync indicator ─── */
+.upcoming-sync-indicator {
+  font-size: 0.65rem;
+  color: #bbb;
+  margin-left: auto;
+  font-weight: 400;
+  font-style: italic;
+}
+
 /* ═══════════════════════════════════════════════════
    RESPONSIVE MOBILE — max-width: 767px
    Only ADD rules here. No desktop overrides above.

@@ -372,8 +372,32 @@ function renderFamilyHub() {
           // Optimistic UI
           const row = el.closest('.family-item');
           if (row) { row.style.opacity = '0.3'; row.style.pointerEvents = 'none'; }
-          // Insert into Amir's tasks and delete from family hub
-          await db.insertTask({ text: item.text, category: 'Home Duties', list: 'backlog' });
+
+          // Check if an A&A project exists in any category
+          let aaProject = null;
+          const taskData = appData.tasks || {};
+          for (const cat of CATEGORY_ORDER) {
+            const group = taskData[cat];
+            if (!group) continue;
+            for (const t of (group.now || [])) {
+              if (t.text && (t.text.includes('A&A') || t.text.toLowerCase().includes('amir & arielle') || t.text.toLowerCase().includes('amir and arielle'))) {
+                aaProject = { task: t, category: cat };
+                break;
+              }
+            }
+            if (aaProject) break;
+          }
+
+          if (aaProject) {
+            // Add as subtask of the A&A project
+            const newSub = { text: item.text, done: false, thisWeek: false, today: false };
+            aaProject.task.subtasks.push(newSub);
+            await db.updateTask(aaProject.task.id, { subtasks: aaProject.task.subtasks });
+          } else {
+            // No A&A project found — create standalone task in Home Duties backlog
+            await db.insertTask({ text: item.text, category: 'Home Duties', list: 'backlog' });
+          }
+
           await db.deleteFamilyItem(id);
           // Remove from in-memory array
           const fromList = hub[from] || [];
@@ -690,6 +714,32 @@ function renderFamilyUpcoming() {
   if (!container) return;
   const events = (appData && appData.familyHub && appData.familyHub.upcomingEvents) || [];
 
+  // Add "Last synced" indicator to the section header
+  const upcomingSection = container.closest('.family-section');
+  if (upcomingSection) {
+    const header = upcomingSection.querySelector('.family-section-header');
+    if (header) {
+      // Remove old sync indicator if present
+      const oldSync = header.querySelector('.upcoming-sync-indicator');
+      if (oldSync) oldSync.remove();
+      // Find latest event date as proxy for last sync
+      if (events.length > 0) {
+        const sortedDates = events.map(e => e.date).sort();
+        const latestDate = sortedDates[sortedDates.length - 1];
+        // Show the most recent check-in date as "last synced"
+        const lastCheckin = (appData.checkins || []).map(c => c.date).sort().pop();
+        const syncLabel = lastCheckin
+          ? new Date(lastCheckin + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : 'never';
+        const syncSpan = document.createElement('span');
+        syncSpan.className = 'upcoming-sync-indicator';
+        syncSpan.textContent = `Synced ${syncLabel}`;
+        syncSpan.title = 'Calendar events are updated during check-ins';
+        header.appendChild(syncSpan);
+      }
+    }
+  }
+
   if (events.length === 0) {
     container.innerHTML = '<p class="empty-state family-empty">Calendar events will appear here after next check-in.</p>';
     return;
@@ -864,9 +914,22 @@ function renderFamilyAhead() {
     return;
   }
 
-  // Sort: act first, then think, then routine
+  // Sort: closest month first, then by urgency within the same month
+  const currentMonth = new Date().getMonth() + 1;
   const order = { act: 0, think: 1, routine: 2 };
-  active.sort((a, b) => (order[a.urgency] || 9) - (order[b.urgency] || 9));
+
+  // Calculate how many months until the prompt's start month (wrapping around year boundary)
+  const monthDistance = (m) => {
+    if (m >= currentMonth) return m - currentMonth;
+    return (12 - currentMonth) + m;
+  };
+
+  active.sort((a, b) => {
+    const distA = monthDistance(a.month);
+    const distB = monthDistance(b.month);
+    if (distA !== distB) return distA - distB;
+    return (order[a.urgency] || 9) - (order[b.urgency] || 9);
+  });
 
   const urgencyLabels = { act: 'Act Now', think: 'Think Ahead', routine: 'Routine' };
   const urgencyIcons = { act: '\u{1F534}', think: '\u{1F7E1}', routine: '\u{1F7E2}' };

@@ -316,10 +316,24 @@ function renderWeeklyObjectives(tasks) {
 
   // Next week: show only planning input, not this week's objectives
   if (viewWeekOffset === 1) {
+    // Build project options from all active (non-done) now items
+    let projectOptions = '<option value="">No project (standalone)</option>';
+    for (const cat of CATEGORY_ORDER) {
+      const group = tasks[cat];
+      if (!group) continue;
+      for (const item of (group.now || [])) {
+        if (item.done) continue;
+        projectOptions += `<option value="${item.id}">${escapeHtml(item.text)} (${cat})</option>`;
+      }
+    }
+
     list.innerHTML = `<li class="obj-next-week-header" style="list-style:none;padding:0 0 8px;font-size:0.78rem;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;">Planning next week</li>
       <li class="empty-state" style="list-style:none;color:#999;font-style:italic;padding:4px 0 8px;">Add objectives you want to tackle next week.</li>
       <li style="list-style:none;padding:8px 0;">
         <input type="text" class="obj-add-input" placeholder="+ add objective for next week" style="width:100%;border:1px dashed #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;">
+        <select class="obj-project-select" style="width:100%;margin-top:6px;border:1px solid #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;color:#666;">
+          ${projectOptions}
+        </select>
       </li>`;
     _bindObjAddInput(list, tasks);
     return;
@@ -541,13 +555,30 @@ function renderWeeklyObjectives(tasks) {
 // Helper: bind the "add objective" input for next week planning
 function _bindObjAddInput(container, tasks) {
   const input = container.querySelector('.obj-add-input');
+  const projectSelect = container.querySelector('.obj-project-select');
   if (!input) return;
   input.addEventListener('keydown', async (e) => {
     if (e.key !== 'Enter') return;
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
-    // Create a new task in Career (default) with thisWeek=true
+
+    const selectedProjectId = projectSelect ? projectSelect.value : '';
+
+    if (selectedProjectId) {
+      // Add as subtask of the selected project
+      const found = findTaskById(tasks, selectedProjectId);
+      if (found) {
+        const newSub = { text, done: false, thisWeek: true, today: false };
+        found.task.subtasks.push(newSub);
+        renderWeeklyObjectives(tasks);
+        renderProjectsAgenda(tasks);
+        await db.updateTask(selectedProjectId, { subtasks: found.task.subtasks });
+        return;
+      }
+    }
+
+    // No project selected — create standalone task in Career with thisWeek=true
     const newRow = await db.insertTask({ text, category: 'Career', list: 'now', thisWeek: true, subtasks: [] });
     if (!tasks['Career']) tasks['Career'] = { description: '', now: [], backlog: [], recurring: [] };
     tasks['Career'].now.push({
@@ -796,9 +827,10 @@ function renderTodayTasks(data) {
   for (const cat of CATEGORY_ORDER) {
     const group = tasks[cat];
     if (!group) continue;
-    const nowItems = group.now || [];
+    // Check both now and backlog lists for today-flagged items
+    const allItems = [...(group.now || []), ...(group.backlog || [])];
 
-    nowItems.forEach((item) => {
+    allItems.forEach((item) => {
       if (item.done) return;
 
       if (item.subtasks && item.subtasks.length > 0) {
@@ -821,8 +853,10 @@ function renderTodayTasks(data) {
 
   if (items.length === 0) {
     container.innerHTML = '<p class="today-empty">Pull items from Weekly Objectives using the <strong>&uarr;</strong> button.</p>';
+    container.style.display = 'block';
     return;
   }
+  container.style.display = 'block';
 
   // Sort: incomplete first, done items sink to bottom
   const todayIncomplete = items.filter(o => !o.done);
@@ -1049,15 +1083,11 @@ function renderProjectsAgenda(tasks) {
     });
   }
 
-  // Always show the add project row
-  const addProjectRow = document.getElementById('addProjectRow');
-  if (addProjectRow) addProjectRow.style.display = '';
-
   if (projects.length === 0) {
     container.style.display = 'none';
     if (empty) empty.style.display = 'block';
-    // Still bind the add project form even with 0 projects
-    _bindAddProjectForm(tasks);
+    // Still append the add project form even with 0 projects
+    _appendAddProjectUI(container, tasks);
     return;
   }
   if (empty) empty.style.display = 'none';
@@ -1074,9 +1104,11 @@ function renderProjectsAgenda(tasks) {
       const dl = new Date(proj.deadline + 'T12:00:00');
       const daysUntil = Math.ceil((dl - new Date()) / (1000 * 60 * 60 * 24));
       const dlLabel = dl.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      if (daysUntil <= 3) deadlineHtml = `<span class="deadline-urgent">due ${dlLabel}</span>`;
-      else if (daysUntil <= 7) deadlineHtml = `<span class="deadline-soon">due ${dlLabel}</span>`;
-      else deadlineHtml = `<span class="deadline-later">due ${dlLabel}</span>`;
+      if (daysUntil <= 3) deadlineHtml = `<span class="proj-deadline-badge deadline-urgent" data-task-id="${proj.id}" title="Click to change deadline">due ${dlLabel}</span>`;
+      else if (daysUntil <= 7) deadlineHtml = `<span class="proj-deadline-badge deadline-soon" data-task-id="${proj.id}" title="Click to change deadline">due ${dlLabel}</span>`;
+      else deadlineHtml = `<span class="proj-deadline-badge deadline-later" data-task-id="${proj.id}" title="Click to change deadline">due ${dlLabel}</span>`;
+    } else {
+      deadlineHtml = `<span class="proj-deadline-badge proj-set-date" data-task-id="${proj.id}" title="Set deadline">set date</span>`;
     }
 
     const tagClass = categoryTagClass(proj.category);
@@ -1091,6 +1123,7 @@ function renderProjectsAgenda(tasks) {
         <span class="proj-subtask-text" data-editable="true" data-task-id="${proj.id}" data-sub-idx="${si}">${escapeHtml(sub.text)}</span>
         ${todayBtn}
         <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-task-id="${proj.id}" data-sub-idx="${si}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
+        <button class="proj-subtask-move" data-task-id="${proj.id}" data-sub-idx="${si}" title="Move to another project">&#8594;</button>
         <button class="proj-subtask-delete" data-task-id="${proj.id}" data-sub-idx="${si}" title="Delete subtask">&times;</button>
       </div>`;
     }).join('');
@@ -1174,6 +1207,38 @@ function renderProjectsAgenda(tasks) {
     });
   });
 
+  // Click deadline badge to edit due date
+  container.querySelectorAll('.proj-deadline-badge').forEach(badge => {
+    badge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const taskId = badge.dataset.taskId;
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      // Create a date picker inline
+      const picker = document.createElement('input');
+      picker.type = 'date';
+      picker.className = 'proj-date-picker';
+      picker.value = found.task.deadline || '';
+      badge.replaceWith(picker);
+      picker.focus();
+      if (picker.showPicker) picker.showPicker();
+      const finish = async () => {
+        const val = picker.value;
+        found.task.deadline = val || null;
+        renderProjectsAgenda(tasks);
+        await db.updateTask(taskId, { deadline: val || null });
+      };
+      picker.addEventListener('change', finish);
+      picker.addEventListener('blur', () => {
+        setTimeout(() => {
+          if (picker.parentElement) {
+            renderProjectsAgenda(tasks);
+          }
+        }, 200);
+      });
+    });
+  });
+
   // Double-click to edit project title
   container.querySelectorAll('.proj-title[data-editable]').forEach(span => {
     span.addEventListener('dblclick', (e) => {
@@ -1245,6 +1310,61 @@ function renderProjectsAgenda(tasks) {
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
       db.updateTask(taskId, { subtasks: task.subtasks });
+    });
+  });
+
+  // Move subtask to another project
+  container.querySelectorAll('.proj-subtask-move').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // If menu already open, close it
+      const existing = btn.parentElement.querySelector('.proj-move-dropdown');
+      if (existing) { existing.remove(); return; }
+
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+
+      // Build dropdown of other projects
+      const otherProjects = projects.filter(p => p.id !== taskId);
+      if (otherProjects.length === 0) return;
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'proj-move-dropdown';
+      dropdown.innerHTML = otherProjects.map(p =>
+        `<div class="proj-move-option" data-target-id="${p.id}">${escapeHtml(p.text)}</div>`
+      ).join('');
+      btn.parentElement.style.position = 'relative';
+      btn.parentElement.appendChild(dropdown);
+
+      dropdown.querySelectorAll('.proj-move-option').forEach(opt => {
+        opt.addEventListener('click', async (ev) => {
+          ev.stopPropagation();
+          const targetId = opt.dataset.targetId;
+          const sourceFound = findTaskById(tasks, taskId);
+          const targetFound = findTaskById(tasks, targetId);
+          if (!sourceFound || !targetFound) return;
+
+          // Remove subtask from source
+          const [movedSub] = sourceFound.task.subtasks.splice(subIdx, 1);
+          // Add to target
+          targetFound.task.subtasks.push(movedSub);
+
+          // Persist both
+          renderProjectsAgenda(tasks);
+          renderWeeklyObjectives(tasks);
+          await db.updateTask(taskId, { subtasks: sourceFound.task.subtasks });
+          await db.updateTask(targetId, { subtasks: targetFound.task.subtasks });
+        });
+      });
+
+      // Close on outside click
+      const closeHandler = (ev) => {
+        if (!dropdown.contains(ev.target) && ev.target !== btn) {
+          dropdown.remove();
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', closeHandler), 0);
     });
   });
 
@@ -1412,80 +1532,82 @@ function renderProjectsAgenda(tasks) {
     });
   });
 
-  // Add project form
-  _bindAddProjectForm(tasks);
+  // Add project form — appended fresh each render
+  _appendAddProjectUI(container, tasks);
 }
 
-function _bindAddProjectForm(tasks) {
-  // Clone-replace elements to remove any stale event listeners
-  const oldTrigger = document.getElementById('addProjectTrigger');
-  const oldSubmit = document.getElementById('addProjectSubmit');
-  const oldCancel = document.getElementById('addProjectCancel');
-  const oldInput = document.getElementById('addProjectInput');
+function _appendAddProjectUI(container, tasks) {
+  // Always append add-project form at the end of the projects container
+  container.insertAdjacentHTML('beforeend', `
+    <div class="add-project-row" id="addProjectRow" style="grid-column: 1 / -1;">
+      <button class="add-project-trigger" id="addProjectTrigger">+ add project</button>
+      <div class="add-project-form" id="addProjectForm" style="display:none;">
+        <input type="text" class="add-project-input" id="addProjectInput" placeholder="Project name...">
+        <select class="add-project-cat" id="addProjectCat">
+          <option value="Career">Career</option>
+          <option value="Self">Self</option>
+          <option value="Home Duties">Home Duties</option>
+          <option value="Family">Family</option>
+        </select>
+        <button class="add-project-submit" id="addProjectSubmit">Add</button>
+        <button class="add-project-cancel" id="addProjectCancel">&times;</button>
+      </div>
+    </div>
+  `);
 
-  if (!oldTrigger) return;
-
-  const addTrigger = oldTrigger.cloneNode(true);
-  oldTrigger.parentNode.replaceChild(addTrigger, oldTrigger);
-
+  const addTrigger = document.getElementById('addProjectTrigger');
   const addForm = document.getElementById('addProjectForm');
+  const addInput = document.getElementById('addProjectInput');
   const addCat = document.getElementById('addProjectCat');
+  const addSubmit = document.getElementById('addProjectSubmit');
+  const addCancel = document.getElementById('addProjectCancel');
 
-  const addSubmit = oldSubmit.cloneNode(true);
-  oldSubmit.parentNode.replaceChild(addSubmit, oldSubmit);
+  if (!addTrigger) return;
 
-  const addCancel = oldCancel.cloneNode(true);
-  oldCancel.parentNode.replaceChild(addCancel, oldCancel);
+  addTrigger.addEventListener('click', () => {
+    addTrigger.style.display = 'none';
+    addForm.style.display = 'flex';
+    addInput.focus();
+  });
 
-  const addInput = oldInput.cloneNode(true);
-  oldInput.parentNode.replaceChild(addInput, oldInput);
+  addCancel.addEventListener('click', () => {
+    addForm.style.display = 'none';
+    addTrigger.style.display = '';
+    addInput.value = '';
+  });
 
-  {
-    addTrigger.addEventListener('click', () => {
-      addTrigger.style.display = 'none';
-      addForm.style.display = 'flex';
-      addInput.focus();
-    });
+  const submitProject = async () => {
+    const text = addInput.value.trim();
+    if (!text) return;
+    const category = addCat.value;
+    try {
+      const newTask = await db.insertTask({ text, category, list: 'now', subtasks: [] });
+      if (!tasks[category]) tasks[category] = { now: [], backlog: [], recurring: [] };
+      tasks[category].now.push({
+        id: newTask.id,
+        text: newTask.text,
+        done: false,
+        deadline: null,
+        link: null,
+        thisWeek: false,
+        today: false,
+        subtasks: [],
+      });
+    } catch (err) {
+      console.error('Failed to add project:', err);
+    }
+    addInput.value = '';
+    addForm.style.display = 'none';
+    addTrigger.style.display = '';
+    renderProjectsAgenda(tasks);
+    renderWeeklyObjectives(tasks);
+  };
 
-    addCancel.addEventListener('click', () => {
-      addForm.style.display = 'none';
-      addTrigger.style.display = '';
-      addInput.value = '';
-    });
-
-    const submitProject = async () => {
-      const text = addInput.value.trim();
-      if (!text) return;
-      const category = addCat.value;
-      try {
-        const newTask = await db.insertTask({ text, category, list: 'now', subtasks: [] });
-        if (!tasks[category]) tasks[category] = { now: [], backlog: [], recurring: [] };
-        tasks[category].now.push({
-          id: newTask.id,
-          text: newTask.text,
-          done: false,
-          deadline: null,
-          link: null,
-          thisWeek: false,
-          today: false,
-          subtasks: [],
-        });
-      } catch (err) {
-        console.error('Failed to add project:', err);
-      }
-      addInput.value = '';
-      addForm.style.display = 'none';
-      addTrigger.style.display = '';
-      renderProjectsAgenda(tasks);
-      renderWeeklyObjectives(tasks);
-    };
-
-    addSubmit.addEventListener('click', submitProject);
-    addInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); submitProject(); }
-      if (e.key === 'Escape') { addCancel.click(); }
-    });
-  }
+  addSubmit.addEventListener('click', submitProject);
+  addInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); submitProject(); }
+    if (e.key === 'Escape') { addCancel.click(); }
+  });
 }
 
 // Helper: find the index of a project item within its category's now array

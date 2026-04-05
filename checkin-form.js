@@ -10,12 +10,16 @@ function setupCheckinForm() {
   const dietToggle = document.getElementById('checkinDietToggle');
   const dietField = document.getElementById('checkinDiet');
 
+  const checkinDateInput = document.getElementById('checkinDate');
+
   if (!triggerBtn || !modal) return;
 
   function openModal() {
     modal.style.display = 'flex';
     overlay.style.display = 'block';
     document.body.style.overflow = 'hidden';
+    // Default date to today
+    checkinDateInput.value = getTodayStr();
     loadExistingCheckin();
   }
 
@@ -59,6 +63,11 @@ function setupCheckinForm() {
     }
   });
 
+  // Date change — load that date's existing check-in
+  checkinDateInput.addEventListener('change', () => {
+    loadExistingCheckin();
+  });
+
   // Add initial empty activity row
   ensureActivityRows();
 }
@@ -97,8 +106,9 @@ async function loadExistingCheckin() {
   const container = document.getElementById('checkinActivities');
   container.innerHTML = '';
 
-  const today = getTodayStr();
-  const existing = await db.getCheckinByDate(today);
+  const checkinDateInput = document.getElementById('checkinDate');
+  const dateToLoad = (checkinDateInput && checkinDateInput.value) ? checkinDateInput.value : getTodayStr();
+  const existing = await db.getCheckinByDate(dateToLoad);
 
   if (existing) {
     // Pre-fill from existing check-in
@@ -124,7 +134,8 @@ async function loadExistingCheckin() {
 }
 
 async function submitCheckin() {
-  const today = getTodayStr();
+  const checkinDateInput = document.getElementById('checkinDate');
+  const today = (checkinDateInput && checkinDateInput.value) ? checkinDateInput.value : getTodayStr();
 
   // Gather activities
   const activityRows = document.querySelectorAll('.checkin-activity-row');

@@ -1,9 +1,9 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/**/*.js", "use": "@vercel/node" },
-    { "src": "**", "use": "@vercel/static" }
-  ],
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(node_modules|logs|\\.env|migrate-to-supabase\\.js|\\.env\\.example|supabase-schema\\.sql|package.*\\.json|data\\.json|archive\\.json|prompts\\.json|tasks\\.md|PLANNING\\.md|\\.claude).*", "status": 404 }
