@@ -2,5 +2,8 @@
   "version": 2,
   "builds": [
     { "src": "**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/(node_modules|logs|\\.env|migrate-to-supabase\\.js|\\.env\\.example|supabase-schema\\.sql|package.*\\.json).*", "status": 404 }
   ]
 }

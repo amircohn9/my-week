@@ -11,8 +11,9 @@
 <body>
   <div id="authOverlay" style="position:fixed;inset:0;background:#f9f9f7;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
     <div style="font-size:1.5rem;font-weight:700;color:#222;">Stay Focused — Keep Moving</div>
-    <input id="authInput" type="password" placeholder="Enter password" style="border:1px solid #ddd;border-radius:8px;padding:10px 16px;font-size:1rem;font-family:inherit;outline:none;width:240px;text-align:center;">
-    <div id="authError" style="color:#e74c3c;font-size:0.85rem;display:none;">Incorrect password</div>
+    <input id="authEmail" type="email" placeholder="Email" value="amircohn9@gmail.com" style="border:1px solid #ddd;border-radius:8px;padding:10px 16px;font-size:1rem;font-family:inherit;outline:none;width:240px;text-align:center;">
+    <input id="authInput" type="password" placeholder="Password" style="border:1px solid #ddd;border-radius:8px;padding:10px 16px;font-size:1rem;font-family:inherit;outline:none;width:240px;text-align:center;">
+    <div id="authError" style="color:#e74c3c;font-size:0.85rem;display:none;">Incorrect email or password</div>
   </div>
   <div id="mainApp" style="display:none;">
   <nav class="tab-rail" id="tabRail">
@@ -34,9 +35,7 @@
           <h1>Stay Focused — Keep Moving</h1>
           <p class="subtitle" id="dateRange"></p>
         </div>
-        <button class="sync-btn" id="syncBtn" style="display:none;">
-          Sync Changes (<span id="syncCount">0</span>)
-        </button>
+        <button class="checkin-trigger-btn" id="checkinTriggerBtn">Check In</button>
       </div>
       <div class="momentum-dots" id="momentumDots"></div>
       <p class="encouragement" id="encouragement"></p>
@@ -118,22 +117,6 @@
       </section>
     </div>
 
-    <!-- Notes for Claude: floating panel -->
-    <div class="notes-fab" id="notesFab" title="Notes for Claude">&#9998;</div>
-    <div class="notes-overlay" id="notesOverlay"></div>
-    <div class="notes-panel" id="notesPanel">
-      <div class="notes-panel-header">
-        <h3>Notes for Claude</h3>
-        <button class="notes-panel-close" id="notesPanelClose">&times;</button>
-      </div>
-      <p class="notes-desc">Changes, ideas, or feedback — Save sends an email so Claude picks it up next check-in.</p>
-      <div id="savedNotes" class="saved-notes"></div>
-      <div class="notes-input-row">
-        <textarea id="notesInput" class="notes-input" placeholder="Type a note and hit Save..." rows="2"></textarea>
-        <button id="saveNoteBtn" class="save-note-btn">Save</button>
-      </div>
-    </div>
-
     <footer>
       <p class="identity-vote" id="identityVotes"></p>
       <p>Built with care. One day at a time.</p>
@@ -148,9 +131,6 @@
         <h1>Amir & Arielle</h1>
         <p class="subtitle" id="familySummary">Our family brain</p>
       </div>
-      <button class="family-sync-btn" id="familySyncBtn" style="display:none;">
-        Sync Changes <span class="family-sync-count" id="familySyncCount"></span>
-      </button>
     </div>
 
     <div id="familyHandled" class="family-handled"></div>
@@ -208,33 +188,96 @@
   </div><!-- end tab-content -->
   </div>
 
+  <!-- Check-in Modal -->
+  <div id="checkinOverlay" class="checkin-overlay" style="display:none;"></div>
+  <div id="checkinModal" class="checkin-modal" style="display:none;">
+    <div class="checkin-modal-header">
+      <h2>Daily Check-In</h2>
+      <button id="checkinClose" class="checkin-close">&times;</button>
+    </div>
+    <div class="checkin-modal-body">
+      <div class="checkin-section">
+        <label>What did you do today?</label>
+        <div id="checkinActivities" class="checkin-activities"></div>
+        <button id="checkinAddActivity" class="checkin-add-activity">+ Add activity</button>
+      </div>
+      <div class="checkin-section">
+        <label for="checkinWins">Wins</label>
+        <textarea id="checkinWins" class="checkin-textarea" placeholder="What went well?" rows="2"></textarea>
+      </div>
+      <div class="checkin-section">
+        <label for="checkinObstacles">Obstacles</label>
+        <textarea id="checkinObstacles" class="checkin-textarea" placeholder="Any blockers?" rows="2"></textarea>
+      </div>
+      <div class="checkin-section">
+        <label for="checkinMood">Mood</label>
+        <input type="text" id="checkinMood" class="checkin-input" placeholder="How are you feeling?">
+      </div>
+      <div class="checkin-section checkin-collapsible">
+        <label class="checkin-toggle-label" id="checkinDietToggle">Diet note (optional) <span class="chevron">&#9662;</span></label>
+        <textarea id="checkinDiet" class="checkin-textarea" placeholder="What did you eat?" rows="2" style="display:none;"></textarea>
+      </div>
+      <div class="checkin-section">
+        <label for="checkinWeight">Weight (optional)</label>
+        <input type="number" id="checkinWeight" class="checkin-input" placeholder="lbs" step="0.1" min="100" max="300">
+      </div>
+      <div class="checkin-section">
+        <label for="checkinFocus">Tomorrow's focus</label>
+        <input type="text" id="checkinFocus" class="checkin-input" placeholder="What's the #1 thing for tomorrow?">
+      </div>
+      <div class="checkin-section">
+        <label for="checkinSummary">Summary</label>
+        <textarea id="checkinSummary" class="checkin-textarea" placeholder="Brief summary of the day (auto-generated if blank)" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="checkin-modal-footer">
+      <button id="checkinSubmit" class="checkin-submit">Save Check-In</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="supabase-helpers.js"></script>
+  <script src="utils.js"></script>
+  <script src="charts.js"></script>
+  <script src="tasks.js"></script>
+  <script src="checkin-form.js"></script>
+  <script src="app.js"></script>
+
   <script>
-    (function() {
-      const PW = 'amir1414';
+    // Supabase Auth — replaces hardcoded password
+    (async function() {
       const overlay = document.getElementById('authOverlay');
       const app = document.getElementById('mainApp');
-      const input = document.getElementById('authInput');
+      const emailInput = document.getElementById('authEmail');
+      const pwInput = document.getElementById('authInput');
       const err = document.getElementById('authError');
-      if (localStorage.getItem('myweek-auth') === PW) {
-        overlay.style.display = 'none'; app.style.display = 'block';
+
+      // Check existing session
+      const session = await db.getSession();
+      if (session) {
+        overlay.style.display = 'none';
+        app.style.display = 'block';
       } else {
-        overlay.style.display = 'flex'; app.style.display = 'none';
+        overlay.style.display = 'flex';
+        app.style.display = 'none';
       }
-      input.addEventListener('keydown', (e) => {
+
+      pwInput.addEventListener('keydown', async (e) => {
         if (e.key !== 'Enter') return;
-        if (input.value === PW) {
-          localStorage.setItem('myweek-auth', PW);
-          overlay.style.display = 'none'; app.style.display = 'block';
-        } else {
-          err.style.display = 'block'; input.value = ''; input.focus();
+        try {
+          await db.signIn(emailInput.value.trim(), pwInput.value);
+          overlay.style.display = 'none';
+          app.style.display = 'block';
+          // Trigger app init
+          window.dispatchEvent(new Event('authenticated'));
+        } catch {
+          err.style.display = 'block';
+          pwInput.value = '';
+          pwInput.focus();
         }
       });
     })();
   </script>
-
-  <script src="utils.js"></script>
-  <script src="charts.js"></script>
-  <script src="tasks.js"></script>
-  <script src="app.js"></script>
 </body>
 </html>

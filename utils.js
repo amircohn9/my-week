@@ -1,7 +1,6 @@
 // utils.js — Shared helpers
 
 const CATEGORY_ORDER = ['Career', 'Self', 'Home Duties', 'Family'];
-const NOTES_EMAIL = 'amircohn9@gmail.com';
 
 function getWeekRange() {
   const now = new Date();

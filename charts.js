@@ -1,4 +1,5 @@
 // charts.js — Dashboard visualizations and rendering
+// Supabase-backed: all state lives on task/habit objects, persisted via db.*
 
 // ---------------------------------------------------------------------------
 // Helper: weekday-aware streak calculation
@@ -35,6 +36,23 @@ function getBestWeekdayStreak(checkinDates) {
     d.setDate(d.getDate() + 1);
   }
   return best;
+}
+
+// ---------------------------------------------------------------------------
+// Helper: find a task object by its id across all categories
+// ---------------------------------------------------------------------------
+function findTaskById(tasks, id) {
+  for (const cat of CATEGORY_ORDER) {
+    const group = tasks[cat];
+    if (!group) continue;
+    for (const item of (group.now || [])) {
+      if (item.id === id) return { task: item, category: cat, list: 'now' };
+    }
+    for (const item of (group.backlog || [])) {
+      if (item.id === id) return { task: item, category: cat, list: 'backlog' };
+    }
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -140,10 +158,7 @@ function renderKPIStrip(data) {
   let weightHtml = '';
   const diet = data.diet;
   if (diet && diet.weights && diet.weights.length > 0) {
-    const localWeights = JSON.parse(localStorage.getItem('myweek-weight-updates') || '[]');
-    const allWeights = [...diet.weights];
-    for (const lw of localWeights) { if (!allWeights.find(w => w.date === lw.date && w.lbs === lw.lbs)) allWeights.push(lw); }
-    allWeights.sort((a, b) => a.date.localeCompare(b.date));
+    const allWeights = [...diet.weights].sort((a, b) => a.date.localeCompare(b.date));
     const latest = allWeights[allWeights.length - 1];
     const remaining = latest.lbs - (diet.goalWeight || 190);
     const arrow = remaining > 0 ? '\u2193' : '\u2713';
@@ -276,50 +291,42 @@ function renderWeeklyObjectives(tasks) {
   const list = document.getElementById('weeklyObjectives');
   if (!list) return;
 
-  const state = getTaskState();
-  const thisWeekState = getThisWeekState();
-  const todayState = getTodayState();
-  const edits = getTaskEdits();
   const objectives = [];
   const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
 
   for (const cat of CATEGORY_ORDER) {
-    const { now: nowItems } = getResolvedItems(tasks, cat);
+    const group = tasks[cat];
+    if (!group) continue;
+    const nowItems = group.now || [];
+
     nowItems.forEach((item) => {
       if (item.done) return;
 
       if (item.subtasks && item.subtasks.length > 0) {
-        item.subtasks.forEach((sub) => {
-          const subKey = `${cat}::${item.text}::${sub.text}`;
-          const isThisWeek = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : !!sub.thisWeek;
-          if (!isThisWeek) return;
-          const isDone = sub.done || state[subKey];
-          objectives.push({ text: edits[subKey] || sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
-        });
-        const parentKey = `${cat}::${item.text}`;
-        const addedSubs = (state._addedSubs || {})[parentKey] || [];
-        addedSubs.forEach((sub) => {
-          const subKey = `${cat}::${item.text}::added::${sub.text}`;
-          const isThisWeek = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : false;
-          if (!isThisWeek) return;
-          const isDone = state[subKey] || false;
-          objectives.push({ text: sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
+        item.subtasks.forEach((sub, si) => {
+          if (!sub.thisWeek) return;
+          objectives.push({
+            text: sub.text, project: item.text, category: cat, color: colors[cat],
+            done: sub.done, today: sub.today,
+            taskId: item.id, subtaskIndex: si
+          });
         });
       } else {
-        const taskKey = `${cat}::${item.text}`;
-        const isThisWeek = thisWeekState.hasOwnProperty(taskKey) ? thisWeekState[taskKey] : !!item.thisWeek;
-        if (!isThisWeek) return;
-        const isDone = item.done || state[taskKey];
-        objectives.push({ text: item.text, project: null, category: cat, color: colors[cat], key: taskKey, done: isDone });
+        if (!item.thisWeek) return;
+        objectives.push({
+          text: item.text, project: null, category: cat, color: colors[cat],
+          done: item.done, today: item.today,
+          taskId: item.id, subtaskIndex: -1
+        });
       }
     });
   }
 
-  // Filter out items in today (they show in the Today list instead)
+  // Filter out items marked for today (they show in the Today list)
   // Filter out items that match recurring habits
   const recurringTexts = getRecurringTexts(tasks);
   const filtered = objectives.filter(obj => {
-    if (todayState[obj.key]) return false;
+    if (obj.today) return false;
     const lower = obj.text.toLowerCase();
     if (recurringTexts.some(rt => lower.includes(rt) || rt.includes(lower))) return false;
     return true;
@@ -340,26 +347,35 @@ function renderWeeklyObjectives(tasks) {
     const divider = (hasBoth && i === incomplete.length) ? '<li class="obj-divider"><span>completed</span></li>' : '';
     return divider + `<li class="${obj.done ? 'obj-done' : ''}">
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
-      <input type="checkbox" class="obj-checkbox" data-key="${obj.key}" ${obj.done ? 'checked' : ''}>
-      <span class="obj-text" data-edit-key="${obj.key}">${escapeHtml(obj.text)}</span>
+      <input type="checkbox" class="obj-checkbox" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" ${obj.done ? 'checked' : ''}>
+      <span class="obj-text" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}">${escapeHtml(obj.text)}</span>
       ${obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : ''}
       <span class="obj-actions">
-        <button class="obj-today-btn" data-key="${obj.key}" title="Move to today">&#9650;</button>
-        <button class="obj-unstar-btn" data-key="${obj.key}" title="Remove from this week">&#9734;</button>
-        <button class="obj-delete-btn" data-key="${obj.key}" title="Delete task">&times;</button>
+        <button class="obj-today-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Move to today">&#9650;</button>
+        <button class="obj-unstar-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Remove from this week">&#9734;</button>
+        <button class="obj-delete-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Delete task">&times;</button>
       </span>
     </li>`;
   }).join('');
 
-  // Wire up checkboxes
+  // Wire up checkboxes — toggle done
   list.querySelectorAll('.obj-checkbox').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const st = getTaskState();
-      st[cb.dataset.key] = cb.checked;
-      saveTaskState(st);
-      updateSyncButton();
+    cb.addEventListener('change', async () => {
+      const taskId = cb.dataset.taskId;
+      const subIdx = parseInt(cb.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        task.subtasks[subIdx].done = cb.checked;
+      } else {
+        task.done = cb.checked;
+      }
+
       renderWeeklyObjectives(tasks);
       renderProjectsAgenda(appData.tasks);
+      db.updateTask(taskId, { subtasks: task.subtasks, done: task.done });
     });
   });
 
@@ -367,7 +383,8 @@ function renderWeeklyObjectives(tasks) {
   list.querySelectorAll('.obj-text').forEach(span => {
     span.addEventListener('dblclick', (e) => {
       e.stopPropagation();
-      const key = span.dataset.editKey;
+      const taskId = span.dataset.taskId;
+      const subIdx = parseInt(span.dataset.subIdx);
       const current = span.textContent;
       const input = document.createElement('input');
       input.type = 'text';
@@ -376,18 +393,24 @@ function renderWeeklyObjectives(tasks) {
       span.replaceWith(input);
       input.focus();
       input.select();
-      const save = () => {
+      const save = async () => {
         const newVal = input.value.trim();
         const newSpan = document.createElement('span');
         newSpan.className = 'obj-text';
-        newSpan.dataset.editKey = key;
+        newSpan.dataset.taskId = taskId;
+        newSpan.dataset.subIdx = subIdx;
         newSpan.textContent = newVal || current;
         input.replaceWith(newSpan);
         if (newVal && newVal !== current) {
-          const ed = getTaskEdits();
-          ed[key] = newVal;
-          saveTaskEdits(ed);
-          updateSyncButton();
+          const found = findTaskById(tasks, taskId);
+          if (!found) return;
+          const task = found.task;
+          if (subIdx >= 0 && task.subtasks[subIdx]) {
+            task.subtasks[subIdx].text = newVal;
+          } else {
+            task.text = newVal;
+          }
+          db.updateTask(taskId, subIdx >= 0 ? { subtasks: task.subtasks } : { text: newVal });
         }
       };
       input.addEventListener('blur', save);
@@ -400,43 +423,75 @@ function renderWeeklyObjectives(tasks) {
 
   // Move to today
   list.querySelectorAll('.obj-today-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const td = getTodayState();
-      td[btn.dataset.key] = true;
-      saveTodayState(td);
-      updateSyncButton();
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        task.subtasks[subIdx].today = true;
+        db.updateTask(taskId, { subtasks: task.subtasks });
+      } else {
+        task.today = true;
+        db.updateTask(taskId, { today: true });
+      }
+
       renderWeeklyObjectives(tasks);
       renderTodayTasks(appData);
       renderProjectsAgenda(appData.tasks);
     });
   });
 
-  // Un-star: remove from weekly focus without deleting
+  // Un-star: remove from weekly focus
   list.querySelectorAll('.obj-unstar-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const tw = getThisWeekState();
-      tw[btn.dataset.key] = false;
-      saveThisWeekState(tw);
-      updateSyncButton();
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        task.subtasks[subIdx].thisWeek = false;
+        task.subtasks[subIdx].today = false;
+        db.updateTask(taskId, { subtasks: task.subtasks });
+      } else {
+        task.thisWeek = false;
+        task.today = false;
+        db.updateTask(taskId, { thisWeek: false, today: false });
+      }
+
       renderWeeklyObjectives(tasks);
       renderProjectsAgenda(appData.tasks);
     });
   });
 
-  // Delete: mark task as done and remove from focus
+  // Delete: mark as done and remove from focus
   list.querySelectorAll('.obj-delete-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const key = btn.dataset.key;
-      const st = getTaskState();
-      st[key] = true;
-      saveTaskState(st);
-      const tw = getThisWeekState();
-      tw[key] = false;
-      saveThisWeekState(tw);
-      updateSyncButton();
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        task.subtasks[subIdx].done = true;
+        task.subtasks[subIdx].thisWeek = false;
+        task.subtasks[subIdx].today = false;
+        db.updateTask(taskId, { subtasks: task.subtasks });
+      } else {
+        task.done = true;
+        task.thisWeek = false;
+        task.today = false;
+        db.updateTask(taskId, { done: true, thisWeek: false, today: false });
+      }
+
       renderWeeklyObjectives(tasks);
       renderProjectsAgenda(appData.tasks);
     });
@@ -454,10 +509,7 @@ function renderWeightCard(diet) {
     return;
   }
 
-  const localWeights = JSON.parse(localStorage.getItem('myweek-weight-updates') || '[]');
-  const allWeights = [...diet.weights];
-  for (const lw of localWeights) { if (!allWeights.find(w => w.date === lw.date && w.lbs === lw.lbs)) allWeights.push(lw); }
-  allWeights.sort((a, b) => a.date.localeCompare(b.date));
+  const allWeights = [...diet.weights].sort((a, b) => a.date.localeCompare(b.date));
 
   const goalWeight = diet.goalWeight || 190;
   const startWeight = diet.startWeight || allWeights[0].lbs;
@@ -470,7 +522,7 @@ function renderWeightCard(diet) {
   const lastDate = new Date(latest.date + 'T12:00:00');
   const lastDateLabel = lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-  // Milestone ticks (no labels, just small tick marks on the bar)
+  // Milestone ticks
   let milestonesHtml = '';
   for (let m = 5; m <= totalToLose; m += 5) {
     const pct = (m / totalToLose) * 100;
@@ -515,16 +567,16 @@ function renderWeightCard(diet) {
   const weightBtn = document.getElementById('weightSaveBtn');
   const weightInput = document.getElementById('weightInput');
   if (weightBtn && weightInput) {
-    weightBtn.addEventListener('click', () => {
+    weightBtn.addEventListener('click', async () => {
       const val = parseFloat(weightInput.value);
       if (!val || val < 100 || val > 300) return;
-      const weights = JSON.parse(localStorage.getItem('myweek-weight-updates') || '[]');
-      weights.push({ date: getTodayStr(), lbs: val });
-      localStorage.setItem('myweek-weight-updates', JSON.stringify(weights));
-      diet.weights.push({ date: getTodayStr(), lbs: val });
+      const todayDate = getTodayStr();
+      // Optimistic: update local data and re-render immediately
+      diet.weights.push({ date: todayDate, lbs: val });
       renderWeightCard(diet);
       renderKPIStrip(appData);
-      updateSyncButton();
+      // Persist to Supabase
+      db.insertWeight(todayDate, val);
     });
     weightInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') weightBtn.click(); });
   }
@@ -568,6 +620,7 @@ function renderDayByDay(checkins, dietEntries) {
   const weekKeys = Object.keys(weekGroups).sort((a, b) => b.localeCompare(a));
   const today = getTodayStr();
 
+  // Use sessionStorage for collapse state (transient UI preference, not data)
   container.innerHTML = weekKeys.map(weekKey => {
     const ws = new Date(weekKey + 'T12:00:00');
     const we = new Date(ws);
@@ -575,7 +628,7 @@ function renderDayByDay(checkins, dietEntries) {
     const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const label = `Week of ${fmt(ws)} – ${fmt(we)}`;
     const collapseKey = `collapse-week-${weekKey}`;
-    const stored = localStorage.getItem(collapseKey);
+    const stored = sessionStorage.getItem(collapseKey);
     const isCollapsed = stored !== null ? stored === 'true' : true;
     const days = weekGroups[weekKey];
 
@@ -607,14 +660,14 @@ function renderDayByDay(checkins, dietEntries) {
     </div>`;
   }).join('');
 
-  // Toggle collapse
+  // Toggle collapse — use sessionStorage for transient UI state
   container.querySelectorAll('.week-group-header').forEach(header => {
     header.addEventListener('click', () => {
       const group = header.closest('.week-group');
       group.classList.toggle('collapsed');
       const collapsed = group.classList.contains('collapsed');
       header.querySelector('.week-group-arrow').innerHTML = collapsed ? '&#9656;' : '&#9662;';
-      localStorage.setItem('collapse-week-' + header.dataset.week, collapsed);
+      sessionStorage.setItem('collapse-week-' + header.dataset.week, collapsed);
     });
   });
 }
@@ -655,37 +708,31 @@ function renderTodayTasks(data) {
   const tasks = data.tasks;
   if (!tasks) { container.innerHTML = ''; return; }
 
-  const todayState = getTodayState();
-  const state = getTaskState();
-  const edits = getTaskEdits();
   const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
   const items = [];
 
   for (const cat of CATEGORY_ORDER) {
-    const { now: nowItems } = getResolvedItems(tasks, cat);
+    const group = tasks[cat];
+    if (!group) continue;
+    const nowItems = group.now || [];
+
     nowItems.forEach((item) => {
       if (item.done) return;
 
       if (item.subtasks && item.subtasks.length > 0) {
-        item.subtasks.forEach((sub) => {
-          const subKey = `${cat}::${item.text}::${sub.text}`;
-          if (!todayState[subKey]) return;
-          const isDone = sub.done || state[subKey];
-          items.push({ text: edits[subKey] || sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
-        });
-        const parentKey = `${cat}::${item.text}`;
-        const addedSubs = (state._addedSubs || {})[parentKey] || [];
-        addedSubs.forEach((sub) => {
-          const subKey = `${cat}::${item.text}::added::${sub.text}`;
-          if (!todayState[subKey]) return;
-          const isDone = state[subKey] || false;
-          items.push({ text: sub.text, project: item.text, category: cat, color: colors[cat], key: subKey, done: isDone });
+        item.subtasks.forEach((sub, si) => {
+          if (!sub.today) return;
+          items.push({
+            text: sub.text, project: item.text, category: cat, color: colors[cat],
+            done: sub.done, taskId: item.id, subtaskIndex: si
+          });
         });
       } else {
-        const taskKey = `${cat}::${item.text}`;
-        if (!todayState[taskKey]) return;
-        const isDone = item.done || state[taskKey];
-        items.push({ text: item.text, project: null, category: cat, color: colors[cat], key: taskKey, done: isDone });
+        if (!item.today) return;
+        items.push({
+          text: item.text, project: null, category: cat, color: colors[cat],
+          done: item.done, taskId: item.id, subtaskIndex: -1
+        });
       }
     });
   }
@@ -706,25 +753,34 @@ function renderTodayTasks(data) {
     const divider = (todayHasBoth && i === todayIncomplete.length) ? '<li class="obj-divider"><span>completed</span></li>' : '';
     return divider + `<li class="${obj.done ? 'obj-done' : ''}">
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
-      <input type="checkbox" class="today-checkbox" data-key="${obj.key}" ${obj.done ? 'checked' : ''}>
-      <span class="today-text" data-edit-key="${obj.key}">${escapeHtml(obj.text)}</span>
+      <input type="checkbox" class="today-checkbox" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" ${obj.done ? 'checked' : ''}>
+      <span class="today-text" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}">${escapeHtml(obj.text)}</span>
       ${obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : ''}
       <span class="today-actions">
-        <button class="today-to-week-btn" data-key="${obj.key}" title="Move back to weekly">&darr;</button>
-        <button class="today-remove-btn" data-key="${obj.key}" title="Remove from week">&times;</button>
+        <button class="today-to-week-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Move back to weekly">&darr;</button>
+        <button class="today-remove-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Remove from week">&times;</button>
       </span>
     </li>`;
   }).join('') + '</ul>';
 
-  // Checkboxes
+  // Checkboxes — toggle done
   container.querySelectorAll('.today-checkbox').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const st = getTaskState();
-      st[cb.dataset.key] = cb.checked;
-      saveTaskState(st);
-      updateSyncButton();
+    cb.addEventListener('change', async () => {
+      const taskId = cb.dataset.taskId;
+      const subIdx = parseInt(cb.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        task.subtasks[subIdx].done = cb.checked;
+      } else {
+        task.done = cb.checked;
+      }
+
       renderTodayTasks(data);
       renderProjectsAgenda(appData.tasks);
+      db.updateTask(taskId, { subtasks: task.subtasks, done: task.done });
     });
   });
 
@@ -732,7 +788,8 @@ function renderTodayTasks(data) {
   container.querySelectorAll('.today-text').forEach(span => {
     span.addEventListener('dblclick', (e) => {
       e.stopPropagation();
-      const key = span.dataset.editKey;
+      const taskId = span.dataset.taskId;
+      const subIdx = parseInt(span.dataset.subIdx);
       const current = span.textContent;
       const input = document.createElement('input');
       input.type = 'text';
@@ -741,18 +798,24 @@ function renderTodayTasks(data) {
       span.replaceWith(input);
       input.focus();
       input.select();
-      const save = () => {
+      const save = async () => {
         const newVal = input.value.trim();
         const newSpan = document.createElement('span');
         newSpan.className = 'today-text';
-        newSpan.dataset.editKey = key;
+        newSpan.dataset.taskId = taskId;
+        newSpan.dataset.subIdx = subIdx;
         newSpan.textContent = newVal || current;
         input.replaceWith(newSpan);
         if (newVal && newVal !== current) {
-          const ed = getTaskEdits();
-          ed[key] = newVal;
-          saveTaskEdits(ed);
-          updateSyncButton();
+          const found = findTaskById(tasks, taskId);
+          if (!found) return;
+          const task = found.task;
+          if (subIdx >= 0 && task.subtasks[subIdx]) {
+            task.subtasks[subIdx].text = newVal;
+          } else {
+            task.text = newVal;
+          }
+          db.updateTask(taskId, subIdx >= 0 ? { subtasks: task.subtasks } : { text: newVal });
         }
       };
       input.addEventListener('blur', save);
@@ -763,31 +826,49 @@ function renderTodayTasks(data) {
     });
   });
 
-  // Move back to week
+  // Move back to week (remove from today, keep in thisWeek)
   container.querySelectorAll('.today-to-week-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const td = getTodayState();
-      delete td[btn.dataset.key];
-      saveTodayState(td);
-      updateSyncButton();
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        task.subtasks[subIdx].today = false;
+        db.updateTask(taskId, { subtasks: task.subtasks });
+      } else {
+        task.today = false;
+        db.updateTask(taskId, { today: false });
+      }
+
       renderTodayTasks(data);
       renderWeeklyObjectives(appData.tasks);
     });
   });
 
-  // Remove from week entirely
+  // Remove from week entirely (remove both today and thisWeek)
   container.querySelectorAll('.today-remove-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const key = btn.dataset.key;
-      const td = getTodayState();
-      delete td[key];
-      saveTodayState(td);
-      const tw = getThisWeekState();
-      tw[key] = false;
-      saveThisWeekState(tw);
-      updateSyncButton();
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        task.subtasks[subIdx].today = false;
+        task.subtasks[subIdx].thisWeek = false;
+        db.updateTask(taskId, { subtasks: task.subtasks });
+      } else {
+        task.today = false;
+        task.thisWeek = false;
+        db.updateTask(taskId, { today: false, thisWeek: false });
+      }
+
       renderTodayTasks(data);
       renderWeeklyObjectives(appData.tasks);
       renderProjectsAgenda(appData.tasks);
@@ -807,25 +888,22 @@ function renderDailyFocus(data) {
   title.textContent = 'My Focus Today';
 
   // Focus text — shows yesterdayNotes (today's plan, set during yesterday's check-in)
-  const editedFocus = getDailyFocusEdit();
-  const focusContent = editedFocus || data.yesterdayNotes;
+  const focusContent = data.yesterdayNotes;
 
   if (focusContent) {
     empty.style.display = 'none';
     contentEl.style.display = 'block';
-    const isEdited = !!editedFocus;
-    contentEl.innerHTML = `<div class="focus-text-editable ${isEdited ? 'focus-edited' : ''}" contenteditable="true" data-placeholder="Click to set your focus for today...">${escapeHtml(focusContent || '')}</div>`;
+    contentEl.innerHTML = `<div class="focus-text-editable" contenteditable="true" data-placeholder="Click to set your focus for today...">${escapeHtml(focusContent || '')}</div>`;
 
     const editable = contentEl.querySelector('.focus-text-editable');
     if (!editable.textContent.trim()) editable.textContent = '';
-    editable.addEventListener('blur', () => {
+    editable.addEventListener('blur', async () => {
       const newText = editable.textContent.trim();
       if (newText && newText !== data.yesterdayNotes) {
-        saveDailyFocusEdit(newText);
+        data.yesterdayNotes = newText;
         editable.classList.add('focus-edited');
-        updateSyncButton();
+        db.updateSettings({ yesterdayNotes: newText });
       } else if (!newText || newText === data.yesterdayNotes) {
-        saveDailyFocusEdit('');
         editable.classList.remove('focus-edited');
       }
     });
@@ -868,38 +946,26 @@ function renderProjectsAgenda(tasks) {
 
   const projects = [];
   const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
-  const completedProjects = getTaskState()._completedProjects || [];
-  const isCompleted = (cat, text) => completedProjects.some(p => p.category === cat && p.text === text);
 
   for (const cat of CATEGORY_ORDER) {
-    const { now: nowItems } = getResolvedItems(tasks, cat);
+    const group = tasks[cat];
+    if (!group) continue;
+    const nowItems = group.now || [];
+
     nowItems.forEach((item) => {
-      if (item.done || isCompleted(cat, item.text)) return;
+      if (item.done) return;
       projects.push({
+        id: item.id,
         text: item.text,
         category: cat,
         color: colors[cat],
         deadline: item.deadline || null,
         subtasks: item.subtasks || [],
         thisWeek: item.thisWeek || false,
-        isAdded: false
+        today: item.today || false,
       });
     });
   }
-
-  // Include locally added projects
-  const addedProjects = getTaskState()._addedProjects || [];
-  addedProjects.forEach((proj) => {
-    projects.push({
-      text: proj.text,
-      category: proj.category,
-      color: colors[proj.category],
-      deadline: null,
-      subtasks: [],
-      thisWeek: false,
-      isAdded: true
-    });
-  });
 
   if (projects.length === 0) {
     container.style.display = 'none';
@@ -909,18 +975,9 @@ function renderProjectsAgenda(tasks) {
   if (empty) empty.style.display = 'none';
   container.style.display = 'grid';
 
-  const state = getTaskState();
-  const thisWeekState = getThisWeekState();
-  const todayState = getTodayState();
-  const addedSubs = state._addedSubs || {};
-  const deletedSubs = state._deletedSubs || {};
-
   container.innerHTML = projects.map((proj, pi) => {
     const totalSubs = proj.subtasks.length;
-    const doneSubs = proj.subtasks.filter((s) => {
-      const key = `${proj.category}::${proj.text}::${s.text}`;
-      return s.done || state[key];
-    }).length;
+    const doneSubs = proj.subtasks.filter(s => s.done).length;
     const pct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
     const barColor = pct === 100 ? '#7db87d' : proj.color;
 
@@ -936,51 +993,26 @@ function renderProjectsAgenda(tasks) {
 
     const tagClass = categoryTagClass(proj.category);
 
-    // Expanded content: subtasks with checkboxes and thisWeek toggles
-    const parentKey = `${proj.category}::${proj.text}`;
-    const addedForThis = addedSubs[parentKey] || [];
-    const deletedForThis = deletedSubs[parentKey] || [];
-
+    // Subtasks with checkboxes and thisWeek/today toggles
     const subtasksHtml = proj.subtasks.map((sub, si) => {
-      if (deletedForThis.includes(si)) return '';
-      const subKey = `${proj.category}::${proj.text}::${sub.text}`;
-      const isDone = sub.done || state[subKey];
-      const isTW = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : !!sub.thisWeek;
-      const isTD = todayState[subKey] || false;
-      const edits = getTaskEdits();
-      const displayText = edits[subKey] || sub.text;
-      const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-today-key="${subKey}" title="Toggle today">T</button>` : '';
-      return `<div class="proj-subtask ${isDone ? 'proj-subtask-done' : ''}">
-        <input type="checkbox" class="proj-subtask-checkbox" data-key="${subKey}" ${isDone ? 'checked' : ''}>
-        <span class="proj-subtask-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(displayText)}</span>
+      const isTW = !!sub.thisWeek;
+      const isTD = !!sub.today;
+      const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-task-id="${proj.id}" data-sub-idx="${si}" title="Toggle today">T</button>` : '';
+      return `<div class="proj-subtask ${sub.done ? 'proj-subtask-done' : ''}">
+        <input type="checkbox" class="proj-subtask-checkbox" data-task-id="${proj.id}" data-sub-idx="${si}" ${sub.done ? 'checked' : ''}>
+        <span class="proj-subtask-text" data-editable="true" data-task-id="${proj.id}" data-sub-idx="${si}">${escapeHtml(sub.text)}</span>
         ${todayBtn}
-        <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${subKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
-      </div>`;
-    }).join('');
-
-    const addedSubsHtml = addedForThis.map((sub, si) => {
-      const subKey = `${proj.category}::${proj.text}::added::${sub.text}`;
-      const isDone = state[subKey] || false;
-      const isTW = thisWeekState.hasOwnProperty(subKey) ? thisWeekState[subKey] : false;
-      const isTD = todayState[subKey] || false;
-      const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-today-key="${subKey}" title="Toggle today">T</button>` : '';
-      return `<div class="proj-subtask ${isDone ? 'proj-subtask-done' : ''}">
-        <input type="checkbox" class="proj-subtask-checkbox" data-key="${subKey}" ${isDone ? 'checked' : ''}>
-        <span class="proj-subtask-text">${escapeHtml(sub.text)}</span>
-        ${todayBtn}
-        <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${subKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
-        <button class="delete-added-sub-btn" data-parent="${parentKey}" data-sub-index="${si}" title="Remove">&times;</button>
+        <button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-task-id="${proj.id}" data-sub-idx="${si}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>
       </div>`;
     }).join('');
 
     // For tasks without subtasks, show thisWeek toggle on the task itself
     let taskThisWeekHtml = '';
     if (totalSubs === 0) {
-      const taskTwKey = `${proj.category}::${proj.text}`;
-      const isTW = thisWeekState.hasOwnProperty(taskTwKey) ? thisWeekState[taskTwKey] : !!proj.thisWeek;
-      const isTD = todayState[taskTwKey] || false;
-      const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-today-key="${taskTwKey}" title="Toggle today">T</button>` : '';
-      taskThisWeekHtml = `${todayBtn}<button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-tw-key="${taskTwKey}" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>`;
+      const isTW = !!proj.thisWeek;
+      const isTD = !!proj.today;
+      const todayBtn = isTW ? `<button class="today-toggle ${isTD ? 'today-active' : ''}" data-task-id="${proj.id}" data-sub-idx="-1" title="Toggle today">T</button>` : '';
+      taskThisWeekHtml = `${todayBtn}<button class="this-week-toggle ${isTW ? 'this-week-active' : ''}" data-task-id="${proj.id}" data-sub-idx="-1" title="Toggle this week">${isTW ? '\u2605' : '\u2606'}</button>`;
     }
 
     return `<div class="proj-card" data-proj="${pi}">
@@ -996,15 +1028,14 @@ function renderProjectsAgenda(tasks) {
         <div class="proj-bar-fill" style="width:${pct}%;background:${barColor}"></div>
       </div>
       <div class="proj-expanded-content">
-        ${subtasksHtml}${addedSubsHtml}
+        ${subtasksHtml}
         <div class="proj-add-subtask-row">
-          <span class="proj-add-trigger" data-parent="${parentKey}">+ add subtask</span>
-          <input type="text" class="proj-add-subtask-input" data-parent="${parentKey}" placeholder="Add subtask and press Enter..." style="display:none;">
+          <span class="proj-add-trigger" data-task-id="${proj.id}">+ add subtask</span>
+          <input type="text" class="proj-add-subtask-input" data-task-id="${proj.id}" placeholder="Add subtask and press Enter..." style="display:none;">
         </div>
         <div class="proj-actions-row">
-          <div class="proj-complete" data-cat="${proj.category}" data-text="${escapeHtml(proj.text)}">&#10003; Complete Project</div>
-          <div class="proj-move-backlog" data-cat="${proj.category}" data-text="${escapeHtml(proj.text)}" data-move-to="backlog">Move to Backlog</div>
-          ${proj.isAdded ? `<div class="proj-delete-added" data-proj-text="${escapeHtml(proj.text)}" data-proj-cat="${proj.category}">Delete Project</div>` : ''}
+          <div class="proj-complete" data-task-id="${proj.id}">&#10003; Complete Project</div>
+          <div class="proj-move-backlog" data-task-id="${proj.id}">Move to Backlog</div>
         </div>
       </div>
     </div>`;
@@ -1052,16 +1083,23 @@ function renderProjectsAgenda(tasks) {
     });
   });
 
-  // Subtask checkboxes
+  // Subtask checkboxes — toggle done
   container.querySelectorAll('.proj-subtask-checkbox').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const st = getTaskState();
-      st[cb.dataset.key] = cb.checked;
-      saveTaskState(st);
+    cb.addEventListener('change', async () => {
+      const taskId = cb.dataset.taskId;
+      const subIdx = parseInt(cb.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (task.subtasks[subIdx]) {
+        task.subtasks[subIdx].done = cb.checked;
+      }
       cb.closest('.proj-subtask').classList.toggle('proj-subtask-done', cb.checked);
-      updateSyncButton();
+
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
+      db.updateTask(taskId, { subtasks: task.subtasks });
     });
   });
 
@@ -1069,7 +1107,8 @@ function renderProjectsAgenda(tasks) {
   container.querySelectorAll('.proj-subtask-text[data-editable]').forEach(span => {
     span.addEventListener('dblclick', (e) => {
       e.stopPropagation();
-      const key = span.dataset.editKey;
+      const taskId = span.dataset.taskId;
+      const subIdx = parseInt(span.dataset.subIdx);
       const current = span.textContent;
       const input = document.createElement('input');
       input.type = 'text';
@@ -1077,20 +1116,24 @@ function renderProjectsAgenda(tasks) {
       input.className = 'task-edit-input';
       span.replaceWith(input);
       input.focus(); input.select();
-      const save = () => {
+      const save = async () => {
         const newVal = input.value.trim();
         const newSpan = document.createElement('span');
         newSpan.className = 'proj-subtask-text';
         newSpan.dataset.editable = 'true';
-        newSpan.dataset.editKey = key;
+        newSpan.dataset.taskId = taskId;
+        newSpan.dataset.subIdx = subIdx;
         newSpan.textContent = newVal || current;
         input.replaceWith(newSpan);
         if (newVal && newVal !== current) {
-          const ed = getTaskEdits();
-          ed[key] = newVal;
-          saveTaskEdits(ed);
-          updateSyncButton();
+          const found = findTaskById(tasks, taskId);
+          if (!found) return;
+          const task = found.task;
+          if (task.subtasks[subIdx]) {
+            task.subtasks[subIdx].text = newVal;
+          }
           renderWeeklyObjectives(tasks);
+          db.updateTask(taskId, { subtasks: task.subtasks });
         }
       };
       input.addEventListener('blur', save);
@@ -1103,18 +1146,26 @@ function renderProjectsAgenda(tasks) {
 
   // This week toggles
   container.querySelectorAll('.this-week-toggle').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const tw = getThisWeekState();
-      const key = btn.dataset.twKey;
-      tw[key] = !tw[key];
-      if (!tw[key]) {
-        delete tw[key];
-        const td = getTodayState();
-        if (td[key]) { delete td[key]; saveTodayState(td); }
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        const newVal = !task.subtasks[subIdx].thisWeek;
+        task.subtasks[subIdx].thisWeek = newVal;
+        if (!newVal) task.subtasks[subIdx].today = false;
+        db.updateTask(taskId, { subtasks: task.subtasks });
+      } else {
+        const newVal = !task.thisWeek;
+        task.thisWeek = newVal;
+        if (!newVal) task.today = false;
+        db.updateTask(taskId, { thisWeek: newVal, today: newVal ? task.today : false });
       }
-      saveThisWeekState(tw);
-      updateSyncButton();
+
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
       renderTodayTasks(appData);
@@ -1123,14 +1174,22 @@ function renderProjectsAgenda(tasks) {
 
   // Today toggles
   container.querySelectorAll('.today-toggle').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const td = getTodayState();
-      const key = btn.dataset.todayKey;
-      td[key] = !td[key];
-      if (!td[key]) delete td[key];
-      saveTodayState(td);
-      updateSyncButton();
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        task.subtasks[subIdx].today = !task.subtasks[subIdx].today;
+        db.updateTask(taskId, { subtasks: task.subtasks });
+      } else {
+        task.today = !task.today;
+        db.updateTask(taskId, { today: task.today });
+      }
+
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
       renderTodayTasks(appData);
@@ -1149,16 +1208,15 @@ function renderProjectsAgenda(tasks) {
   });
 
   container.querySelectorAll('.proj-add-subtask-input').forEach(input => {
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', async (e) => {
       if (e.key === 'Enter' && input.value.trim()) {
-        const st = getTaskState();
-        if (!st._addedSubs) st._addedSubs = {};
-        const parentKey = input.dataset.parent;
-        if (!st._addedSubs[parentKey]) st._addedSubs[parentKey] = [];
-        st._addedSubs[parentKey].push({ text: input.value.trim() });
-        saveTaskState(st);
+        const taskId = input.dataset.taskId;
+        const found = findTaskById(tasks, taskId);
+        if (!found) return;
+        const task = found.task;
+        task.subtasks.push({ text: input.value.trim(), done: false, thisWeek: false, today: false });
         renderProjectsAgenda(tasks);
-        updateSyncButton();
+        db.updateTask(taskId, { subtasks: task.subtasks });
       }
       if (e.key === 'Escape') {
         input.style.display = 'none';
@@ -1174,66 +1232,38 @@ function renderProjectsAgenda(tasks) {
     });
   });
 
-  // Delete added subtask
-  container.querySelectorAll('.delete-added-sub-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const st = getTaskState();
-      const parentKey = btn.dataset.parent;
-      const subIdx = parseInt(btn.dataset.subIndex);
-      if (st._addedSubs && st._addedSubs[parentKey]) {
-        st._addedSubs[parentKey].splice(subIdx, 1);
-        saveTaskState(st);
-        renderProjectsAgenda(tasks);
-        updateSyncButton();
-      }
-    });
-  });
-
   // Complete project
   container.querySelectorAll('.proj-complete').forEach(el => {
-    el.addEventListener('click', () => {
-      const st = getTaskState();
-      if (!st._completedProjects) st._completedProjects = [];
-      st._completedProjects.push({ category: el.dataset.cat, text: el.dataset.text, date: getTodayStr() });
-      saveTaskState(st);
+    el.addEventListener('click', async () => {
+      const taskId = el.dataset.taskId;
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      found.task.done = true;
       _expandedProjIdx = null;
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
-      updateSyncButton();
+      db.updateTask(taskId, { done: true });
     });
   });
 
   // Move to backlog
   container.querySelectorAll('.proj-move-backlog').forEach(el => {
-    el.addEventListener('click', () => {
-      const mv = getTaskMoves();
-      const cat = el.dataset.cat;
-      const text = el.dataset.text;
-      if (!mv[cat]) mv[cat] = {};
-      mv[cat][text] = 'backlog';
-      saveTaskMoves(mv);
-      renderProjectsAgenda(tasks);
-      renderWeeklyObjectives(tasks);
-      renderBacklog(tasks);
-      updateSyncButton();
-    });
-  });
-
-  // Delete added project
-  container.querySelectorAll('.proj-delete-added').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const st = getTaskState();
-      if (!st._addedProjects) return;
-      const text = el.dataset.projText;
-      const cat = el.dataset.projCat;
-      st._addedProjects = st._addedProjects.filter(p => !(p.text === text && p.category === cat));
-      saveTaskState(st);
+    el.addEventListener('click', async () => {
+      const taskId = el.dataset.taskId;
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      // Move from now to backlog in local data
+      const group = tasks[found.category];
+      const idx = group.now.findIndex(t => t.id === taskId);
+      if (idx >= 0) {
+        const [item] = group.now.splice(idx, 1);
+        group.backlog.unshift(item);
+      }
       _expandedProjIdx = null;
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
-      updateSyncButton();
+      renderBacklog(tasks);
+      db.updateTask(taskId, { list: 'backlog' });
     });
   });
 
@@ -1259,19 +1289,33 @@ function renderProjectsAgenda(tasks) {
       addInput.value = '';
     });
 
-    const submitProject = () => {
+    const submitProject = async () => {
       const text = addInput.value.trim();
       if (!text) return;
-      const st = getTaskState();
-      if (!st._addedProjects) st._addedProjects = [];
-      st._addedProjects.push({ text, category: addCat.value });
-      saveTaskState(st);
+      const category = addCat.value;
+      // Insert into Supabase and get the new record with its id
+      try {
+        const newTask = await db.insertTask({ text, category, list: 'now', subtasks: [] });
+        // Add to local data
+        if (!tasks[category]) tasks[category] = { now: [], backlog: [], recurring: [] };
+        tasks[category].now.push({
+          id: newTask.id,
+          text: newTask.text,
+          done: false,
+          deadline: null,
+          link: null,
+          thisWeek: false,
+          today: false,
+          subtasks: [],
+        });
+      } catch (err) {
+        console.error('Failed to add project:', err);
+      }
       addInput.value = '';
       addForm.style.display = 'none';
       addTrigger.style.display = '';
       renderProjectsAgenda(tasks);
       renderWeeklyObjectives(tasks);
-      updateSyncButton();
     };
 
     addSubmit.addEventListener('click', submitProject);
@@ -1292,15 +1336,11 @@ function getProjectIndex(tasks, category, text) {
 // ---------------------------------------------------------------------------
 // 11. renderRecurringHabits(tasks) — Visual weekly progress cards
 // ---------------------------------------------------------------------------
-function getHiddenHabits() { try { return JSON.parse(localStorage.getItem('myweek-hidden-habits')) || []; } catch { return []; } }
-function saveHiddenHabits(arr) { localStorage.setItem('myweek-hidden-habits', JSON.stringify(arr)); }
-
 function renderRecurringHabits(tasks) {
   const container = document.getElementById('recurringHabits');
   if (!container) return;
 
   const { weekStart, weekEnd } = getWeekRange();
-  const hiddenHabits = getHiddenHabits();
   const habits = [];
 
   for (const cat of CATEGORY_ORDER) {
@@ -1310,7 +1350,7 @@ function renderRecurringHabits(tasks) {
       // Skip "ongoing" items (no trackable sessions)
       if (item.recurring === 'ongoing') continue;
       // Skip hidden habits
-      if (hiddenHabits.includes(item.text)) continue;
+      if (item.hidden) continue;
 
       let target = 1;
       if (item.text.match(/2x/i)) target = 2;
@@ -1324,12 +1364,8 @@ function renderRecurringHabits(tasks) {
         }).length;
       }
 
-      // Check localStorage for logged sessions
-      const state = getTaskState();
-      const sessionKey = `${cat}::session::${item.text}`;
-      if (state[sessionKey]) thisWeekCount++;
-
       habits.push({
+        id: item.id,
         text: item.text,
         category: cat,
         target,
@@ -1342,6 +1378,17 @@ function renderRecurringHabits(tasks) {
   if (habits.length === 0) {
     container.innerHTML = '<p class="empty-state">No recurring habits defined.</p>';
     return;
+  }
+
+  // Count hidden habits for the "show all" button
+  let hiddenCount = 0;
+  for (const cat of CATEGORY_ORDER) {
+    const group = tasks[cat];
+    if (!group || !group.recurring) continue;
+    for (const item of group.recurring) {
+      if (item.recurring === 'ongoing') continue;
+      if (item.hidden) hiddenCount++;
+    }
   }
 
   container.innerHTML = habits.map((h, i) => {
@@ -1368,25 +1415,43 @@ function renderRecurringHabits(tasks) {
     </div>`;
   }).join('');
 
-  if (hiddenHabits.length > 0) {
+  if (hiddenCount > 0) {
     container.innerHTML += `<div class="habits-show-hidden">
-      <button class="habits-unhide-btn">${hiddenHabits.length} hidden — show all</button>
+      <button class="habits-unhide-btn">${hiddenCount} hidden — show all</button>
     </div>`;
-    container.querySelector('.habits-unhide-btn').addEventListener('click', () => {
-      saveHiddenHabits([]);
+    container.querySelector('.habits-unhide-btn').addEventListener('click', async () => {
+      // Unhide all hidden habits
+      for (const cat of CATEGORY_ORDER) {
+        const group = tasks[cat];
+        if (!group || !group.recurring) continue;
+        for (const item of group.recurring) {
+          if (item.hidden) {
+            item.hidden = false;
+            db.updateHabit(item.id, { hidden: false });
+          }
+        }
+      }
       renderRecurringHabits(tasks);
     });
   }
 
   container.querySelectorAll('.habit-hide-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const idx = parseInt(btn.closest('.habit-card').dataset.habitIdx);
-      const text = habits[idx].text;
-      const hidden = getHiddenHabits();
-      hidden.push(text);
-      saveHiddenHabits(hidden);
+      const habit = habits[idx];
+      // Update local data
+      for (const cat of CATEGORY_ORDER) {
+        const group = tasks[cat];
+        if (!group || !group.recurring) continue;
+        const item = group.recurring.find(r => r.id === habit.id);
+        if (item) {
+          item.hidden = true;
+          break;
+        }
+      }
       renderRecurringHabits(tasks);
+      db.updateHabit(habit.id, { hidden: true });
     });
   });
 }

@@ -1817,3 +1817,107 @@ footer {
   color: #bbb;
   font-size: 0.85rem;
 }
+
+/* ─── Check-In Trigger Button ─── */
+.checkin-trigger-btn {
+  background: #2d2d2d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.checkin-trigger-btn:hover { background: #444; }
+
+/* ─── Check-In Modal ─── */
+.checkin-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 10000;
+}
+.checkin-modal {
+  position: fixed; z-index: 10001;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: #fff; border-radius: 14px;
+  width: 90vw; max-width: 520px; max-height: 90vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.checkin-modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 22px 12px; border-bottom: 1px solid #eee;
+}
+.checkin-modal-header h2 { font-size: 1.15rem; font-weight: 700; }
+.checkin-close {
+  background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #999;
+}
+.checkin-modal-body {
+  padding: 16px 22px; overflow-y: auto; flex: 1;
+}
+.checkin-modal-footer {
+  padding: 14px 22px; border-top: 1px solid #eee; text-align: right;
+}
+.checkin-section { margin-bottom: 16px; }
+.checkin-section label {
+  display: block; font-size: 0.8rem; font-weight: 600; color: #666;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+}
+.checkin-textarea, .checkin-input {
+  width: 100%; border: 1px solid #ddd; border-radius: 8px;
+  padding: 10px 12px; font-size: 0.95rem; font-family: inherit;
+  outline: none; resize: vertical;
+}
+.checkin-textarea:focus, .checkin-input:focus { border-color: #999; }
+.checkin-submit {
+  background: #2d2d2d; color: #fff; border: none; border-radius: 8px;
+  padding: 10px 28px; font-size: 0.95rem; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.checkin-submit:hover { background: #444; }
+.checkin-submit:disabled { background: #aaa; cursor: not-allowed; }
+
+/* Activity rows */
+.checkin-activity-row {
+  display: flex; gap: 6px; margin-bottom: 6px; align-items: center;
+}
+.checkin-activity-cat {
+  border: 1px solid #ddd; border-radius: 6px; padding: 8px 4px;
+  font-size: 0.85rem; font-family: inherit; min-width: 80px;
+}
+.checkin-activity-text {
+  flex: 1; border: 1px solid #ddd; border-radius: 6px;
+  padding: 8px 10px; font-size: 0.95rem; font-family: inherit;
+}
+.checkin-activity-hours {
+  width: 55px; border: 1px solid #ddd; border-radius: 6px;
+  padding: 8px 6px; font-size: 0.9rem; text-align: center; font-family: inherit;
+}
+.checkin-activity-remove {
+  background: none; border: none; color: #ccc; font-size: 1.2rem;
+  cursor: pointer; padding: 0 4px;
+}
+.checkin-activity-remove:hover { color: #e74c3c; }
+.checkin-add-activity {
+  background: none; border: 1px dashed #ccc; border-radius: 6px;
+  padding: 6px 14px; font-size: 0.85rem; color: #999;
+  cursor: pointer; font-family: inherit; width: 100%;
+}
+.checkin-add-activity:hover { border-color: #999; color: #666; }
+
+/* Collapsible diet section */
+.checkin-toggle-label { cursor: pointer; }
+.checkin-toggle-label .chevron { font-size: 0.7rem; margin-left: 4px; }
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .checkin-modal {
+    width: 100vw; max-width: 100vw; max-height: 100vh;
+    top: 0; left: 0; transform: none;
+    border-radius: 0; height: 100vh;
+  }
+  .checkin-activity-row { flex-wrap: wrap; }
+  .checkin-activity-cat { min-width: 100%; }
+  .checkin-activity-text { min-width: calc(100% - 90px); }
+}

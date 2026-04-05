@@ -1,0 +1,3 @@
+// Supabase configuration — loaded before all other scripts
+const SUPABASE_URL = 'https://vxmvlgfcbywfdagsuyty.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4bXZsZ2ZjYnl3ZmRhZ3N1eXR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNTI1NjAsImV4cCI6MjA5MDkyODU2MH0.CgFlJ5qo_NBv08b_3sZCioDlKxt9hiiopIcVZhQrBGQ';

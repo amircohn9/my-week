@@ -1,186 +1,9 @@
-// tasks.js — Task list rendering and state management
+// tasks.js — Task list rendering and state management (Supabase backend)
 
-// --- localStorage state helpers ---
-function getTaskState() { try { return JSON.parse(localStorage.getItem('myweek-tasks')) || {}; } catch { return {}; } }
-function saveTaskState(state) { localStorage.setItem('myweek-tasks', JSON.stringify(state)); }
+// --- Render a single task item ---
 
-function getTaskEdits() { try { return JSON.parse(localStorage.getItem('myweek-task-edits')) || {}; } catch { return {}; } }
-function saveTaskEdits(edits) { localStorage.setItem('myweek-task-edits', JSON.stringify(edits)); }
-
-function getTaskMoves() { try { return JSON.parse(localStorage.getItem('myweek-task-moves')) || {}; } catch { return {}; } }
-function saveTaskMoves(moves) { localStorage.setItem('myweek-task-moves', JSON.stringify(moves)); }
-
-function getThisWeekState() { try { return JSON.parse(localStorage.getItem('myweek-this-week')) || {}; } catch { return {}; } }
-function saveThisWeekState(state) { localStorage.setItem('myweek-this-week', JSON.stringify(state)); }
-
-function getTodayState() { try { return JSON.parse(localStorage.getItem('myweek-today')) || {}; } catch { return {}; } }
-function saveTodayState(state) { localStorage.setItem('myweek-today', JSON.stringify(state)); }
-
-function getDailyFocusEdit() { return localStorage.getItem('myweek-daily-focus-edit') || ''; }
-function saveDailyFocusEdit(text) {
-  if (text) localStorage.setItem('myweek-daily-focus-edit', text);
-  else localStorage.removeItem('myweek-daily-focus-edit');
-}
-
-// --- Resolve items accounting for moves ---
-function getResolvedItems(tasks, category) {
-  const group = tasks[category];
-  if (!group) return { now: [], backlog: [] };
-  const moves = getTaskMoves();
-  const catMoves = moves[category] || {};
-  let nowItems = [...(group.now || [])];
-  let backlogItems = [...(group.backlog || [])];
-  for (const [itemText, target] of Object.entries(catMoves)) {
-    if (target === 'backlog') {
-      const idx = nowItems.findIndex(it => it.text === itemText);
-      if (idx >= 0) backlogItems.unshift(nowItems.splice(idx, 1)[0]);
-    } else if (target === 'now') {
-      const idx = backlogItems.findIndex(it => it.text === itemText);
-      if (idx >= 0) nowItems.push(backlogItems.splice(idx, 1)[0]);
-    }
-  }
-  return { now: nowItems, backlog: backlogItems };
-}
-
-// --- Sync ---
-function countSyncChanges() {
-  const state = getTaskState();
-  const edits = getTaskEdits();
-  const moves = getTaskMoves();
-  let count = 0;
-  for (const [k, v] of Object.entries(state)) {
-    if (k === '_addedSubs' || k === '_deletedSubs' || k === '_added' || k === '_synced' || k === '_addedProjects' || k === '_completedProjects') continue;
-    if (v) count++;
-  }
-  count += Object.keys(edits).length;
-  for (const cat of Object.keys(moves)) count += Object.keys(moves[cat]).length;
-  if (state._addedSubs) for (const key of Object.keys(state._addedSubs)) count += state._addedSubs[key].length;
-  if (state._deletedSubs) for (const key of Object.keys(state._deletedSubs)) count += state._deletedSubs[key].length;
-  if (state._added) for (const cat of Object.keys(state._added)) count += state._added[cat].length;
-  if (state._addedProjects) count += state._addedProjects.length;
-  if (state._completedProjects) count += state._completedProjects.length;
-  const hidden = getHiddenHabits();
-  count += hidden.length;
-  try { const wu = JSON.parse(localStorage.getItem('myweek-weight-updates')) || []; count += wu.length; } catch {}
-  // thisWeek changes
-  const tw = getThisWeekState();
-  count += Object.keys(tw).length;
-  // today changes not counted — todayState persists across syncs
-  // Daily focus edit
-  if (getDailyFocusEdit()) count++;
-  try { const fc = JSON.parse(localStorage.getItem('family-hub-changes')) || []; count += fc.length; } catch {}
-  try { const fa = JSON.parse(localStorage.getItem('family-hub-added')) || []; count += fa.length; } catch {}
-  return count;
-}
-
-function updateSyncButton() {
-  const btn = document.getElementById('syncBtn');
-  if (!btn) return;
-  const count = countSyncChanges();
-  if (count > 0) {
-    btn.innerHTML = `Sync Changes <span class="sync-count">${count}</span>`;
-    btn.style.display = '';
-  } else {
-    btn.innerHTML = 'Sync Changes';
-    btn.style.display = 'none';
-  }
-}
-
-function generateSyncSummary() {
-  const state = getTaskState();
-  const edits = getTaskEdits();
-  const moves = getTaskMoves();
-  const hidden = getHiddenHabits();
-  const lines = ['=== MyWeek Sync Summary ===', ''];
-
-  const completions = Object.entries(state).filter(([k, v]) => v === true && !k.startsWith('_'));
-  if (completions.length) { lines.push('COMPLETED:'); completions.forEach(([k]) => lines.push('  [x] ' + k)); lines.push(''); }
-
-  const sessions = Object.entries(state).filter(([k, v]) => typeof v === 'string' && k.includes('::session::'));
-  if (sessions.length) { lines.push('SESSIONS LOGGED:'); sessions.forEach(([k, v]) => lines.push('  ' + k + ' on ' + v)); lines.push(''); }
-
-  if (Object.keys(edits).length) { lines.push('TEXT EDITS:'); Object.entries(edits).forEach(([k, v]) => lines.push('  ' + k + ' → ' + v)); lines.push(''); }
-
-  for (const [cat, catMoves] of Object.entries(moves)) {
-    if (Object.keys(catMoves).length) { lines.push('MOVES (' + cat + '):'); Object.entries(catMoves).forEach(([text, target]) => lines.push('  ' + text + ' → ' + target)); lines.push(''); }
-  }
-
-  if (state._addedSubs) {
-    const entries = Object.entries(state._addedSubs).filter(([, v]) => v.length > 0);
-    if (entries.length) { lines.push('ADDED SUBTASKS:'); entries.forEach(([parent, subs]) => { subs.forEach(s => lines.push('  ' + parent + ' → + ' + s.text)); }); lines.push(''); }
-  }
-
-  if (state._deletedSubs) {
-    const entries = Object.entries(state._deletedSubs).filter(([, v]) => v.length > 0);
-    if (entries.length) { lines.push('DELETED SUBTASKS:'); entries.forEach(([parent, indices]) => { indices.forEach(i => lines.push('  ' + parent + ' → remove sub #' + i)); }); lines.push(''); }
-  }
-
-  if (hidden.length) { lines.push('HIDDEN RECURRING:'); hidden.forEach(k => lines.push('  ' + k)); lines.push(''); }
-
-  try {
-    const wu = JSON.parse(localStorage.getItem('myweek-weight-updates')) || [];
-    if (wu.length) { lines.push('WEIGHT UPDATES:'); wu.forEach(w => lines.push('  ' + w.date + ': ' + w.lbs + ' lbs')); lines.push(''); }
-  } catch {}
-
-  // thisWeek changes
-  const tw = getThisWeekState();
-  if (Object.keys(tw).length) { lines.push('THIS WEEK TOGGLES:'); Object.entries(tw).forEach(([k, v]) => lines.push('  ' + k + ' → ' + (v ? 'ON' : 'OFF'))); lines.push(''); }
-
-  // today changes
-  const td = getTodayState();
-  if (Object.keys(td).length) { lines.push('TODAY TOGGLES:'); Object.entries(td).forEach(([k, v]) => lines.push('  ' + k + ' → ' + (v ? 'ON' : 'OFF'))); lines.push(''); }
-
-  // Added projects
-  if (state._addedProjects && state._addedProjects.length) {
-    lines.push('ADDED PROJECTS:');
-    state._addedProjects.forEach(p => lines.push('  [' + p.category + '] ' + p.text));
-    lines.push('');
-  }
-
-  // Completed projects
-  if (state._completedProjects && state._completedProjects.length) {
-    lines.push('COMPLETED PROJECTS (archive these):');
-    state._completedProjects.forEach(p => lines.push('  [' + p.category + '] ' + p.text + ' (completed ' + p.date + ')'));
-    lines.push('');
-  }
-
-  // Added tasks
-  if (state._added) {
-    const entries = Object.entries(state._added).filter(([, v]) => v.length > 0);
-    if (entries.length) { lines.push('ADDED TASKS:'); entries.forEach(([cat, items]) => { items.forEach(t => lines.push('  [' + cat + '] ' + t.text)); }); lines.push(''); }
-  }
-
-  // Daily focus edit
-  const focusEdit = getDailyFocusEdit();
-  if (focusEdit) { lines.push('DAILY FOCUS EDIT:'); lines.push('  ' + focusEdit); lines.push(''); }
-
-  // Family hub changes
-  try {
-    const fc = JSON.parse(localStorage.getItem('family-hub-changes')) || [];
-    if (fc.length) {
-      lines.push('FAMILY HUB CHANGES:');
-      fc.forEach(c => {
-        if (c.type === 'toggle') lines.push('  [' + c.section + '] ' + c.text + ' → ' + (c.done ? 'HANDLED' : 'REOPENED'));
-        else if (c.type === 'add') lines.push('  Added to ' + c.section + ': ' + c.text);
-        else if (c.type === 'edit') lines.push('  Edited [' + c.section + ']: "' + c.oldText + '" → "' + c.newText + '"');
-        else if (c.type === 'assign') lines.push('  [' + c.section + '] ' + c.text + ' → ' + (c.assignee || 'unassigned'));
-        else if (c.type === 'deadline') lines.push('  [' + c.section + '] ' + c.text + ' deadline: ' + (c.deadline || 'removed'));
-        else if (c.type === 'move') lines.push('  Moved "' + c.text + '" from ' + c.from + ' → ' + c.to);
-        else if (c.type === 'moveToAmir') lines.push('  Move to Amir\'s tasks: ' + c.text + ' (from ' + c.section + ')');
-      });
-      lines.push('');
-    }
-  } catch {}
-
-  return lines.join('\n');
-}
-
-// --- Backlog rendering (only backlog items) ---
-
-function renderTaskItem(item, cat, section, state, edits, moveTarget) {
-  const key = `${cat}::${section}::${item.text}`;
-  const checked = state[key] || item.done;
-  const doneClass = checked ? 'task-done' : '';
+function renderTaskItem(item, cat, section, moveTarget) {
+  const doneClass = item.done ? 'task-done' : '';
 
   let urgentClass = '';
   if (item.deadline) {
@@ -189,12 +12,11 @@ function renderTaskItem(item, cat, section, state, edits, moveTarget) {
     if (daysUntil <= 3) urgentClass = 'task-item-urgent';
   }
 
-  const displayText = edits[key] || item.text;
   let textHtml;
   if (item.link) {
-    textHtml = `<span class="task-text" data-editable="true" data-edit-key="${key}"><a href="${item.link}" target="_blank" class="task-link">${escapeHtml(displayText)}</a></span>`;
+    textHtml = `<span class="task-text" data-editable="true" data-id="${item.id}"><a href="${item.link}" target="_blank" class="task-link">${escapeHtml(item.text)}</a></span>`;
   } else {
-    textHtml = `<span class="task-text" data-editable="true" data-edit-key="${key}">${escapeHtml(displayText)}</span>`;
+    textHtml = `<span class="task-text" data-editable="true" data-id="${item.id}">${escapeHtml(item.text)}</span>`;
   }
 
   let deadlineHtml = '';
@@ -209,100 +31,87 @@ function renderTaskItem(item, cat, section, state, edits, moveTarget) {
 
   const moveLabel = moveTarget === 'now' ? '\u2191' : '\u2193';
   const moveTitle = moveTarget === 'now' ? 'Move to Agenda' : 'Move to Backlog';
-  const moveBtn = `<button class="move-btn" data-cat="${cat}" data-text="${escapeHtml(item.text)}" data-move-to="${moveTarget}" title="${moveTitle}">${moveLabel}</button>`;
+  const moveBtn = `<button class="move-btn" data-id="${item.id}" data-move-to="${moveTarget}" title="${moveTitle}">${moveLabel}</button>`;
 
-  const addedSubs = getTaskState()._addedSubs || {};
-  const addedForThis = addedSubs[key] || [];
-  const deletedSubs = getTaskState()._deletedSubs || {};
-  const deletedForThis = deletedSubs[key] || [];
+  const allSubs = item.subtasks || [];
+  const hasSubtasks = allSubs.length > 0;
 
-  let subtasksHtml = '';
-  const allSubs = [...(item.subtasks || [])];
-  const hasSubtasks = allSubs.some((s, si) => !deletedForThis.includes(si)) || addedForThis.length > 0;
-
-  if (hasSubtasks || allSubs.length > 0) {
+  if (hasSubtasks) {
     const subItems = allSubs.map((sub, si) => {
-      const subKey = `${cat}::${section}::${item.text}::${sub.text}`;
-      if (deletedForThis.includes(si)) return '';
-      const subChecked = state[subKey] || sub.done;
-      const subDisplay = edits[subKey] || sub.text;
+      const subChecked = sub.done;
       return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
-        <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
-        <span class="task-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(subDisplay)}</span>
-        <button class="delete-sub-btn" data-parent="${key}" data-sub-index="${si}" title="Remove">&times;</button>
+        <input type="checkbox" class="task-checkbox subtask-checkbox" data-id="${item.id}" data-sub-index="${si}" ${subChecked ? 'checked' : ''}>
+        <span class="task-text subtask-text" data-editable="true" data-id="${item.id}" data-sub-index="${si}">${escapeHtml(sub.text)}</span>
+        <button class="delete-sub-btn" data-id="${item.id}" data-sub-index="${si}" title="Remove">&times;</button>
       </div>`;
     }).join('');
 
-    const addedSubItems = addedForThis.map((sub, si) => {
-      const subKey = `${cat}::${section}::${item.text}::added::${sub.text}`;
-      const subChecked = state[subKey] || false;
-      return `<div class="task-item subtask ${subChecked ? 'task-done' : ''}">
-        <input type="checkbox" class="task-checkbox" data-key="${subKey}" ${subChecked ? 'checked' : ''}>
-        <span class="task-text" data-editable="true" data-edit-key="${subKey}">${escapeHtml(sub.text)}</span>
-        <button class="delete-added-sub-btn" data-parent="${key}" data-sub-index="${si}" title="Remove">&times;</button>
-      </div>`;
-    }).join('');
-
-    const subCount = allSubs.filter((s, si) => !deletedForThis.includes(si)).length + addedForThis.length;
-    subtasksHtml = `<div class="subtask-list subtask-collapsed" data-subtask-key="${key}">
-      ${subItems}${addedSubItems}
+    const subtasksHtml = `<div class="subtask-list subtask-collapsed" data-id="${item.id}">
+      ${subItems}
       <div class="add-subtask-row">
-        <span class="add-subtask-trigger" data-parent="${key}">+ subtask</span>
-        <input type="text" class="add-subtask-input add-subtask-hidden" data-parent="${key}" placeholder="Add subtask and press Enter...">
+        <span class="add-subtask-trigger" data-id="${item.id}">+ subtask</span>
+        <input type="text" class="add-subtask-input add-subtask-hidden" data-id="${item.id}" placeholder="Add subtask and press Enter...">
       </div>
     </div>`;
 
-    const toggleBtn = `<button class="subtask-toggle-btn" data-subtask-key="${key}" title="Show subtasks">${subCount}</button>`;
-    return `<div class="task-item ${doneClass} ${urgentClass}">
-      <input type="checkbox" class="task-checkbox" data-key="${key}" ${checked ? 'checked' : ''}>
+    const toggleBtn = `<button class="subtask-toggle-btn" data-id="${item.id}" title="Show subtasks">${allSubs.length}</button>`;
+    return `<div class="task-item ${doneClass} ${urgentClass}" data-id="${item.id}">
+      <input type="checkbox" class="task-checkbox parent-checkbox" data-id="${item.id}" ${item.done ? 'checked' : ''}>
       ${textHtml}${deadlineHtml}${toggleBtn}${moveBtn}
     </div>${subtasksHtml}`;
   }
 
-  return `<div class="task-item ${doneClass} ${urgentClass}">
-    <input type="checkbox" class="task-checkbox" data-key="${key}" ${checked ? 'checked' : ''}>
+  return `<div class="task-item ${doneClass} ${urgentClass}" data-id="${item.id}">
+    <input type="checkbox" class="task-checkbox parent-checkbox" data-id="${item.id}" ${item.done ? 'checked' : ''}>
     ${textHtml}${deadlineHtml}${moveBtn}
   </div>`;
 }
+
+// --- Helper: find task object inside appData.tasks by id ---
+
+function findTaskById(tasks, id) {
+  for (const cat of CATEGORY_ORDER) {
+    const group = tasks[cat];
+    if (!group) continue;
+    for (const list of ['now', 'backlog']) {
+      const found = (group[list] || []).find(t => t.id === id);
+      if (found) return { task: found, category: cat, list };
+    }
+  }
+  return null;
+}
+
+// --- Backlog rendering ---
 
 function renderBacklog(tasks) {
   const container = document.getElementById('taskList');
   if (!tasks) { container.innerHTML = '<p class="empty-state">No tasks loaded.</p>'; return; }
 
-  const state = getTaskState();
-  const edits = getTaskEdits();
-
+  // Collapse state stays in localStorage (UI-only)
   const collapseState = {};
   CATEGORY_ORDER.forEach(cat => {
     const stored = localStorage.getItem('task-collapse-' + cat);
     collapseState[cat] = stored === null ? true : stored === 'true';
   });
 
-  const addedTasks = state._added || {};
-
   container.innerHTML = CATEGORY_ORDER.map(cat => {
-    const { backlog: backlogItems } = getResolvedItems(tasks, cat);
-    const addedItems = addedTasks[cat] || [];
-    if (backlogItems.length === 0 && addedItems.length === 0) return '';
+    const group = tasks[cat];
+    if (!group) return '';
+    const backlogItems = group.backlog || [];
+    if (backlogItems.length === 0) return '';
 
     const tagClass = categoryTagClass(cat);
     const isCollapsed = collapseState[cat];
-    const backlogHtml = backlogItems.map((item) => renderTaskItem(item, cat, 'backlog', state, edits, 'now')).join('');
-    const addedHtml = addedItems.map((item, i) => `<div class="task-item">
-      <input type="checkbox" class="task-checkbox added-task-checkbox" data-cat="${cat}" data-idx="${i}">
-      <span class="task-text">${escapeHtml(item.text)}</span>
-      <button class="move-added-task-btn" data-cat="${cat}" data-idx="${i}" title="Move to Agenda">&#8593;</button>
-      <button class="delete-added-task-btn" data-cat="${cat}" data-idx="${i}" title="Remove">&times;</button>
-    </div>`).join('');
+    const backlogHtml = backlogItems.map(item => renderTaskItem(item, cat, 'backlog', 'now')).join('');
 
     return `<div class="task-group ${isCollapsed ? 'collapsed' : ''}" data-cat="${cat}">
       <div class="task-group-header" data-cat="${cat}">
         <span class="task-group-arrow">${isCollapsed ? '&#9656;' : '&#9662;'}</span>
         <span class="category-tag ${tagClass} task-cat-title">${cat}</span>
-        <span class="task-count">${backlogItems.length + addedItems.length}</span>
+        <span class="task-count">${backlogItems.length}</span>
       </div>
       <div class="task-group-items" data-cat="${cat}">
-        ${backlogHtml}${addedHtml}
+        ${backlogHtml}
         <div class="add-task-row" data-cat="${cat}">
           <span class="add-task-trigger" data-cat="${cat}">+ add task</span>
           <input type="text" class="add-task-input" data-cat="${cat}" placeholder="New task... press Enter" style="display:none;">
@@ -313,7 +122,7 @@ function renderBacklog(tasks) {
 
   // --- Event listeners ---
 
-  // Collapse toggle
+  // Collapse toggle (UI-only, stays in localStorage)
   container.querySelectorAll('.task-group-header').forEach(header => {
     header.addEventListener('click', () => {
       const group = header.closest('.task-group');
@@ -325,41 +134,70 @@ function renderBacklog(tasks) {
     });
   });
 
-  // Checkboxes
-  container.querySelectorAll('.task-checkbox').forEach(cb => {
-    cb.addEventListener('change', (e) => {
-      const st = getTaskState();
-      st[e.target.dataset.key] = e.target.checked;
-      saveTaskState(st);
-      e.target.closest('.task-item').classList.toggle('task-done', e.target.checked);
-      updateSyncButton();
+  // Parent task checkboxes
+  container.querySelectorAll('.parent-checkbox').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const id = cb.dataset.id;
+      const result = findTaskById(tasks, id);
+      if (!result) return;
+      const checked = cb.checked;
+      // Optimistic UI
+      result.task.done = checked;
+      cb.closest('.task-item').classList.toggle('task-done', checked);
+      // Persist
+      await db.updateTask(id, { done: checked });
     });
   });
 
-  // Move buttons
+  // Subtask checkboxes
+  container.querySelectorAll('.subtask-checkbox').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const id = cb.dataset.id;
+      const subIndex = parseInt(cb.dataset.subIndex);
+      const result = findTaskById(tasks, id);
+      if (!result) return;
+      const checked = cb.checked;
+      // Optimistic UI
+      result.task.subtasks[subIndex].done = checked;
+      cb.closest('.task-item').classList.toggle('task-done', checked);
+      // Persist the whole subtasks array
+      await db.updateTask(id, { subtasks: result.task.subtasks });
+    });
+  });
+
+  // Move buttons (backlog -> now)
   container.querySelectorAll('.move-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const mv = getTaskMoves();
-      const cat = btn.dataset.cat;
-      const text = btn.dataset.text;
+      const id = btn.dataset.id;
       const target = btn.dataset.moveTo;
-      if (!mv[cat]) mv[cat] = {};
-      mv[cat][text] = target;
-      saveTaskMoves(mv);
+      const result = findTaskById(tasks, id);
+      if (!result) return;
+      // Optimistic UI: move in appData
+      const group = tasks[result.category];
+      const fromList = group[result.list];
+      const idx = fromList.findIndex(t => t.id === id);
+      if (idx >= 0) {
+        const [item] = fromList.splice(idx, 1);
+        group[target].push(item);
+      }
+      // Re-render affected views
       renderBacklog(tasks);
-      renderProjectsAgenda(tasks);
-      renderWeeklyObjectives(tasks);
-      updateSyncButton();
+      if (typeof renderProjectsAgenda === 'function') renderProjectsAgenda(tasks);
+      if (typeof renderWeeklyObjectives === 'function') renderWeeklyObjectives(tasks);
+      // Persist
+      await db.updateTask(id, { list: target });
     });
   });
 
-  // Double-click to edit
-  container.querySelectorAll('.task-text[data-editable]').forEach(span => {
+  // Double-click to edit task text
+  container.querySelectorAll('.task-text[data-editable]:not(.subtask-text)').forEach(span => {
     span.addEventListener('dblclick', (e) => {
       e.stopPropagation();
-      const key = span.dataset.editKey;
-      const current = span.textContent;
+      const id = span.dataset.id;
+      const result = findTaskById(tasks, id);
+      if (!result) return;
+      const current = result.task.text;
       const input = document.createElement('input');
       input.type = 'text';
       input.value = current;
@@ -367,19 +205,17 @@ function renderBacklog(tasks) {
       span.replaceWith(input);
       input.focus();
       input.select();
-      const save = () => {
+      const save = async () => {
         const newVal = input.value.trim();
         const newSpan = document.createElement('span');
         newSpan.className = 'task-text';
         newSpan.dataset.editable = 'true';
-        newSpan.dataset.editKey = key;
+        newSpan.dataset.id = id;
         newSpan.textContent = newVal || current;
         input.replaceWith(newSpan);
         if (newVal && newVal !== current) {
-          const ed = getTaskEdits();
-          ed[key] = newVal;
-          saveTaskEdits(ed);
-          updateSyncButton();
+          result.task.text = newVal;
+          await db.updateTask(id, { text: newVal });
         }
       };
       input.addEventListener('blur', save);
@@ -390,12 +226,50 @@ function renderBacklog(tasks) {
     });
   });
 
-  // Subtask toggle
+  // Double-click to edit subtask text
+  container.querySelectorAll('.subtask-text[data-editable]').forEach(span => {
+    span.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      const id = span.dataset.id;
+      const subIndex = parseInt(span.dataset.subIndex);
+      const result = findTaskById(tasks, id);
+      if (!result) return;
+      const current = result.task.subtasks[subIndex].text;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = current;
+      input.className = 'task-edit-input';
+      span.replaceWith(input);
+      input.focus();
+      input.select();
+      const save = async () => {
+        const newVal = input.value.trim();
+        const newSpan = document.createElement('span');
+        newSpan.className = 'task-text subtask-text';
+        newSpan.dataset.editable = 'true';
+        newSpan.dataset.id = id;
+        newSpan.dataset.subIndex = subIndex;
+        newSpan.textContent = newVal || current;
+        input.replaceWith(newSpan);
+        if (newVal && newVal !== current) {
+          result.task.subtasks[subIndex].text = newVal;
+          await db.updateTask(id, { subtasks: result.task.subtasks });
+        }
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = current; input.blur(); }
+      });
+    });
+  });
+
+  // Subtask toggle (expand/collapse)
   container.querySelectorAll('.subtask-toggle-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const key = btn.dataset.subtaskKey;
-      const list = container.querySelector(`.subtask-list[data-subtask-key="${key}"]`);
+      const id = btn.dataset.id;
+      const list = container.querySelector(`.subtask-list[data-id="${id}"]`);
       if (list) list.classList.toggle('subtask-collapsed');
     });
   });
@@ -411,17 +285,19 @@ function renderBacklog(tasks) {
     });
   });
 
+  // Add subtask input
   container.querySelectorAll('.add-subtask-input').forEach(input => {
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', async (e) => {
       if (e.key === 'Enter' && input.value.trim()) {
-        const st = getTaskState();
-        if (!st._addedSubs) st._addedSubs = {};
-        const parentKey = input.dataset.parent;
-        if (!st._addedSubs[parentKey]) st._addedSubs[parentKey] = [];
-        st._addedSubs[parentKey].push({ text: input.value.trim() });
-        saveTaskState(st);
+        const id = input.dataset.id;
+        const result = findTaskById(tasks, id);
+        if (!result) return;
+        const newSub = { text: input.value.trim(), done: false, thisWeek: false, today: false };
+        // Optimistic UI
+        result.task.subtasks.push(newSub);
+        // Re-render and persist
         renderBacklog(tasks);
-        updateSyncButton();
+        await db.updateTask(id, { subtasks: result.task.subtasks });
       }
       if (e.key === 'Escape') {
         input.classList.add('add-subtask-hidden');
@@ -439,40 +315,17 @@ function renderBacklog(tasks) {
 
   // Delete subtask
   container.querySelectorAll('.delete-sub-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const st = getTaskState();
-      if (!st._deletedSubs) st._deletedSubs = {};
-      const parentKey = btn.dataset.parent;
-      const subIdx = parseInt(btn.dataset.subIndex);
-      if (!st._deletedSubs[parentKey]) st._deletedSubs[parentKey] = [];
-      if (!st._deletedSubs[parentKey].includes(subIdx)) st._deletedSubs[parentKey].push(subIdx);
-      saveTaskState(st);
+      const id = btn.dataset.id;
+      const subIndex = parseInt(btn.dataset.subIndex);
+      const result = findTaskById(tasks, id);
+      if (!result) return;
+      // Optimistic UI
+      result.task.subtasks.splice(subIndex, 1);
       renderBacklog(tasks);
-      updateSyncButton();
-    });
-  });
-
-  // Delete added subtask
-  container.querySelectorAll('.delete-added-sub-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const st = getTaskState();
-      const parentKey = btn.dataset.parent;
-      const subIdx = parseInt(btn.dataset.subIndex);
-      if (st._addedSubs && st._addedSubs[parentKey]) {
-        st._addedSubs[parentKey].splice(subIdx, 1);
-        saveTaskState(st);
-        renderBacklog(tasks);
-        updateSyncButton();
-      }
-    });
-  });
-
-  // Added task checkboxes
-  container.querySelectorAll('.added-task-checkbox').forEach(cb => {
-    cb.addEventListener('change', () => {
-      cb.closest('.task-item').classList.toggle('task-done', cb.checked);
+      // Persist
+      await db.updateTask(id, { subtasks: result.task.subtasks });
     });
   });
 
@@ -486,18 +339,28 @@ function renderBacklog(tasks) {
     });
   });
 
+  // Add task input
   container.querySelectorAll('.add-task-input').forEach(input => {
     const cat = input.dataset.cat;
-    const save = () => {
+    const save = async () => {
       const text = input.value.trim();
       if (text) {
-        const st = getTaskState();
-        if (!st._added) st._added = {};
-        if (!st._added[cat]) st._added[cat] = [];
-        st._added[cat].push({ text });
-        saveTaskState(st);
+        // Insert into Supabase (returns row with id)
+        const newRow = await db.insertTask({ text, category: cat, list: 'backlog', subtasks: [] });
+        // Optimistic UI: add to appData with the returned id
+        const newTask = {
+          id: newRow.id,
+          text,
+          done: false,
+          deadline: null,
+          link: null,
+          thisWeek: false,
+          today: false,
+          subtasks: [],
+        };
+        if (!tasks[cat]) tasks[cat] = { description: '', now: [], backlog: [], recurring: [] };
+        tasks[cat].backlog.push(newTask);
         renderBacklog(tasks);
-        updateSyncButton();
       } else {
         input.style.display = 'none';
         const trigger = input.closest('.add-task-row').querySelector('.add-task-trigger');
@@ -509,75 +372,5 @@ function renderBacklog(tasks) {
       if (e.key === 'Escape') { input.value = ''; input.style.display = 'none'; const trigger = input.closest('.add-task-row').querySelector('.add-task-trigger'); if (trigger) trigger.style.display = ''; }
     });
     input.addEventListener('blur', () => { if (!input.value.trim()) { input.style.display = 'none'; const trigger = input.closest('.add-task-row').querySelector('.add-task-trigger'); if (trigger) trigger.style.display = ''; } });
-  });
-
-  // Move added task to agenda
-  container.querySelectorAll('.move-added-task-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const st = getTaskState();
-      const cat = btn.dataset.cat;
-      const idx = parseInt(btn.dataset.idx);
-      if (st._added && st._added[cat] && st._added[cat][idx]) {
-        const item = st._added[cat][idx];
-        const mv = getTaskMoves();
-        if (!mv[cat]) mv[cat] = {};
-        mv[cat][item.text] = 'now';
-        saveTaskMoves(mv);
-        st._added[cat].splice(idx, 1);
-        saveTaskState(st);
-        renderBacklog(tasks);
-        renderProjectsAgenda(tasks);
-        renderWeeklyObjectives(tasks);
-        updateSyncButton();
-      }
-    });
-  });
-
-  // Delete added task
-  container.querySelectorAll('.delete-added-task-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const st = getTaskState();
-      const cat = btn.dataset.cat;
-      const idx = parseInt(btn.dataset.idx);
-      if (st._added && st._added[cat]) {
-        st._added[cat].splice(idx, 1);
-        saveTaskState(st);
-        renderBacklog(tasks);
-        updateSyncButton();
-      }
-    });
-  });
-
-  // Sync button
-  function clearAllSyncState() {
-    localStorage.removeItem('myweek-tasks');
-    localStorage.removeItem('myweek-task-edits');
-    localStorage.removeItem('myweek-task-moves');
-    localStorage.removeItem('myweek-this-week');
-    localStorage.removeItem('myweek-weight-updates');
-    localStorage.removeItem('myweek-daily-focus-edit');
-    localStorage.removeItem('family-hub-changes');
-    localStorage.removeItem('family-hub-added');
-    saveDailyFocusEdit('');
-    updateSyncButton();
-    if (typeof updateFamilySyncBtn === 'function') updateFamilySyncBtn();
-  }
-
-  // Click = sync via Gmail + auto-clear
-  document.getElementById('syncBtn').onclick = () => {
-    const summary = generateSyncSummary();
-    const subject = encodeURIComponent('Dashboard Sync — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
-    const body = encodeURIComponent(summary);
-    window.open('https://mail.google.com/mail/?view=cm&to=' + NOTES_EMAIL + '&su=' + subject + '&body=' + body, '_blank');
-    clearAllSyncState();
-  };
-
-  // Right-click or long-press = dismiss without sending
-  const syncBtn = document.getElementById('syncBtn');
-  syncBtn.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    if (confirm('Clear sync queue without sending?')) clearAllSyncState();
   });
 }

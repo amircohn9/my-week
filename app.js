@@ -1,23 +1,16 @@
-// app.js — Init, data loading, notes, collapsible sections
+// app.js — Init, data loading, collapsible sections (Supabase backend)
 
 let appData = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const [hotData, archiveData] = await Promise.all([
-    fetch('data.json').then(r => r.json()),
-    fetch('archive.json').then(r => r.json()).catch(() => ({ checkins: [], completedItems: [], diet: { entries: [], weights: [] } }))
-  ]);
-  appData = hotData;
-  // Merge archive into hot data so dashboard sees full history
-  appData.checkins = [...(archiveData.checkins || []), ...(appData.checkins || [])];
-  appData.completedItems = [...(archiveData.completedItems || []), ...(appData.completedItems || [])];
-  if (archiveData.diet) {
-    appData.diet.entries = [...(archiveData.diet.entries || []), ...(appData.diet.entries || [])];
-    appData.diet.weights = [...(archiveData.diet.weights || []), ...(appData.diet.weights || [])];
+async function initApp() {
+  const session = await db.getSession();
+  if (!session) {
+    window.addEventListener('authenticated', initApp);
+    return;
   }
 
-  // Clear stale sync queue (>7 days old)
-  cleanStaleFamilyChanges();
+  appData = await db.loadAll();
+  appData._completedPrompts = await db.getCompletedPrompts();
 
   // Render all sections
   renderDateRange();
@@ -34,12 +27,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderBacklog(appData.tasks);
   renderDayByDay(appData.checkins, appData.diet ? appData.diet.entries : []);
   renderIdentityVotes(appData);
-  renderNotes();
   setupToggle();
   setupCollapsibleSections();
   setupTabRail();
-  updateSyncButton();
-});
+  setupCheckinForm();
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
 
 // --- Header ---
 
@@ -92,7 +86,7 @@ function setupTabRail() {
       btn.classList.add('active');
       const tabId = btn.dataset.tab === 'dashboard' ? 'tabDashboard' : 'tabFamily';
       document.getElementById(tabId).classList.add('active');
-      if (btn.dataset.tab === 'family') { renderFamilyHub(); setupFamilySync(); }
+      if (btn.dataset.tab === 'family') { renderFamilyHub(); }
     });
   });
 }
@@ -102,113 +96,8 @@ const FAMILY_LABELS = { thisWeek: 'This Week', backlog: 'Backlog', decisions: 'D
 
 function getFamilyHub() {
   if (!appData.familyHub) appData.familyHub = {};
-  // Migrate old keys
-  if (appData.familyHub.now) { appData.familyHub.thisWeek = appData.familyHub.now; delete appData.familyHub.now; }
-  if (appData.familyHub.comingUp) { appData.familyHub.backlog = appData.familyHub.comingUp; delete appData.familyHub.comingUp; }
   for (const s of FAMILY_SECTIONS) if (!appData.familyHub[s]) appData.familyHub[s] = [];
-  // Apply local additions
-  let added;
-  try { added = JSON.parse(localStorage.getItem('family-hub-added')) || []; } catch { added = []; }
-  for (const a of added) {
-    const list = appData.familyHub[a.section];
-    if (list && !list.find(i => i.text === a.item.text)) list.push(a.item);
-  }
   return appData.familyHub;
-}
-
-function saveFamilyChange(type, payload) {
-  const key = 'family-hub-changes';
-  let changes;
-  try { changes = JSON.parse(localStorage.getItem(key)) || []; } catch { changes = []; }
-  changes.push({ type, ...payload, timestamp: Date.now() });
-  localStorage.setItem(key, JSON.stringify(changes));
-  updateSyncButton();
-  updateFamilySyncBtn();
-}
-
-function countFamilyChanges() {
-  const deduped = deduplicateFamilyChanges();
-  let count = deduped.length;
-  try {
-    const added = JSON.parse(localStorage.getItem('family-hub-added')) || [];
-    const seen = new Set();
-    for (const a of added) { const k = a.section + '::' + a.item.text; if (!seen.has(k)) { seen.add(k); count++; } }
-  } catch {}
-  return count;
-}
-
-function updateFamilySyncBtn() {
-  const btn = document.getElementById('familySyncBtn');
-  const countEl = document.getElementById('familySyncCount');
-  if (!btn) return;
-  const count = countFamilyChanges();
-  if (count === 0) {
-    btn.style.display = 'none';
-  } else {
-    btn.style.display = '';
-    countEl.textContent = count;
-  }
-}
-
-function deduplicateFamilyChanges() {
-  let changes;
-  try { changes = JSON.parse(localStorage.getItem('family-hub-changes')) || []; } catch { return []; }
-  // For toggles, assigns, deadlines, comments — only keep the latest per item
-  const latest = {};
-  const ordered = [];
-  for (const c of changes) {
-    const key = c.type + '::' + (c.section || c.from || '') + '::' + c.text;
-    if (['toggle', 'assign', 'deadline', 'comment'].includes(c.type)) {
-      latest[key] = c;
-    } else {
-      ordered.push(c);
-    }
-  }
-  return [...ordered, ...Object.values(latest)];
-}
-
-function generateFamilySyncSummary() {
-  const lines = ['FAMILY HUB SYNC — ' + new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }), ''];
-  const changes = deduplicateFamilyChanges();
-  for (const c of changes) {
-    if (c.type === 'toggle') lines.push((c.done ? 'HANDLED' : 'REOPENED') + ': ' + c.text + ' [' + c.section + ']');
-    else if (c.type === 'add') lines.push('ADDED to ' + c.section + ': ' + c.text);
-    else if (c.type === 'edit') lines.push('EDITED [' + c.section + ']: "' + c.oldText + '" → "' + c.newText + '"');
-    else if (c.type === 'assign') lines.push('ASSIGNED [' + c.section + ']: ' + c.text + ' → ' + (c.assignee || 'unassigned'));
-    else if (c.type === 'deadline') lines.push('DEADLINE [' + c.section + ']: ' + c.text + ' → ' + (c.deadline || 'removed'));
-    else if (c.type === 'move') lines.push('MOVED: "' + c.text + '" from ' + c.from + ' → ' + c.to);
-    else if (c.type === 'moveToAmir') lines.push('→ AMIR\'S TASKS: ' + c.text + ' (from ' + c.section + ')');
-    else if (c.type === 'comment') lines.push('NOTE [' + c.section + ']: ' + c.text + ' → "' + (c.comment || '') + '"');
-  }
-  try {
-    const added = JSON.parse(localStorage.getItem('family-hub-added')) || [];
-    // Deduplicate adds
-    const seen = new Set();
-    for (const a of added) {
-      const key = a.section + '::' + a.item.text;
-      if (!seen.has(key)) { seen.add(key); lines.push('ADDED to ' + a.section + ': ' + a.item.text); }
-    }
-  } catch {}
-  return lines.join('\n');
-}
-
-function setupFamilySync() {
-  const btn = document.getElementById('familySyncBtn');
-  if (!btn || btn._bound) return;
-  btn._bound = true;
-  btn.addEventListener('click', () => {
-    const summary = generateFamilySyncSummary();
-    const subject = encodeURIComponent('Family Hub Sync — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
-    const body = encodeURIComponent(summary);
-    window.open('https://mail.google.com/mail/?view=cm&to=' + NOTES_EMAIL + '&su=' + subject + '&body=' + body, '_blank');
-    // Auto-clear queue after opening Gmail
-    localStorage.removeItem('family-hub-changes');
-    localStorage.removeItem('family-hub-added');
-    btn.style.display = 'none';
-    updateFamilySyncBtn();
-    updateSyncButton();
-  });
-  updateFamilySyncBtn();
 }
 
 function renderFamilyHandled(hub) {
@@ -283,29 +172,29 @@ function renderFamilyHub() {
         ? `<span class="family-item-deadline">${new Date(item.deadline + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`
         : '';
       const hasComment = item.comment && item.comment.trim();
-      const commentToggle = `<span class="family-comment-toggle${hasComment ? ' has-comment' : ''}" data-section="${section}" data-text="${escapeHtml(item.text)}" title="${hasComment ? 'View note' : 'Add note'}">&#9998;</span>`;
+      const commentToggle = `<span class="family-comment-toggle${hasComment ? ' has-comment' : ''}" data-id="${item.id}" title="${hasComment ? 'View note' : 'Add note'}">&#9998;</span>`;
       const moveOptions = otherSections.map(s =>
-        `<span class="family-move-option" data-to="${s}" data-from="${section}" data-text="${escapeHtml(item.text)}">${FAMILY_LABELS[s]}</span>`
+        `<span class="family-move-option" data-to="${s}" data-from="${section}" data-id="${item.id}">${FAMILY_LABELS[s]}</span>`
       ).join('');
 
       const commentHtml = item._showComment ? (
-        `<div class="family-item-comment" data-section="${section}" data-text="${escapeHtml(item.text)}">${escapeHtml(item.comment || '')}</div>`
+        `<div class="family-item-comment" data-id="${item.id}">${escapeHtml(item.comment || '')}</div>`
       ) : '';
 
       return `<div class="family-item-wrapper"><div class="family-item${item.done ? ' done' : ''}">
-        <div class="family-item-check${isDecision ? ' decision' : ''}" data-section="${section}" data-text="${escapeHtml(item.text)}">${item.done ? '&#10003;' : ''}</div>
+        <div class="family-item-check${isDecision ? ' decision' : ''}" data-id="${item.id}">${item.done ? '&#10003;' : ''}</div>
         <div class="family-item-body">
-          <span class="family-item-text" data-section="${section}" data-text="${escapeHtml(item.text)}">${escapeHtml(item.text)}</span>
-          <span class="family-owner ${ownerClass}" data-section="${section}" data-text="${escapeHtml(item.text)}">${ownerLabel}</span>
+          <span class="family-item-text" data-id="${item.id}">${escapeHtml(item.text)}</span>
+          <span class="family-owner ${ownerClass}" data-id="${item.id}">${ownerLabel}</span>
           ${deadlineHtml}
         </div>
         <div class="family-item-actions">
           ${commentToggle}
-          <span class="family-item-date-btn" data-section="${section}" data-text="${escapeHtml(item.text)}" title="Date">&#128197;</span>
-          <span class="family-item-move-btn" data-section="${section}" data-text="${escapeHtml(item.text)}" title="Move">&#8596;</span>
+          <span class="family-item-date-btn" data-id="${item.id}" title="Date">&#128197;</span>
+          <span class="family-item-move-btn" data-id="${item.id}" title="Move">&#8596;</span>
           <div class="family-move-menu" style="display:none;">
             ${moveOptions}
-            <span class="family-move-option move-to-amir" data-to="_amirTasks" data-from="${section}" data-text="${escapeHtml(item.text)}">Amir's tasks</span>
+            <span class="family-move-option move-to-amir" data-to="_amirTasks" data-from="${section}" data-id="${item.id}">Amir's tasks</span>
           </div>
         </div>
       </div>${commentHtml}</div>`;
@@ -315,14 +204,16 @@ function renderFamilyHub() {
 
     // Toggle done
     container.querySelectorAll('.family-item-check').forEach(el => {
-      el.addEventListener('click', () => {
-        const text = el.dataset.text;
-        const item = (hub[section] || []).find(i => i.text === text);
+      el.addEventListener('click', async () => {
+        const id = el.dataset.id;
+        const item = (hub[section] || []).find(i => i.id === id);
         if (!item) return;
+        // Optimistic UI update
         item.done = !item.done;
         item.doneDate = item.done ? getTodayStr() : null;
-        saveFamilyChange('toggle', { section, text, done: item.done });
         renderFamilyHub();
+        // Write to Supabase
+        await db.updateFamilyItem(id, { done: item.done, doneDate: item.doneDate });
       });
     });
 
@@ -330,7 +221,10 @@ function renderFamilyHub() {
     container.querySelectorAll('.family-item-text').forEach(el => {
       el.addEventListener('click', () => {
         if (el.querySelector('input')) return;
-        const oldText = el.dataset.text;
+        const id = el.dataset.id;
+        const item = (hub[section] || []).find(i => i.id === id);
+        if (!item) return;
+        const oldText = item.text;
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'family-inline-edit';
@@ -339,12 +233,11 @@ function renderFamilyHub() {
         el.appendChild(input);
         input.focus();
         input.select();
-        const save = () => {
+        const save = async () => {
           const newText = input.value.trim();
           if (newText && newText !== oldText) {
-            const item = (hub[section] || []).find(i => i.text === oldText);
-            if (item) item.text = newText;
-            saveFamilyChange('edit', { section, oldText, newText });
+            item.text = newText;
+            await db.updateFamilyItem(id, { text: newText });
           }
           renderFamilyHub();
         };
@@ -358,24 +251,24 @@ function renderFamilyHub() {
 
     // Toggle assignee
     container.querySelectorAll('.family-owner').forEach(el => {
-      el.addEventListener('click', (e) => {
+      el.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const text = el.dataset.text;
-        const item = (hub[section] || []).find(i => i.text === text);
+        const id = el.dataset.id;
+        const item = (hub[section] || []).find(i => i.id === id);
         if (!item) return;
         const cycle = ['Amir', 'Arielle', 'Both', ''];
         const idx = cycle.indexOf(item.assignee || '');
         item.assignee = cycle[(idx + 1) % cycle.length];
-        saveFamilyChange('assign', { section, text, assignee: item.assignee });
         renderFamilyHub();
+        await db.updateFamilyItem(id, { assignee: item.assignee });
       });
     });
 
     // Deadline picker
     container.querySelectorAll('.family-item-date-btn').forEach(el => {
       el.addEventListener('click', () => {
-        const text = el.dataset.text;
-        const item = (hub[section] || []).find(i => i.text === text);
+        const id = el.dataset.id;
+        const item = (hub[section] || []).find(i => i.id === id);
         const picker = document.createElement('input');
         picker.type = 'date';
         picker.className = 'family-date-picker';
@@ -383,12 +276,12 @@ function renderFamilyHub() {
         el.parentElement.appendChild(picker);
         picker.focus();
         picker.showPicker && picker.showPicker();
-        const finish = () => {
+        const finish = async () => {
           const val = picker.value;
           if (item) item.deadline = val || null;
-          saveFamilyChange('deadline', { section, text, deadline: val || null });
           picker.remove();
           renderFamilyHub();
+          await db.updateFamilyItem(id, { deadline: val || null });
         };
         picker.addEventListener('change', finish);
         picker.addEventListener('blur', () => setTimeout(() => picker.remove(), 200));
@@ -407,24 +300,36 @@ function renderFamilyHub() {
     });
 
     container.querySelectorAll('.family-move-option').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', async () => {
         const from = el.dataset.from;
         const to = el.dataset.to;
-        const text = el.dataset.text;
+        const id = el.dataset.id;
+
         if (to === '_amirTasks') {
-          saveFamilyChange('moveToAmir', { section: from, text });
+          const item = (hub[from] || []).find(i => i.id === id);
+          if (!item) return;
+          // Optimistic UI
           const row = el.closest('.family-item');
           if (row) { row.style.opacity = '0.3'; row.style.pointerEvents = 'none'; }
+          // Insert into Amir's tasks and delete from family hub
+          await db.insertTask({ text: item.text, category: 'Home Duties', list: 'backlog' });
+          await db.deleteFamilyItem(id);
+          // Remove from in-memory array
+          const fromList = hub[from] || [];
+          const idx = fromList.findIndex(i => i.id === id);
+          if (idx !== -1) fromList.splice(idx, 1);
+          renderFamilyHub();
           return;
         }
+
         const fromList = hub[from] || [];
-        const idx = fromList.findIndex(i => i.text === text);
+        const idx = fromList.findIndex(i => i.id === id);
         if (idx === -1) return;
         const [item] = fromList.splice(idx, 1);
         if (!hub[to]) hub[to] = [];
         hub[to].push(item);
-        saveFamilyChange('move', { from, to, text });
         renderFamilyHub();
+        await db.updateFamilyItem(id, { section: to });
       });
     });
 
@@ -432,8 +337,8 @@ function renderFamilyHub() {
     container.querySelectorAll('.family-comment-toggle').forEach(el => {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
-        const text = el.dataset.text;
-        const item = (hub[section] || []).find(i => i.text === text);
+        const id = el.dataset.id;
+        const item = (hub[section] || []).find(i => i.id === id);
         if (!item) return;
         item._showComment = !item._showComment;
         renderFamilyHub();
@@ -444,8 +349,8 @@ function renderFamilyHub() {
     container.querySelectorAll('.family-item-comment').forEach(el => {
       el.addEventListener('click', () => {
         if (el.querySelector('textarea')) return;
-        const text = el.dataset.text;
-        const item = (hub[section] || []).find(i => i.text === text);
+        const id = el.dataset.id;
+        const item = (hub[section] || []).find(i => i.id === id);
         const ta = document.createElement('textarea');
         ta.className = 'family-item-comment-edit';
         ta.value = item ? (item.comment || '') : '';
@@ -453,12 +358,12 @@ function renderFamilyHub() {
         el.style.display = 'none';
         el.parentElement.insertBefore(ta, el.nextSibling);
         ta.focus();
-        const save = () => {
+        const save = async () => {
           const val = ta.value.trim();
           if (item) item.comment = val;
-          saveFamilyChange('comment', { section, text, comment: val });
           ta.remove();
           renderFamilyHub();
+          await db.updateFamilyItem(id, { comment: val });
         };
         ta.addEventListener('blur', save);
         ta.addEventListener('keydown', (ev) => {
@@ -473,20 +378,28 @@ function renderFamilyHub() {
   document.querySelectorAll('.family-add-input').forEach(input => {
     if (input._bound) return;
     input._bound = true;
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', async (e) => {
       if (e.key !== 'Enter') return;
       const text = input.value.trim();
       if (!text) return;
       const section = input.dataset.section;
-      const item = { text, date: getTodayStr(), addedBy: '', assignee: '', done: false, deadline: null };
-      if (!hub[section]) hub[section] = [];
-      hub[section].push(item);
-      let added;
-      try { added = JSON.parse(localStorage.getItem('family-hub-added')) || []; } catch { added = []; }
-      added.push({ section, item });
-      localStorage.setItem('family-hub-added', JSON.stringify(added));
-      saveFamilyChange('add', { section, text });
       input.value = '';
+      // Insert into Supabase
+      const returned = await db.insertFamilyItem({ text, section, addedBy: 'Amir' });
+      // Add returned item (with id) to in-memory hub
+      const hub = getFamilyHub();
+      if (!hub[section]) hub[section] = [];
+      hub[section].push({
+        id: returned.id,
+        text: returned.text,
+        date: returned.date,
+        addedBy: returned.added_by,
+        assignee: returned.assignee || '',
+        done: returned.done,
+        doneDate: returned.done_date,
+        deadline: returned.deadline,
+        comment: returned.comment || '',
+      });
       renderFamilyHub();
     });
   });
@@ -506,41 +419,7 @@ function renderFamilyHub() {
   renderFamilyAhead();
 }
 
-// --- Stale sync cleanup ---
-
-function cleanStaleFamilyChanges() {
-  const cutoff = Date.now() - 7 * 86400000;
-  try {
-    const changes = JSON.parse(localStorage.getItem('family-hub-changes')) || [];
-    const fresh = changes.filter(c => c.timestamp && c.timestamp > cutoff);
-    if (fresh.length < changes.length) {
-      if (fresh.length === 0) localStorage.removeItem('family-hub-changes');
-      else localStorage.setItem('family-hub-changes', JSON.stringify(fresh));
-    }
-  } catch { localStorage.removeItem('family-hub-changes'); }
-  try {
-    const added = JSON.parse(localStorage.getItem('family-hub-added')) || [];
-    const freshAdded = added.filter(a => {
-      if (!a.item || !a.item.date) return false;
-      const age = (Date.now() - new Date(a.item.date + 'T12:00:00').getTime()) / 86400000;
-      return age <= 7;
-    });
-    if (freshAdded.length < added.length) {
-      if (freshAdded.length === 0) localStorage.removeItem('family-hub-added');
-      else localStorage.setItem('family-hub-added', JSON.stringify(freshAdded));
-    }
-  } catch { localStorage.removeItem('family-hub-added'); }
-}
-
-// --- Upcoming events: hide/highlight ---
-
-function getUpcomingHidden() {
-  try { return JSON.parse(localStorage.getItem('family-upcoming-hidden')) || []; } catch { return []; }
-}
-
-function getUpcomingHighlighted() {
-  try { return JSON.parse(localStorage.getItem('family-upcoming-highlighted')) || []; } catch { return []; }
-}
+// --- Upcoming events ---
 
 function upcomingKey(evt) { return evt.date + '::' + evt.summary; }
 
@@ -548,8 +427,6 @@ function renderFamilyUpcoming() {
   const container = document.getElementById('familyUpcoming');
   if (!container) return;
   const events = (appData && appData.familyHub && appData.familyHub.upcomingEvents) || [];
-  const hidden = getUpcomingHidden();
-  const highlighted = getUpcomingHighlighted();
 
   if (events.length === 0) {
     container.innerHTML = '<p class="empty-state family-empty">Calendar events will appear here after next check-in.</p>';
@@ -561,10 +438,10 @@ function renderFamilyUpcoming() {
   today.setHours(0, 0, 0, 0);
   const groups = {};
 
-  for (const evt of events) {
+  const visible = events.filter(e => !e.hidden);
+  for (const evt of visible) {
     const d = new Date(evt.date + 'T12:00:00');
     if (d < today) continue;
-    if (hidden.includes(upcomingKey(evt))) continue;
     const daysOut = Math.floor((d - today) / 86400000);
     let groupLabel;
     if (daysOut <= 0) groupLabel = 'Today';
@@ -584,17 +461,16 @@ function renderFamilyUpcoming() {
     for (const evt of evts) {
       const d = new Date(evt.date + 'T12:00:00');
       const dayName = dayNames[d.getDay()];
-      const key = upcomingKey(evt);
-      const isHighlighted = highlighted.includes(key);
+      const isHighlighted = evt.highlighted;
       const typeClass = evt.type === 'daycare-closed' ? ' upcoming-alert' : evt.type === 'travel' ? ' upcoming-travel' : '';
       const hlClass = isHighlighted ? ' upcoming-highlighted' : '';
-      html += `<div class="upcoming-event${typeClass}${hlClass}" data-key="${escapeHtml(key)}">
+      html += `<div class="upcoming-event${typeClass}${hlClass}" data-id="${evt.id}">
         <span class="upcoming-day">${dayName}</span>
         <span class="upcoming-text">${escapeHtml(evt.summary)}</span>
         ${evt.time ? `<span class="upcoming-time">${evt.time}</span>` : ''}
         <span class="upcoming-actions">
-          <span class="upcoming-star${isHighlighted ? ' active' : ''}" data-key="${escapeHtml(key)}" title="Highlight">&#9733;</span>
-          <span class="upcoming-hide" data-key="${escapeHtml(key)}" title="Hide">&times;</span>
+          <span class="upcoming-star${isHighlighted ? ' active' : ''}" data-id="${evt.id}" title="Highlight">&#9733;</span>
+          <span class="upcoming-hide" data-id="${evt.id}" title="Hide">&times;</span>
         </span>
       </div>`;
     }
@@ -604,71 +480,37 @@ function renderFamilyUpcoming() {
 
   // Highlight toggle
   container.querySelectorAll('.upcoming-star').forEach(el => {
-    el.addEventListener('click', (e) => {
+    el.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const key = el.dataset.key;
-      const hl = getUpcomingHighlighted();
-      const idx = hl.indexOf(key);
-      if (idx === -1) {
-        hl.push(key);
-        saveFamilyChange('highlight-event', { key });
-      } else {
-        hl.splice(idx, 1);
-        saveFamilyChange('unhighlight-event', { key });
-      }
-      localStorage.setItem('family-upcoming-highlighted', JSON.stringify(hl));
+      const id = el.dataset.id;
+      const evt = events.find(ev => ev.id === id);
+      if (!evt) return;
+      evt.highlighted = !evt.highlighted;
       renderFamilyUpcoming();
+      await db.updateFamilyEvent(id, { highlighted: evt.highlighted });
     });
   });
 
   // Hide
   container.querySelectorAll('.upcoming-hide').forEach(el => {
-    el.addEventListener('click', (e) => {
+    el.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const key = el.dataset.key;
-      const h = getUpcomingHidden();
-      h.push(key);
-      localStorage.setItem('family-upcoming-hidden', JSON.stringify(h));
-      saveFamilyChange('hide-event', { key });
+      const id = el.dataset.id;
+      const evt = events.find(ev => ev.id === id);
+      if (evt) evt.hidden = true;
       renderFamilyUpcoming();
+      await db.updateFamilyEvent(id, { hidden: true });
     });
   });
 }
 
 // --- Anticipation Engine ---
 
-let _aheadPrompts = null;
-
-async function loadAheadPrompts() {
-  if (_aheadPrompts) return _aheadPrompts;
-  try {
-    const res = await fetch('prompts.json');
-    const data = await res.json();
-    _aheadPrompts = data.prompts || [];
-  } catch { _aheadPrompts = []; }
-  return _aheadPrompts;
-}
-
-function getAheadCompleted() {
-  try { return JSON.parse(localStorage.getItem('ahead-completed')) || {}; } catch { return {}; }
-}
-
-function markAheadCompleted(id) {
-  const c = getAheadCompleted();
-  c[id + '-' + new Date().getFullYear()] = getTodayStr();
-  localStorage.setItem('ahead-completed', JSON.stringify(c));
-}
-
-function isAheadCompleted(id) {
-  const c = getAheadCompleted();
-  return !!c[id + '-' + new Date().getFullYear()];
-}
-
 function getActivePrompts(prompts) {
   const now = new Date();
   const month = now.getMonth() + 1;
-  const completed = getAheadCompleted();
   const year = now.getFullYear();
+  const completedPrompts = appData._completedPrompts || [];
 
   return prompts.filter(p => {
     // Date window check
@@ -683,17 +525,17 @@ function getActivePrompts(prompts) {
     if (!inWindow) return false;
 
     // Already completed this year?
-    if (completed[p.id + '-' + year]) return false;
+    if (completedPrompts.some(c => c.prompt_id === p.id && c.year === year)) return false;
 
     return true;
   });
 }
 
-async function renderFamilyAhead() {
+function renderFamilyAhead() {
   const container = document.getElementById('familyAhead');
   if (!container) return;
 
-  const prompts = await loadAheadPrompts();
+  const prompts = appData.prompts || [];
   const active = getActivePrompts(prompts);
 
   if (active.length === 0) {
@@ -706,7 +548,7 @@ async function renderFamilyAhead() {
   active.sort((a, b) => (order[a.urgency] || 9) - (order[b.urgency] || 9));
 
   const urgencyLabels = { act: 'Act Now', think: 'Think Ahead', routine: 'Routine' };
-  const urgencyIcons = { act: '🔴', think: '🟡', routine: '🟢' };
+  const urgencyIcons = { act: '\u{1F534}', think: '\u{1F7E1}', routine: '\u{1F7E2}' };
 
   let lastUrgency = '';
   let html = '';
@@ -723,7 +565,7 @@ async function renderFamilyAhead() {
       <div class="ahead-item-actions">
         <button class="ahead-add-btn" data-id="${p.id}" data-text="${escapeHtml(p.title)}" data-section="thisWeek" title="Add to This Week">+TW</button>
         <button class="ahead-add-btn" data-id="${p.id}" data-text="${escapeHtml(p.title)}" data-section="backlog" title="Add to Backlog">+BL</button>
-        <button class="ahead-done-btn" data-id="${p.id}" title="Done / dismiss">✓</button>
+        <button class="ahead-done-btn" data-id="${p.id}" title="Done / dismiss">\u2713</button>
       </div>
     </div>`;
   }
@@ -731,101 +573,44 @@ async function renderFamilyAhead() {
 
   // Add to section
   container.querySelectorAll('.ahead-add-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const section = btn.dataset.section;
       const text = btn.dataset.text;
       const id = btn.dataset.id;
+      const year = new Date().getFullYear();
+
+      // Insert into Supabase family hub
+      const returned = await db.insertFamilyItem({ text, section, addedBy: 'Ahead' });
       const hub = getFamilyHub();
       if (!hub[section]) hub[section] = [];
-      const item = { text, date: getTodayStr(), addedBy: 'Ahead', assignee: '', done: false, deadline: null };
-      hub[section].push(item);
-      let added;
-      try { added = JSON.parse(localStorage.getItem('family-hub-added')) || []; } catch { added = []; }
-      added.push({ section, item });
-      localStorage.setItem('family-hub-added', JSON.stringify(added));
-      saveFamilyChange('add', { section, text });
-      markAheadCompleted(id);
+      hub[section].push({
+        id: returned.id,
+        text: returned.text,
+        date: returned.date,
+        addedBy: returned.added_by,
+        assignee: returned.assignee || '',
+        done: returned.done,
+        doneDate: returned.done_date,
+        deadline: returned.deadline,
+        comment: returned.comment || '',
+      });
+
+      // Mark prompt completed
+      await db.completePrompt(id, year);
+      appData._completedPrompts.push({ prompt_id: id, year });
+
       renderFamilyHub();
     });
   });
 
   // Dismiss
   container.querySelectorAll('.ahead-done-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      markAheadCompleted(btn.dataset.id);
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const year = new Date().getFullYear();
+      await db.completePrompt(id, year);
+      appData._completedPrompts.push({ prompt_id: id, year });
       renderFamilyAhead();
     });
   });
-}
-
-// --- Notes for Claude (via Gmail) ---
-
-function getNotes() { try { return JSON.parse(localStorage.getItem('myweek-notes')) || []; } catch { return []; } }
-function saveNotes(notes) { localStorage.setItem('myweek-notes', JSON.stringify(notes)); }
-
-function sendNoteViaGmail(text) {
-  const subject = encodeURIComponent('Notes for Claude — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
-  const body = encodeURIComponent(text);
-  window.open(`https://mail.google.com/mail/?view=cm&to=${NOTES_EMAIL}&su=${subject}&body=${body}`, '_blank');
-}
-
-function renderNotes() {
-  const container = document.getElementById('savedNotes');
-  const notes = getNotes();
-
-  container.innerHTML = notes.length === 0 ? '' : notes.map((n, i) => `
-    <div class="note-item">
-      <span class="note-text">${escapeHtml(n.text)}</span>
-      <span class="note-date">${new Date(n.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-      <button class="note-delete" data-index="${i}">&times;</button>
-    </div>
-  `).join('');
-
-  container.querySelectorAll('.note-delete').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const ns = getNotes();
-      ns.splice(parseInt(btn.dataset.index), 1);
-      saveNotes(ns);
-      renderNotes();
-    });
-  });
-
-  document.getElementById('saveNoteBtn').onclick = () => {
-    const input = document.getElementById('notesInput');
-    const text = input.value.trim();
-    if (!text) return;
-    const ns = getNotes();
-    ns.push({ text, timestamp: Date.now() });
-    saveNotes(ns);
-    sendNoteViaGmail(text);
-    input.value = '';
-    renderNotes();
-  };
-
-  document.getElementById('notesInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      document.getElementById('saveNoteBtn').click();
-    }
-  });
-
-  // FAB panel toggle
-  const fab = document.getElementById('notesFab');
-  const panel = document.getElementById('notesPanel');
-  const overlay = document.getElementById('notesOverlay');
-  const closeBtn = document.getElementById('notesPanelClose');
-
-  function openNotes() { panel.classList.add('open'); overlay.classList.add('open'); fab.style.display = 'none'; }
-  function closeNotes() { panel.classList.remove('open'); overlay.classList.remove('open'); fab.style.display = 'flex'; }
-
-  if (!fab._bound) {
-    fab._bound = true;
-    fab.addEventListener('click', openNotes);
-    overlay.addEventListener('click', closeNotes);
-    closeBtn.addEventListener('click', closeNotes);
-  }
-
-  const noteCount = getNotes().length;
-  if (noteCount > 0) fab.setAttribute('data-count', noteCount);
-  else fab.removeAttribute('data-count');
 }
