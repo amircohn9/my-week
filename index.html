@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2d2d2d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Stay Focused — Keep Moving</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
@@ -25,6 +30,10 @@
     <button class="tab-rail-btn" data-tab="family" title="Amir & Arielle">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <span class="tab-rail-label">A &amp; A</span>
+    </button>
+    <button class="tab-rail-btn" data-tab="weekend" title="Weekend Ideas">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <span class="tab-rail-label">Ideas</span>
     </button>
   </nav>
   <div class="tab-content">
@@ -97,8 +106,6 @@
             <button class="toggle-btn" data-range="week">This Week</button>
           </div>
         </div>
-        <div id="restBanner" class="rest-banner" style="display:none;"></div>
-        <div id="winsHeadline" class="wins-headline"></div>
         <div id="categoryBars" class="category-bars"></div>
         <p class="empty-state" id="chartEmpty">No data yet — do your first check-in.</p>
         <div id="completedList" class="completed-list"></div>
@@ -201,6 +208,45 @@
   </div>
   </div><!-- end tabFamily -->
 
+  <div class="tab-pane" id="tabWeekend">
+  <div class="container weekend-container">
+    <div class="family-header-row">
+      <div>
+        <h1>Weekend Ideas</h1>
+        <p class="subtitle" id="weekendLastUpdated">Not yet loaded</p>
+      </div>
+      <button class="checkin-trigger-btn" id="refreshIdeasBtn">Refresh Ideas</button>
+    </div>
+
+    <div id="weekendLoading" class="weekend-loading" style="display:none;">
+      <div class="loading-spinner"></div>
+      <p>Finding activities near Arlington...</p>
+    </div>
+
+    <div id="weekendContent">
+      <div class="weekend-row-section">
+        <h2 class="weekend-row-title">This Weekend</h2>
+        <div id="weekendThisWeek" class="weekend-scroll-row"></div>
+      </div>
+
+      <div class="weekend-row-section">
+        <h2 class="weekend-row-title">Next Weekend</h2>
+        <div id="weekendNextWeek" class="weekend-scroll-row"></div>
+      </div>
+
+      <div class="weekend-row-section">
+        <h2 class="weekend-row-title">Anytime Ideas</h2>
+        <div id="weekendAnytime" class="weekend-scroll-row"></div>
+      </div>
+
+      <div class="weekend-liked-section" id="weekendLikedSection" style="display:none;">
+        <h2 class="weekend-row-title weekend-liked-toggle">Liked Ideas <span class="chevron">&#9662;</span></h2>
+        <div id="weekendLiked" class="weekend-scroll-row" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+  </div><!-- end tabWeekend -->
+
   </div><!-- end tab-content -->
   </div>
 
@@ -258,7 +304,14 @@
   <script src="charts.js"></script>
   <script src="tasks.js"></script>
   <script src="checkin-form.js"></script>
+  <script src="weekend-ideas.js"></script>
   <script src="app.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
 
   <script>
     // Supabase Auth — replaces hardcoded password

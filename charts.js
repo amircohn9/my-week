@@ -314,6 +314,17 @@ function renderWeeklyObjectives(tasks) {
     return;
   }
 
+  // Next week: show only planning input, not this week's objectives
+  if (viewWeekOffset === 1) {
+    list.innerHTML = `<li class="obj-next-week-header" style="list-style:none;padding:0 0 8px;font-size:0.78rem;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;">Planning next week</li>
+      <li class="empty-state" style="list-style:none;color:#999;font-style:italic;padding:4px 0 8px;">Add objectives you want to tackle next week.</li>
+      <li style="list-style:none;padding:8px 0;">
+        <input type="text" class="obj-add-input" placeholder="+ add objective for next week" style="width:100%;border:1px dashed #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;">
+      </li>`;
+    _bindObjAddInput(list, tasks);
+    return;
+  }
+
   const objectives = [];
   const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
 
@@ -356,17 +367,7 @@ function renderWeeklyObjectives(tasks) {
   });
 
   if (filtered.length === 0) {
-    const emptyMsg = viewWeekOffset === 1
-      ? 'Mark subtasks as "this week" in your projects, or add an objective below.'
-      : 'Mark subtasks as "this week" in your projects to populate objectives.';
-    let emptyHtml = '<li class="empty-state">' + emptyMsg + '</li>';
-    if (viewWeekOffset === 1) {
-      emptyHtml += `<li style="list-style:none;padding:8px 0;">
-        <input type="text" class="obj-add-input" placeholder="+ add objective for next week" style="width:100%;border:1px dashed #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;">
-      </li>`;
-    }
-    list.innerHTML = emptyHtml;
-    _bindObjAddInput(list, tasks);
+    list.innerHTML = '<li class="empty-state">Mark subtasks as "this week" in your projects to populate objectives.</li>';
     return;
   }
 
@@ -376,11 +377,7 @@ function renderWeeklyObjectives(tasks) {
   const sorted = [...incomplete, ...complete];
   const hasBoth = incomplete.length > 0 && complete.length > 0;
 
-  const nextWeekHeader = viewWeekOffset === 1
-    ? '<li class="obj-next-week-header" style="list-style:none;padding:0 0 8px;font-size:0.78rem;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;">Planning next week</li>'
-    : '';
-
-  list.innerHTML = nextWeekHeader + sorted.map((obj, i) => {
+  list.innerHTML = sorted.map((obj, i) => {
     const divider = (hasBoth && i === incomplete.length) ? '<li class="obj-divider"><span>completed</span></li>' : '';
     return divider + `<li class="${obj.done ? 'obj-done' : ''}">
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
@@ -393,12 +390,7 @@ function renderWeeklyObjectives(tasks) {
         <button class="obj-delete-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Delete task">&times;</button>
       </span>
     </li>`;
-  }).join('') + (viewWeekOffset === 1 ? `<li style="list-style:none;padding:8px 0;">
-    <input type="text" class="obj-add-input" placeholder="+ add objective for next week" style="width:100%;border:1px dashed #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;">
-  </li>` : '');
-
-  // Bind next-week add input
-  _bindObjAddInput(list, tasks);
+  }).join('');
 
   // Wire up checkboxes — toggle done
   list.querySelectorAll('.obj-checkbox').forEach(cb => {

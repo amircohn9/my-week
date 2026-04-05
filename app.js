@@ -132,14 +132,16 @@ function setupCollapsibleSections() {
 // --- Tab Rail ---
 
 function setupTabRail() {
+  const tabMap = { dashboard: 'tabDashboard', family: 'tabFamily', weekend: 'tabWeekend' };
   document.querySelectorAll('.tab-rail-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-rail-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
-      const tabId = btn.dataset.tab === 'dashboard' ? 'tabDashboard' : 'tabFamily';
+      const tabId = tabMap[btn.dataset.tab] || 'tabDashboard';
       document.getElementById(tabId).classList.add('active');
       if (btn.dataset.tab === 'family') { renderFamilyHub(); }
+      if (btn.dataset.tab === 'weekend') { setupWeekendIdeas(); }
     });
   });
 }

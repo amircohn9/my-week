@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Week Plan — Mar 23–27</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f5f5f3; color: #222; padding: 24px; }
+
+    h1 { font-size: 1.1rem; font-weight: 600; color: #555; margin-bottom: 4px; }
+    .subtitle { font-size: 0.82rem; color: #999; margin-bottom: 20px; }
+
+    .week-grid {
+      display: grid;
+      grid-template-columns: 60px repeat(5, 1fr);
+      gap: 0;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+    }
+
+    /* Header row */
+    .day-header {
+      padding: 12px 8px;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #888;
+      background: #fafafa;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .day-header.today { color: #7c3aed; }
+    .day-header .day-num { display: block; font-size: 1.1rem; font-weight: 700; color: #222; margin-top: 2px; }
+    .day-header.today .day-num { color: #7c3aed; }
+    .time-header { background: #fafafa; border-bottom: 1px solid #f0f0f0; border-right: 1px solid #f0f0f0; }
+
+    /* Time column */
+    .time-col {
+      border-right: 1px solid #f0f0f0;
+    }
+    .time-slot {
+      height: 48px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      padding: 4px 8px 0 0;
+      font-size: 0.68rem;
+      color: #ccc;
+      border-bottom: 1px solid #f8f8f8;
+    }
+
+    /* Day columns */
+    .day-col {
+      border-right: 1px solid #f0f0f0;
+      position: relative;
+    }
+    .day-col:last-child { border-right: none; }
+
+    /* Each cell = 1 hour = 48px */
+    .cell {
+      height: 48px;
+      border-bottom: 1px solid #f8f8f8;
+      position: relative;
+    }
+
+    /* Events */
+    .event {
+      position: absolute;
+      left: 3px;
+      right: 3px;
+      border-radius: 5px;
+      padding: 3px 6px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      overflow: hidden;
+      z-index: 2;
+      cursor: default;
+    }
+    .event-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .event-time { font-size: 0.65rem; opacity: 0.75; display: block; }
+
+    /* Colors */
+    .ev-kids    { background: #e8eaf6; color: #3949ab; }
+    .ev-workout { background: #e3f2fd; color: #1565c0; }
+    .ev-meeting { background: #e8f5e9; color: #2e7d32; }
+    .ev-focus   { background: #f3e8ff; color: #6b21a8; border-left: 3px solid #7c3aed; }
+    .ev-food    { background: #fff8e1; color: #f57f17; }
+    .ev-family  { background: #fce4ec; color: #c2185b; }
+    .ev-admin   { background: #f1f8e9; color: #558b2f; }
+
+    /* Focus block highlight */
+    .ev-cv {
+      background: linear-gradient(135deg, #7c3aed15, #a78bfa25);
+      color: #6b21a8;
+      border-left: 3px solid #7c3aed;
+      font-weight: 600;
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: #666;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    /* Summary bar */
+    .summary {
+      margin-top: 20px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+    }
+    .summary h2 { font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 12px; }
+    .summary-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 0.82rem;
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-day { font-weight: 600; color: #222; width: 80px; flex-shrink: 0; }
+    .summary-tasks { color: #555; flex: 1; }
+    .summary-hours { font-size: 0.75rem; color: #999; white-space: nowrap; }
+    .tag {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .tag-cv { background: #f3e8ff; color: #6b21a8; }
+    .tag-home { background: #fef3c7; color: #92400e; }
+    .tag-career { background: #d1fae5; color: #065f46; }
+    .tag-family { background: #fce7f3; color: #9d174d; }
+  </style>
+</head>
+<body>
+
+  <h1>Week Plan — Mar 23–27, 2026</h1>
+  <p class="subtitle">Main objective: CV system (7h) &nbsp;·&nbsp; Severance by Wed &nbsp;·&nbsp; Admin wrapped by Fri</p>
+
+  <div class="week-grid">
+
+    <!-- Headers -->
+    <div class="time-header day-header"></div>
+    <div class="day-header today">Mon <span class="day-num">23</span></div>
+    <div class="day-header">Tue <span class="day-num">24</span></div>
+    <div class="day-header">Wed <span class="day-num">25</span></div>
+    <div class="day-header">Thu <span class="day-num">26</span></div>
+    <div class="day-header">Fri <span class="day-num">27</span></div>
+
+    <!-- Time column + day columns (8am–6pm = 10 rows) -->
+    <div class="time-col">
+      <div class="time-slot">8am</div>
+      <div class="time-slot">9am</div>
+      <div class="time-slot">10am</div>
+      <div class="time-slot">11am</div>
+      <div class="time-slot">12pm</div>
+      <div class="time-slot">1pm</div>
+      <div class="time-slot">2pm</div>
+      <div class="time-slot">3pm</div>
+      <div class="time-slot">4pm</div>
+      <div class="time-slot">5pm</div>
+    </div>
+
+    <!-- MONDAY -->
+    <div class="day-col">
+      <div class="cell"></div><!-- 8 -->
+
+      <!-- 9–1pm: CV system (4h) -->
+      <div class="event ev-cv" style="top:48px; height:192px;">
+        <span class="event-time">9:00 – 1:00</span>
+        <span class="event-label">🎯 CV System</span>
+      </div>
+
+      <div class="cell"></div><!-- 9 -->
+      <div class="cell"></div><!-- 10 -->
+      <div class="cell"></div><!-- 11 -->
+      <div class="cell"></div><!-- 12 -->
+      <div class="cell"></div><!-- 1 -->
+
+      <!-- 2–3: House Stuff -->
+      <div class="event ev-focus" style="top:288px; height:48px;">
+        <span class="event-time">2:00</span>
+        <span class="event-label">House Stuff</span>
+      </div>
+      <div class="cell"></div><!-- 2 -->
+
+      <div class="cell"></div><!-- 3 -->
+
+      <!-- Kids pickup 4:45 -->
+      <div class="event ev-kids" style="top:420px; height:28px;">
+        <span class="event-label">Kids pickup</span>
+      </div>
+      <div class="cell"></div><!-- 4 -->
+      <div class="cell"></div><!-- 5 -->
+    </div>
+
+    <!-- TUESDAY -->
+    <div class="day-col">
+      <!-- Kids dropoff 8 -->
+      <div class="event ev-kids" style="top:0px; height:24px;">
+        <span class="event-label">Kids dropoff</span>
+      </div>
+      <!-- Workout 8:15 -->
+      <div class="event ev-workout" style="top:12px; height:60px;">
+        <span class="event-time">8:15</span>
+        <span class="event-label">💪 Workout</span>
+      </div>
+      <div class="cell"></div><!-- 8 -->
+
+      <div class="cell"></div><!-- 9 -->
+
+      <!-- SIRLEA 10:30–12:30 -->
+      <div class="event ev-meeting" style="top:120px; height:96px;">
+        <span class="event-time">10:30 – 12:30</span>
+        <span class="event-label">SIRLEA</span>
+      </div>
+      <div class="cell"></div><!-- 10 -->
+      <div class="cell"></div><!-- 11 -->
+      <div class="cell"></div><!-- 12 -->
+
+      <!-- Admin 12:30–2: CPA files + attorney files -->
+      <div class="event ev-admin" style="top:216px; height:80px;">
+        <span class="event-time">12:30 – 2:00</span>
+        <span class="event-label">📎 CPA files + Attorney</span>
+      </div>
+      <div class="cell"></div><!-- 1 -->
+
+      <!-- Wistia sync 2pm -->
+      <div class="event ev-meeting" style="top:288px; height:28px;">
+        <span class="event-time">2:00</span>
+        <span class="event-label">Wistia Sync</span>
+      </div>
+      <div class="cell"></div><!-- 2 -->
+      <div class="cell"></div><!-- 3 -->
+
+      <div class="event ev-kids" style="top:420px; height:28px;">
+        <span class="event-label">Kids pickup</span>
+      </div>
+      <div class="cell"></div><!-- 4 -->
+      <div class="cell"></div><!-- 5 -->
+    </div>
+
+    <!-- WEDNESDAY -->
+    <div class="day-col">
+      <div class="event ev-kids" style="top:0px; height:24px;">
+        <span class="event-label">Kids dropoff</span>
+      </div>
+      <div class="cell"></div><!-- 8 -->
+
+      <div class="cell"></div><!-- 9 -->
+
+      <!-- Psychologist 10–11 -->
+      <div class="event ev-meeting" style="top:96px; height:48px;">
+        <span class="event-time">10:00</span>
+        <span class="event-label">🧠 Psychologist</span>
+      </div>
+      <div class="cell"></div><!-- 10 -->
+
+      <div class="cell"></div><!-- 11 -->
+
+      <!-- CV System 11:30–2:30 (3h) -->
+      <div class="event ev-cv" style="top:168px; height:144px;">
+        <span class="event-time">11:30 – 2:30</span>
+        <span class="event-label">🎯 CV System</span>
+      </div>
+      <div class="cell"></div><!-- 12 -->
+      <div class="cell"></div><!-- 1 -->
+      <div class="cell"></div><!-- 2 -->
+
+      <!-- Severance thinking 2:30–3:30 -->
+      <div class="event ev-focus" style="top:312px; height:48px;">
+        <span class="event-time">2:30 – 3:30</span>
+        <span class="event-label">Severance</span>
+      </div>
+      <div class="cell"></div><!-- 3 -->
+
+      <!-- Caffe Nero 3:30 -->
+      <div class="event ev-meeting" style="top:360px; height:48px;">
+        <span class="event-time">3:30</span>
+        <span class="event-label">☕ Amir/Brian</span>
+      </div>
+
+      <div class="event ev-kids" style="top:420px; height:28px;">
+        <span class="event-label">Kids pickup</span>
+      </div>
+      <div class="cell"></div><!-- 4 -->
+      <div class="cell"></div><!-- 5 -->
+    </div>
+
+    <!-- THURSDAY -->
+    <div class="day-col">
+      <div class="event ev-kids" style="top:0px; height:24px;">
+        <span class="event-label">Kids dropoff</span>
+      </div>
+      <div class="event ev-workout" style="top:12px; height:60px;">
+        <span class="event-time">8:15</span>
+        <span class="event-label">💪 Workout</span>
+      </div>
+      <div class="cell"></div><!-- 8 -->
+      <div class="cell"></div><!-- 9 -->
+      <div class="cell"></div><!-- 10 -->
+      <div class="cell"></div><!-- 11 -->
+      <div class="cell"></div><!-- 12 -->
+
+      <!-- FB Marketplace + shoe photos 12:30–3:30 -->
+      <div class="event ev-admin" style="top:216px; height:144px;">
+        <span class="event-time">12:30 – 3:30</span>
+        <span class="event-label">📦 FB Marketplace + Shoes</span>
+      </div>
+      <div class="cell"></div><!-- 1 -->
+      <div class="cell"></div><!-- 2 -->
+      <div class="cell"></div><!-- 3 -->
+
+      <!-- Hebrew day 3:30 -->
+      <div class="event ev-family" style="top:360px; height:60px;">
+        <span class="event-time">3:30</span>
+        <span class="event-label">🇮🇱 Hebrew day</span>
+      </div>
+      <div class="cell"></div><!-- 4 -->
+      <div class="cell"></div><!-- 5 -->
+    </div>
+
+    <!-- FRIDAY -->
+    <div class="day-col">
+      <div class="event ev-kids" style="top:0px; height:24px;">
+        <span class="event-label">Kids dropoff</span>
+      </div>
+      <div class="cell"></div><!-- 8 -->
+
+      <!-- LinkedIn + unemployment 8:30–11 -->
+      <div class="event ev-career" style="top:36px; height:132px; background:#d1fae5; color:#065f46; border-radius:5px; position:absolute; left:3px; right:3px; padding: 3px 6px; font-size:0.72rem; font-weight:500;">
+        <span style="font-size:0.65rem; opacity:0.75; display:block;">8:30 – 11:00</span>
+        <span>✍️ LinkedIn × 2 + Unemployment + Netherlands</span>
+      </div>
+      <div class="cell"></div><!-- 9 -->
+      <div class="cell"></div><!-- 10 -->
+
+      <!-- Elaine Boyer 11:30 -->
+      <div class="event ev-meeting" style="top:168px; height:48px;">
+        <span class="event-time">11:30</span>
+        <span class="event-label">Elaine Boyer</span>
+      </div>
+      <div class="cell"></div><!-- 11 -->
+      <div class="cell"></div><!-- 12 -->
+
+      <!-- Apply to jobs 1–4 -->
+      <div class="event ev-focus" style="top:240px; height:144px;">
+        <span class="event-time">1:00 – 4:00</span>
+        <span class="event-label">Apply to 3 jobs</span>
+      </div>
+      <div class="cell"></div><!-- 1 -->
+      <div class="cell"></div><!-- 2 -->
+      <div class="cell"></div><!-- 3 -->
+
+      <div class="event ev-kids" style="top:420px; height:28px;">
+        <span class="event-label">Kids pickup</span>
+      </div>
+      <div class="cell"></div><!-- 4 -->
+      <div class="cell"></div><!-- 5 -->
+    </div>
+
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#a78bfa;"></div> CV System (main objective)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#bbdefb;"></div> Calendar / meetings</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#c8e6c9;"></div> Admin tasks</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e8eaf6;"></div> Kids</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fce4ec;"></div> Family</div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <h2>Week at a glance</h2>
+    <div class="summary-row">
+      <span class="summary-day">Monday</span>
+      <span class="summary-tasks"><span class="tag tag-cv">CV</span> 4h deep work on CV system</span>
+      <span class="summary-hours">~4h focused</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-day">Tuesday</span>
+      <span class="summary-tasks"><span class="tag tag-home">Admin</span> Share CPA + attorney files &nbsp; <span class="tag tag-career">Career</span> Wistia sync</span>
+      <span class="summary-hours">~2h tasks</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-day">Wednesday</span>
+      <span class="summary-tasks"><span class="tag tag-cv">CV</span> 3h finish CV system &nbsp; <span class="tag tag-career">Career</span> Severance thinking</span>
+      <span class="summary-hours">~4h focused</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-day">Thursday</span>
+      <span class="summary-tasks"><span class="tag tag-home">Home</span> FB Marketplace posts + shoe photos &nbsp; <span class="tag tag-family">Family</span> Hebrew day</span>
+      <span class="summary-hours">~3h tasks</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-day">Friday</span>
+      <span class="summary-tasks"><span class="tag tag-career">Career</span> LinkedIn × 2, apply to 3 jobs &nbsp; <span class="tag tag-home">Home</span> Unemployment + Netherlands</span>
+      <span class="summary-hours">~5h tasks</span>
+    </div>
+  </div>
+
+</body>
+</html>

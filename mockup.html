@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Mockup v2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #f8f7f4; color: #2d2d2d; padding: 24px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    header { margin-bottom: 20px; }
+    header h1 { font-size: 1.6rem; font-weight: 700; }
+    .subtitle { color: #888; font-size: 0.85rem; margin-top: 4px; }
+    .dots { display: flex; gap: 10px; margin-top: 10px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: #7db87d; }
+    .dot.empty { background: #e0e0e0; }
+    .dot-label { font-size: 0.65rem; color: #999; text-align: center; }
+    .dot-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .encouragement { font-size: 0.85rem; color: #888; font-style: italic; margin-top: 8px; }
+
+    /* KPI Strip */
+    .kpi-strip { display: flex; gap: 12px; margin-bottom: 16px; }
+    .kpi-card { flex: 1; background: #fff; border-radius: 10px; padding: 14px; text-align: center; border: 1px solid rgba(0,0,0,0.04); }
+    .kpi-value { font-size: 1.4rem; font-weight: 700; }
+    .kpi-label { font-size: 0.68rem; color: #999; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "focus       objectives"
+        "projects    projects"
+        "recurring   recurring"
+        "wins        weight"
+        "backlog     backlog"
+        "daybyday    daybyday";
+      gap: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    .card h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; color: #1a1a1a; }
+
+    .focus-area { grid-area: focus; }
+    .objectives-area { grid-area: objectives; }
+    .projects-area { grid-area: projects; }
+    .recurring-area { grid-area: recurring; }
+    .wins-area { grid-area: wins; }
+    .weight-area { grid-area: weight; }
+    .backlog-area { grid-area: backlog; }
+    .daybyday-area { grid-area: daybyday; }
+
+    /* Focus section */
+    .toggle-group { display: flex; background: #f0f0f0; border-radius: 8px; padding: 2px; width: fit-content; }
+    .toggle-btn { border: none; background: transparent; padding: 4px 12px; font-size: 0.75rem; font-family: inherit; color: #888; border-radius: 6px; cursor: pointer; }
+    .toggle-btn.active { background: #fff; color: #1a1a1a; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+    .focus-text { font-size: 1rem; font-weight: 500; color: #333; border: 1px dashed #ddd; border-radius: 6px; padding: 8px 12px; cursor: text; margin-bottom: 12px; }
+    .focus-text:hover { border-color: #bbb; }
+    .focus-text:focus { border-color: #a78bfa; border-style: solid; outline: none; }
+    .cal-event { display: flex; gap: 8px; padding: 3px 0; font-size: 0.82rem; align-items: center; }
+    .cal-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .cal-time { color: #999; font-weight: 500; width: 60px; flex-shrink: 0; }
+    .cal-label { font-size: 0.72rem; color: #999; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px; font-weight: 600; }
+
+    /* Weekly Objectives — auto-generated */
+    .obj-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 0.82rem; border-bottom: 1px solid #f5f5f5; }
+    .obj-item:last-child { border-bottom: none; }
+    .obj-check { width: 15px; height: 15px; accent-color: #7db87d; flex-shrink: 0; }
+    .obj-text { flex: 1; }
+    .obj-project { font-size: 0.68rem; color: #bbb; display: block; }
+    .obj-cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .obj-empty { font-size: 0.82rem; color: #ccc; font-style: italic; }
+
+    /* Projects Grid */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .proj-card {
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 14px;
+      border: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+      border-left: 3px solid #ccc;
+    }
+    .proj-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .proj-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .proj-cat { font-size: 0.65rem; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+    .proj-title { font-size: 0.88rem; font-weight: 600; color: #333; }
+    .proj-bar { height: 6px; background: #e8e8e8; border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+    .proj-bar-fill { height: 100%; border-radius: 3px; }
+    .proj-meta { font-size: 0.72rem; color: #999; display: flex; justify-content: space-between; }
+    .proj-deadline { color: #b45309; font-weight: 500; }
+    .proj-this-week { font-size: 0.68rem; color: #7c3aed; font-weight: 500; }
+
+    /* Expanded project */
+    .proj-expanded-demo {
+      display: none;
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 18px;
+      border: 1px solid #e0e0e0;
+    }
+    .proj-expanded-demo.visible { display: block; }
+    .proj-expanded-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .proj-close { border: none; background: #e8e8e8; color: #666; font-size: 0.78rem; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-family: inherit; }
+    .proj-close:hover { background: #ddd; }
+    .proj-subtask { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 0.82rem; color: #555; border-bottom: 1px solid #f0f0f0; }
+    .proj-subtask:last-of-type { border-bottom: none; }
+    .proj-subtask input[type="checkbox"] { accent-color: #7db87d; flex-shrink: 0; }
+    .proj-subtask-text { flex: 1; }
+    .this-week-toggle {
+      border: 1px solid #e0e0e0; background: #fff; color: #ccc; font-size: 0.65rem; padding: 2px 8px;
+      border-radius: 99px; cursor: pointer; font-family: inherit; transition: all 0.2s; flex-shrink: 0;
+    }
+    .this-week-toggle.active { border-color: #7c3aed; color: #7c3aed; background: #f5f0ff; }
+    .this-week-toggle:hover { border-color: #999; color: #666; }
+    .proj-add-sub { font-size: 0.75rem; color: #ccc; margin-top: 8px; cursor: pointer; }
+    .proj-add-sub:hover { color: #888; }
+
+    /* Recurring Habits */
+    .habits-grid {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .habit-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fafafa;
+      border: 1px solid #f0f0f0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      flex: 1;
+      min-width: 180px;
+    }
+    .habit-ring {
+      width: 36px;
+      height: 36px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .habit-ring svg { width: 36px; height: 36px; }
+    .habit-ring-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #555;
+    }
+    .habit-name { font-size: 0.78rem; font-weight: 500; color: #555; }
+    .habit-cat { font-size: 0.6rem; color: #bbb; }
+    .habit-complete .habit-name { color: #7db87d; }
+
+    /* Wins */
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .bar-label { width: 85px; font-size: 0.82rem; font-weight: 500; color: #555; }
+    .bar-track { flex: 1; height: 22px; background: #f0f0f0; border-radius: 5px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 5px; }
+    .bar-value { font-size: 0.75rem; color: #888; width: 35px; text-align: right; }
+
+    /* Weight — horizontal accomplishment bar */
+    .weight-big { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+    .weight-subtitle { font-size: 0.78rem; color: #999; margin-bottom: 12px; }
+    .weight-bar-container { margin-bottom: 12px; }
+    .weight-labels { display: flex; justify-content: space-between; font-size: 0.68rem; font-weight: 600; margin-bottom: 4px; }
+    .weight-start-label { color: #aaa; }
+    .weight-goal-label { color: #7db87d; }
+    .weight-bar-track {
+      height: 20px;
+      background: #f0f0f0;
+      border-radius: 10px;
+      position: relative;
+      overflow: visible;
+    }
+    .weight-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #c4b5fd, #7c3aed);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+      position: relative;
+    }
+    .weight-bar-arrow {
+      position: absolute;
+      right: -1px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-left: 10px solid #7c3aed;
+    }
+    .weight-milestones {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+      padding: 0 2px;
+    }
+    .weight-milestone {
+      font-size: 0.6rem;
+      color: #ccc;
+      text-align: center;
+    }
+    .weight-milestone.reached { color: #7db87d; font-weight: 600; }
+    .weight-stats-row { display: flex; gap: 20px; margin-bottom: 10px; }
+    .stat-num { font-size: 1.1rem; font-weight: 700; }
+    .stat-label { font-size: 0.65rem; color: #999; text-transform: uppercase; }
+    .weight-input-row { display: flex; gap: 6px; }
+    .weight-input-row input {
+      border: 1px dashed #ddd; border-radius: 6px; padding: 4px 8px;
+      font-size: 0.8rem; width: 100px; font-family: inherit; outline: none;
+    }
+    .weight-input-row input:focus { border-color: #a78bfa; border-style: solid; }
+    .weight-input-row button {
+      border: none; background: #a78bfa; color: #fff; font-size: 0.8rem;
+      padding: 4px 12px; border-radius: 6px; cursor: pointer; font-family: inherit;
+    }
+
+    /* Backlog */
+    .backlog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .backlog-group h3 { font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; }
+    .backlog-cat { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 0.78rem; margin-bottom: 8px; }
+    .backlog-item { font-size: 0.82rem; color: #555; padding: 3px 0; padding-left: 8px; border-left: 2px solid #e8e8e8; margin-bottom: 4px; }
+
+    /* Day by Day */
+    .week-header { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 0; font-size: 0.82rem; font-weight: 600; color: #888; }
+    .week-arrow { font-size: 0.9rem; width: 14px; }
+    .day-entry { padding: 8px 0; border-bottom: 1px solid #f5f5f5; }
+    .day-date { font-size: 0.78rem; font-weight: 600; color: #888; }
+    .day-summary { font-size: 0.82rem; color: #555; margin-top: 2px; }
+    .collapsed-hint { font-size: 0.75rem; color: #ccc; font-style: italic; padding: 4px 0; }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas: "focus" "objectives" "projects" "recurring" "wins" "weight" "backlog" "daybyday";
+      }
+      .backlog-grid { grid-template-columns: 1fr; }
+      .habits-grid { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- HEADER -->
+    <header>
+      <h1>Stay Focused — Keep Moving</h1>
+      <p class="subtitle">Mar 16 – Mar 20, 2026</p>
+      <div class="dots">
+        <div class="dot-col"><span class="dot-label">M</span><div class="dot"></div></div>
+        <div class="dot-col"><span class="dot-label">T</span><div class="dot"></div></div>
+        <div class="dot-col"><span class="dot-label">W</span><div class="dot"></div></div>
+        <div class="dot-col"><span class="dot-label">T</span><div class="dot"></div></div>
+        <div class="dot-col"><span class="dot-label">F</span><div class="dot"></div></div>
+      </div>
+      <p class="encouragement">7.1h avg this week across 5 weekdays — 14.5h invested in Career.</p>
+    </header>
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip">
+      <div class="kpi-card"><div class="kpi-value">5/5</div><div class="kpi-label">weekdays active</div></div>
+      <div class="kpi-card"><div class="kpi-value">35.5<span style="font-size:0.8rem;color:#888">h</span></div><div class="kpi-label">tracked</div></div>
+      <div class="kpi-card"><div class="kpi-value">214<span style="font-size:0.8rem;color:#888">lbs</span></div><div class="kpi-label">24 to goal</div></div>
+      <div class="kpi-card"><div class="kpi-value">5</div><div class="kpi-label">weekday streak</div></div>
+    </div>
+
+    <!-- DASHBOARD GRID -->
+    <div class="dashboard-grid">
+
+      <!-- MY FOCUS TODAY -->
+      <section class="card focus-area">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h2 style="margin:0">My Focus Today</h2>
+          <div class="toggle-group">
+            <button class="toggle-btn active">Today</button>
+            <button class="toggle-btn">Tomorrow</button>
+          </div>
+        </div>
+        <div class="focus-text" contenteditable="true">Get the time management dashboard working end-to-end</div>
+        <div class="cal-label">Monday, Mar 23</div>
+        <div class="cal-event"><span class="cal-dot" style="background:#7986CB"></span><span class="cal-time">8:00 AM</span> Kids dropoff</div>
+        <div class="cal-event"><span class="cal-dot" style="background:#039BE5"></span><span class="cal-time">8:15 AM</span> Workout — Katie</div>
+        <div class="cal-event"><span class="cal-dot" style="background:#3F51B5"></span><span class="cal-time">9:30 AM</span> Career block</div>
+        <div class="cal-event"><span class="cal-dot" style="background:#33B679"></span><span class="cal-time">12:00 PM</span> Lunch</div>
+        <div class="cal-event"><span class="cal-dot" style="background:#7986CB"></span><span class="cal-time">4:45 PM</span> Kids pickup</div>
+      </section>
+
+      <!-- WEEKLY OBJECTIVES — auto-generated from "this week" subtasks -->
+      <section class="card objectives-area">
+        <h2>Weekly Objectives</h2>
+        <div class="obj-item">
+          <input type="checkbox" class="obj-check">
+          <span class="obj-cat-dot" style="background:#34d399"></span>
+          <span class="obj-text">Time management project<span class="obj-project">Get really good at Claude Code</span></span>
+        </div>
+        <div class="obj-item">
+          <input type="checkbox" class="obj-check">
+          <span class="obj-cat-dot" style="background:#34d399"></span>
+          <span class="obj-text">2 CV options — Content/Creative Director<span class="obj-project">Get ready to apply for next role</span></span>
+        </div>
+        <div class="obj-item">
+          <input type="checkbox" class="obj-check">
+          <span class="obj-cat-dot" style="background:#fbbf24"></span>
+          <span class="obj-text">Move the suggested accounts<span class="obj-project">RBC — make a decision</span></span>
+        </div>
+        <div class="obj-item">
+          <input type="checkbox" class="obj-check">
+          <span class="obj-cat-dot" style="background:#fbbf24"></span>
+          <span class="obj-text">Share Schwab statement<span class="obj-project">RBC — make a decision</span></span>
+        </div>
+        <p class="obj-empty" style="margin-top:8px">Mark subtasks as "this week" in your projects below</p>
+      </section>
+
+      <!-- PROJECTS ON THE AGENDA -->
+      <section class="card projects-area">
+        <h2>Projects on the Agenda</h2>
+        <div class="projects-grid" id="projectsGrid">
+          <div class="proj-card" style="border-left-color:#34d399" onclick="toggleExpand()">
+            <div class="proj-card-header">
+              <span class="proj-cat" style="background:#d1fae5;color:#065f46">Career</span>
+              <span class="proj-title">Get really good at Claude Code</span>
+            </div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:33%;background:#34d399"></div></div>
+            <div class="proj-meta"><span>1/3 tasks</span><span class="proj-this-week">1 this week</span></div>
+          </div>
+          <div class="proj-card" style="border-left-color:#34d399">
+            <div class="proj-card-header">
+              <span class="proj-cat" style="background:#d1fae5;color:#065f46">Career</span>
+              <span class="proj-title">Get ready to apply for next role</span>
+            </div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:0%;background:#34d399"></div></div>
+            <div class="proj-meta"><span>0/1 tasks</span><span class="proj-this-week">1 this week</span></div>
+          </div>
+          <div class="proj-card" style="border-left-color:#34d399">
+            <div class="proj-card-header">
+              <span class="proj-cat" style="background:#d1fae5;color:#065f46">Career</span>
+              <span class="proj-title">Complete severance package</span>
+            </div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:0%;background:#34d399"></div></div>
+            <div class="proj-meta"><span>No subtasks</span><span class="proj-deadline">due Mar 30</span></div>
+          </div>
+          <div class="proj-card" style="border-left-color:#fbbf24">
+            <div class="proj-card-header">
+              <span class="proj-cat" style="background:#fef3c7;color:#92400e">Home</span>
+              <span class="proj-title">RBC — make a decision</span>
+            </div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:0%;background:#fbbf24"></div></div>
+            <div class="proj-meta"><span>0/5 tasks</span><span class="proj-this-week">2 this week</span></div>
+          </div>
+          <div class="proj-card" style="border-left-color:#fbbf24">
+            <div class="proj-card-header">
+              <span class="proj-cat" style="background:#fef3c7;color:#92400e">Home</span>
+              <span class="proj-title">Taxes 2026</span>
+            </div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:0%;background:#fbbf24"></div></div>
+            <div class="proj-meta"><span>No subtasks</span><span class="proj-deadline">due Mar 28</span></div>
+          </div>
+        </div>
+
+        <!-- Expanded view (click first card to demo) -->
+        <div class="proj-expanded-demo" id="expandedView">
+          <div class="proj-expanded-header">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="proj-cat" style="background:#d1fae5;color:#065f46">Career</span>
+              <span class="proj-title">Get really good at Claude Code</span>
+            </div>
+            <button class="proj-close" onclick="toggleExpand()">Close</button>
+          </div>
+          <div class="proj-bar" style="margin-bottom:14px"><div class="proj-bar-fill" style="width:33%;background:#34d399"></div></div>
+          <div class="proj-subtask">
+            <input type="checkbox">
+            <span class="proj-subtask-text">Time management project</span>
+            <button class="this-week-toggle active">this week</button>
+          </div>
+          <div class="proj-subtask">
+            <input type="checkbox">
+            <span class="proj-subtask-text">House expenses</span>
+            <button class="this-week-toggle">this week</button>
+          </div>
+          <div class="proj-subtask">
+            <input type="checkbox">
+            <span class="proj-subtask-text">Case study video</span>
+            <button class="this-week-toggle">this week</button>
+          </div>
+          <div class="proj-add-sub">+ add task</div>
+        </div>
+      </section>
+
+      <!-- RECURRING HABITS -->
+      <section class="card recurring-area">
+        <h2>Recurring Habits</h2>
+        <div class="habits-grid">
+          <div class="habit-card habit-complete">
+            <div class="habit-ring">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e8e8" stroke-width="3"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#7db87d" stroke-width="3"
+                  stroke-dasharray="88 0" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+              </svg>
+              <span class="habit-ring-text">2/2</span>
+            </div>
+            <div><div class="habit-name">Workout</div><div class="habit-cat">Self</div></div>
+          </div>
+          <div class="habit-card habit-complete">
+            <div class="habit-ring">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e8e8" stroke-width="3"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#7db87d" stroke-width="3"
+                  stroke-dasharray="88 0" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+              </svg>
+              <span class="habit-ring-text">1/1</span>
+            </div>
+            <div><div class="habit-name">Psychologist</div><div class="habit-cat">Self</div></div>
+          </div>
+          <div class="habit-card">
+            <div class="habit-ring">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e8e8" stroke-width="3"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#f59e0b" stroke-width="3"
+                  stroke-dasharray="0 88" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+              </svg>
+              <span class="habit-ring-text">0/1</span>
+            </div>
+            <div><div class="habit-name">Piano</div><div class="habit-cat">Self</div></div>
+          </div>
+          <div class="habit-card habit-complete">
+            <div class="habit-ring">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e8e8" stroke-width="3"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#7db87d" stroke-width="3"
+                  stroke-dasharray="88 0" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+              </svg>
+              <span class="habit-ring-text">1/1</span>
+            </div>
+            <div><div class="habit-name">Hebrew w/ Alma</div><div class="habit-cat">Family</div></div>
+          </div>
+          <div class="habit-card">
+            <div class="habit-ring">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e8e8" stroke-width="3"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#f59e0b" stroke-width="3"
+                  stroke-dasharray="0 88" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+              </svg>
+              <span class="habit-ring-text">0/1</span>
+            </div>
+            <div><div class="habit-name">Carmeli time</div><div class="habit-cat">Family</div></div>
+          </div>
+          <div class="habit-card habit-complete">
+            <div class="habit-ring">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e8e8" stroke-width="3"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#7db87d" stroke-width="3"
+                  stroke-dasharray="88 0" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+              </svg>
+              <span class="habit-ring-text">1/1</span>
+            </div>
+            <div><div class="habit-name">Day w/ Arielle</div><div class="habit-cat">Family</div></div>
+          </div>
+          <div class="habit-card">
+            <div class="habit-ring">
+              <svg viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#e8e8e8" stroke-width="3"/>
+                <circle cx="18" cy="18" r="14" fill="none" stroke="#f59e0b" stroke-width="3"
+                  stroke-dasharray="44 44" stroke-linecap="round" transform="rotate(-90 18 18)"/>
+              </svg>
+              <span class="habit-ring-text">1/2</span>
+            </div>
+            <div><div class="habit-name">LinkedIn posts</div><div class="habit-cat">Career</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WINS & TIME -->
+      <section class="card wins-area">
+        <h2>Wins & Time</h2>
+        <div class="bar-row"><span class="bar-label">Career</span><div class="bar-track"><div class="bar-fill" style="width:75%;background:#34d399"></div></div><span class="bar-value">14.5h</span></div>
+        <div class="bar-row"><span class="bar-label">Self</span><div class="bar-track"><div class="bar-fill" style="width:15%;background:#60a5fa"></div></div><span class="bar-value">3h</span></div>
+        <div class="bar-row"><span class="bar-label">Home</span><div class="bar-track"><div class="bar-fill" style="width:15%;background:#fbbf24"></div></div><span class="bar-value">2.5h</span></div>
+        <div class="bar-row"><span class="bar-label">Family</span><div class="bar-track"><div class="bar-fill" style="width:50%;background:#f472b6"></div></div><span class="bar-value">10h</span></div>
+      </section>
+
+      <!-- WEIGHT & BODY — horizontal, accomplishment forward -->
+      <section class="card weight-area">
+        <h2>Weight & Body</h2>
+        <div class="weight-big">214 lbs</div>
+        <div class="weight-subtitle">Last weighed: Dec 20</div>
+        <div class="weight-bar-container">
+          <div class="weight-labels">
+            <span class="weight-start-label">214 start</span>
+            <span class="weight-goal-label">190 goal</span>
+          </div>
+          <div class="weight-bar-track">
+            <div class="weight-bar-fill" style="width:0%">
+              <div class="weight-bar-arrow"></div>
+            </div>
+          </div>
+          <div class="weight-milestones">
+            <span class="weight-milestone">214</span>
+            <span class="weight-milestone">210</span>
+            <span class="weight-milestone">205</span>
+            <span class="weight-milestone">200</span>
+            <span class="weight-milestone">195</span>
+            <span class="weight-milestone reached">190</span>
+          </div>
+        </div>
+        <div class="weight-stats-row">
+          <div><div class="stat-num">0</div><div class="stat-label">lbs lost</div></div>
+          <div><div class="stat-num">24</div><div class="stat-label">to go</div></div>
+        </div>
+        <div class="weight-input-row">
+          <input type="number" placeholder="Log weight...">
+          <button>Update</button>
+        </div>
+      </section>
+
+      <!-- BACKLOG — only backlog items, no now, no recurring -->
+      <section class="card backlog-area">
+        <h2>Backlog</h2>
+        <div class="backlog-grid">
+          <div class="backlog-group">
+            <span class="backlog-cat" style="background:#d1fae5;color:#065f46">Career</span>
+            <div class="backlog-item">Learn content strategy</div>
+            <div class="backlog-item">Learn brand building</div>
+          </div>
+          <div class="backlog-group">
+            <span class="backlog-cat" style="background:#fef3c7;color:#92400e">Home Duties</span>
+            <div class="backlog-item">Spring clean up</div>
+            <div class="backlog-item">Naturalization</div>
+            <div class="backlog-item">Unemployment</div>
+            <div class="backlog-item">A&A Family Review</div>
+          </div>
+          <div class="backlog-group">
+            <span class="backlog-cat" style="background:#fce7f3;color:#9d174d">Family</span>
+            <div class="backlog-item">Schedule time in NYC</div>
+            <div class="backlog-item">Buy tickets to Netherlands</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DAY BY DAY -->
+      <section class="card daybyday-area">
+        <h2>Day by Day</h2>
+        <div class="week-header"><span class="week-arrow">&#9662;</span> Week of Mar 16 – Mar 20</div>
+        <div class="day-entry"><span class="day-date">Friday, Mar 20</span><span style="float:right;font-size:0.75rem;color:#888">8.5h</span><div class="day-summary">LinkedIn brainstorm, Claude Code projects, naturalization meeting, Shabbat</div></div>
+        <div class="day-entry"><span class="day-date">Thursday, Mar 19</span><span style="float:right;font-size:0.75rem;color:#888">6.5h</span><div class="day-summary">Gym, RBC meeting, Claude Code project, walk with Travis</div></div>
+        <div class="day-entry"><span class="day-date">Wednesday, Mar 18</span><span style="float:right;font-size:0.75rem;color:#888">8h</span><div class="day-summary">Full day with Arielle</div></div>
+        <div style="margin-top:12px">
+          <div class="week-header"><span class="week-arrow">&#9656;</span> Week of Mar 9 – Mar 13</div>
+          <div class="collapsed-hint">3 days tracked</div>
+        </div>
+      </section>
+
+    </div>
+
+  </div>
+
+  <script>
+    function toggleExpand() {
+      const grid = document.getElementById('projectsGrid');
+      const expanded = document.getElementById('expandedView');
+      if (expanded.classList.contains('visible')) {
+        expanded.classList.remove('visible');
+        grid.style.display = 'grid';
+      } else {
+        expanded.classList.add('visible');
+        grid.style.display = 'none';
+      }
+    }
+    // Demo: toggle "this week" buttons
+    document.querySelectorAll('.this-week-toggle').forEach(btn => {
+      btn.addEventListener('click', () => btn.classList.toggle('active'));
+    });
+  </script>
+</body>
+</html>
