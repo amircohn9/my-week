@@ -91,18 +91,42 @@ function renderWeekendIdeas(ideas, timestamp) {
   const nextWeekend = [];
   const anytime = [];
 
+  // Helper: extract a parseable date from complex strings like "Saturday, April 11, 2026 11:00 am"
+  function extractDate(dateStr) {
+    if (!dateStr) return null;
+    // Try direct parse first
+    let d = new Date(dateStr);
+    if (!isNaN(d.getTime()) && d.getFullYear() > 2000) return d;
+    // Try extracting "Month Day, Year" pattern
+    const match = dateStr.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2})(?:[-–]\d{1,2})?,?\s*(\d{4})/i);
+    if (match) {
+      d = new Date(match[1] + ' ' + match[2] + ', ' + match[3]);
+      if (!isNaN(d.getTime())) return d;
+    }
+    // Try "April 8-12, 2026" — use the first date
+    const rangeMatch = dateStr.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2})/i);
+    if (rangeMatch) {
+      const yearMatch = dateStr.match(/(\d{4})/);
+      const year = yearMatch ? yearMatch[1] : now.getFullYear();
+      d = new Date(rangeMatch[1] + ' ' + rangeMatch[2] + ', ' + year);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+  }
+
   for (const idea of visible) {
     if (!idea.date_time || idea.date_time.toLowerCase() === 'anytime') {
       anytime.push(idea);
     } else {
-      // Try to parse the date
-      const d = new Date(idea.date_time);
-      if (isNaN(d.getTime())) {
+      const d = extractDate(idea.date_time);
+      if (!d) {
         anytime.push(idea);
       } else if (d < thisWeekEnd) {
         thisWeekend.push(idea);
-      } else {
+      } else if (d < new Date(thisSat.getTime() + 14 * 86400000)) {
         nextWeekend.push(idea);
+      } else {
+        anytime.push(idea);
       }
     }
   }

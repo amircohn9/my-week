@@ -267,6 +267,7 @@ function renderFamilyHub() {
           <div class="family-move-menu" style="display:none;">
             ${moveOptions}
             <span class="family-move-option move-to-amir" data-to="_amirTasks" data-from="${section}" data-id="${item.id}">Amir's tasks</span>
+            ${item.comment && item.comment.includes('Moved to dashboard') ? `<span class="family-move-option undo-move-to-amir" data-from="${section}" data-id="${item.id}">Undo move to Amir</span>` : ''}
           </div>
         </div>
       </div>${commentHtml}</div>`;
@@ -377,6 +378,36 @@ function renderFamilyHub() {
         const to = el.dataset.to;
         const id = el.dataset.id;
 
+        // Undo move to Amir
+        if (el.classList.contains('undo-move-to-amir')) {
+          const item = (hub[from] || []).find(i => i.id === id);
+          if (!item) return;
+          // Remove "Moved to dashboard" from comment
+          item.comment = (item.comment || '').replace(/\s*\|?\s*Moved to dashboard \d{4}-\d{2}-\d{2}/g, '').trim();
+          item.assignee = '';
+          await db.updateFamilyItem(id, { assignee: '', comment: item.comment });
+
+          // Find and remove the subtask from the A&A project
+          const taskData = appData.tasks || {};
+          for (const cat of CATEGORY_ORDER) {
+            const group = taskData[cat];
+            if (!group) continue;
+            for (const t of (group.now || [])) {
+              if (t.text && (t.text.includes('A&A') || t.text.toLowerCase().includes('amir & arielle'))) {
+                const subIdx = t.subtasks.findIndex(s => s.text === item.text);
+                if (subIdx !== -1) {
+                  t.subtasks.splice(subIdx, 1);
+                  db.updateTask(t.id, { subtasks: t.subtasks });
+                }
+              }
+            }
+          }
+          renderFamilyHub();
+          renderProjectsAgenda(appData.tasks);
+          renderWeeklyObjectives(appData.tasks);
+          return;
+        }
+
         if (to === '_amirTasks') {
           const item = (hub[from] || []).find(i => i.id === id);
           if (!item) return;
@@ -401,12 +432,14 @@ function renderFamilyHub() {
 
           if (aaProject) {
             // Add as subtask of the A&A project
-            const newSub = { text: item.text, done: false, thisWeek: false, today: false };
+            const newSub = { text: item.text, done: false, thisWeek: true, today: false };
             aaProject.task.subtasks.push(newSub);
             await db.updateTask(aaProject.task.id, { subtasks: aaProject.task.subtasks });
           } else {
-            // No A&A project found — create standalone task in Home Duties backlog
-            await db.insertTask({ text: item.text, category: 'Home Duties', list: 'backlog' });
+            // No A&A project found — create one, then add subtask
+            const newTask = await db.insertTask({ text: 'A&A', category: 'Family', list: 'now', subtasks: [{ text: item.text, done: false, thisWeek: true, today: false }] });
+            if (!appData.tasks.Family) appData.tasks.Family = { now: [], backlog: [], recurring: [] };
+            appData.tasks.Family.now.push({ id: newTask.id, text: 'A&A', done: false, subtasks: newTask.subtasks || [{ text: item.text, done: false, thisWeek: true, today: false }], thisWeek: false, today: false });
           }
 
           // Mark the family item as moved (don't delete it)
@@ -414,7 +447,11 @@ function renderFamilyHub() {
           item.comment = (item.comment ? item.comment + ' | ' : '') + 'Moved to dashboard ' + todayStr;
           item.assignee = 'Amir';
           await db.updateFamilyItem(id, { assignee: 'Amir', comment: item.comment });
+
+          // Re-render both family hub and dashboard projects
           renderFamilyHub();
+          renderProjectsAgenda(appData.tasks);
+          renderWeeklyObjectives(appData.tasks);
           return;
         }
 
