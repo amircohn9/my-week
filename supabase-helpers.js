@@ -207,6 +207,7 @@ const db = {
         date_applied: a.date_applied,
         method: a.method,
         unemployment: a.unemployment || false,
+        sort_order: a.sort_order,
       })),
       notes: [], // removed — kept for renderer compat
       prompts: prompts.map(p => ({
@@ -546,6 +547,7 @@ const db = {
       role: app.role || '',
       date_applied: app.date_applied || new Date().toISOString().slice(0, 10),
       method: app.method || 'direct',
+      unemployment: app.unemployment || false,
       sort_order: app.sort_order || 0,
     }).select().single();
     if (error) throw error;

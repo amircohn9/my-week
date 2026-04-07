@@ -26,8 +26,11 @@ function renderJobApplications() {
   const countEl = document.getElementById('jobAppsCount');
   if (countEl) countEl.textContent = apps.length > 0 ? `${apps.length} application${apps.length !== 1 ? 's' : ''}` : '';
 
-  // Sort by date descending (most recent first)
-  const sorted = [...apps].sort((a, b) => (b.date_applied || '').localeCompare(a.date_applied || ''));
+  // Sort by sort_order if set, otherwise by date descending
+  const sorted = [...apps].sort((a, b) => {
+    if (a.sort_order != null && b.sort_order != null) return a.sort_order - b.sort_order;
+    return (b.date_applied || '').localeCompare(a.date_applied || '');
+  });
 
   if (sorted.length === 0) {
     container.innerHTML = '<p class="empty-state">No applications tracked yet.</p>';

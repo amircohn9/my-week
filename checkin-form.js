@@ -129,38 +129,10 @@ async function saveCheckin(parsed) {
   const dietNote = parsed.diet || '';
   const weightVal = parsed.weight;
 
-  // 1. Upsert check-in
-  await db.upsertCheckin({ date: today, activities, mood, obstacles, wins, summary });
-
-  // 2. Insert completed items (one per activity)
-  await db.deleteCompletedItemsByDate(today);
-  await db.insertCompletedItems(activities.map(a => ({
-    category: a.category,
-    text: a.text,
-    hours: a.hours,
-    date: today,
-  })));
-
-  // 3. Weight log
-  if (weightVal && weightVal >= 100 && weightVal <= 300) {
-    await db.insertWeight(today, weightVal);
-  }
-
-  // 4. Diet entry
-  if (dietNote) {
-    await db.upsertDietEntry({ date: today, note: dietNote });
-  }
-
-  // 5. Tomorrow's focus
-  if (focus) {
-    await db.updateSettings({ yesterdayNotes: focus });
-  }
-
-  // 6. Auto-update habit sessions from AI matching + backfill default hours
+  // 1. Auto-update habit sessions + backfill default hours BEFORE saving
   const habitUpdates = parsed.habitUpdates || [];
   if (habitUpdates.length > 0 && appData && appData.tasks) {
     for (const update of habitUpdates) {
-      // Find the habit in appData
       let habitItem = null;
       for (const cat of CATEGORY_ORDER) {
         const group = appData.tasks[cat];
@@ -170,29 +142,50 @@ async function saveCheckin(parsed) {
       }
       if (!habitItem) continue;
 
-      // Check if already logged for this date
+      // Log session if not already logged today
       const alreadyLogged = (habitItem.sessions || []).some(s => s.date === today);
-      if (alreadyLogged) continue;
-
-      // Add session
-      if (!habitItem.sessions) habitItem.sessions = [];
-      habitItem.sessions.push({ date: today, note: update.note || '' });
-      await db.updateHabit(update.habitId, { sessions: habitItem.sessions });
+      if (!alreadyLogged) {
+        if (!habitItem.sessions) habitItem.sessions = [];
+        habitItem.sessions.push({ date: today, note: update.note || '' });
+        await db.updateHabit(update.habitId, { sessions: habitItem.sessions });
+      }
 
       // Backfill default hours on matching activities that have no hours
       if (habitItem.defaultHours) {
         for (const act of activities) {
-          if (act.hours == null && act.category === update.matchedCategory) {
-            // Fuzzy match: check if activity text relates to this habit
-            const habitWords = habitItem.text.toLowerCase();
-            const actWords = act.text.toLowerCase();
-            if (habitWords.includes(actWords.split(' ')[0]) || actWords.includes(habitWords.split(' ')[0])) {
-              act.hours = habitItem.defaultHours;
-            }
+          if (act.hours == null && act.category === update.category) {
+            act.hours = habitItem.defaultHours;
           }
         }
       }
     }
+  }
+
+  // 2. Upsert check-in (after hours backfill so data is complete)
+  await db.upsertCheckin({ date: today, activities, mood, obstacles, wins, summary });
+
+  // 3. Insert completed items (one per activity)
+  await db.deleteCompletedItemsByDate(today);
+  await db.insertCompletedItems(activities.map(a => ({
+    category: a.category,
+    text: a.text,
+    hours: a.hours,
+    date: today,
+  })));
+
+  // 4. Weight log
+  if (weightVal && weightVal >= 100 && weightVal <= 300) {
+    await db.insertWeight(today, weightVal);
+  }
+
+  // 5. Diet entry
+  if (dietNote) {
+    await db.upsertDietEntry({ date: today, note: dietNote });
+  }
+
+  // 6. Tomorrow's focus
+  if (focus) {
+    await db.updateSettings({ yesterdayNotes: focus });
   }
 }
 

@@ -1,8 +1,8 @@
 // app.js — Init, data loading, collapsible sections (Supabase backend)
 //
-// SQL required for Trips feature (run once in Supabase SQL editor):
+// SQL required for Trips + Susie features (run once in Supabase SQL editor):
 // ALTER TABLE family_hub_items DROP CONSTRAINT family_hub_items_section_check;
-// ALTER TABLE family_hub_items ADD CONSTRAINT family_hub_items_section_check CHECK (section IN ('thisWeek','backlog','decisions','purchases','trips'));
+// ALTER TABLE family_hub_items ADD CONSTRAINT family_hub_items_section_check CHECK (section IN ('thisWeek','backlog','decisions','purchases','trips','susie'));
 // Note: 'purchases' items are treated as 'decisions' in the app (merged into Decisions & Purchases)
 
 let appData = null;

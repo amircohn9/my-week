@@ -68,7 +68,7 @@ Return ONLY valid JSON with this exact structure:
   "tomorrowFocus": "string with tomorrow's main focus, or empty string",
   "summary": "one-line summary of the day",
   "habitUpdates": [
-    { "habitId": "the habit id from the list above", "note": "optional short note about the session" }
+    { "habitId": "the habit id from the list above", "category": "the habit's category", "note": "optional short note about the session" }
   ]
 }
 

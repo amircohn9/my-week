@@ -46,6 +46,7 @@ CREATE TABLE habits (
   next_session date,
   hidden boolean DEFAULT false,
   sessions jsonb DEFAULT '[]'::jsonb,
+  default_hours numeric,
   sort_order integer DEFAULT 0,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
@@ -115,7 +116,7 @@ CREATE TABLE family_hub_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) NOT NULL,
   text text NOT NULL,
-  section text NOT NULL CHECK (section IN ('thisWeek','backlog','decisions','purchases')),
+  section text NOT NULL CHECK (section IN ('thisWeek','backlog','decisions','purchases','trips','susie')),
   date date,
   added_by text DEFAULT 'Amir',
   assignee text DEFAULT '',
@@ -164,6 +165,18 @@ CREATE TABLE prompt_completions (
   UNIQUE(prompt_id, year)
 );
 
+CREATE TABLE job_applications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) NOT NULL,
+  company text NOT NULL,
+  role text DEFAULT '',
+  date_applied date DEFAULT CURRENT_DATE,
+  method text DEFAULT 'direct' CHECK (method IN ('linkedin','direct')),
+  unemployment boolean DEFAULT false,
+  sort_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+
 
 -- ============================================================
 -- INDEXES
@@ -196,6 +209,7 @@ ALTER TABLE family_hub_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE family_upcoming_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_completions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE job_applications ENABLE ROW LEVEL SECURITY;
 
 -- User-owned tables: full access for the owner
 CREATE POLICY "app_settings_all" ON app_settings USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
@@ -209,6 +223,7 @@ CREATE POLICY "calendar_events_all" ON calendar_events USING (auth.uid() = user_
 CREATE POLICY "family_hub_items_all" ON family_hub_items USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "family_upcoming_events_all" ON family_upcoming_events USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "prompt_completions_all" ON prompt_completions USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "job_applications_all" ON job_applications USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Prompts: read-only for all authenticated users
 CREATE POLICY "prompts_read" ON prompts FOR SELECT TO authenticated USING (true);
