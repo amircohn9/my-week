@@ -1,4 +1,4 @@
-// checkin-form.js — Daily check-in form UI
+// checkin-form.js — Dictation-friendly daily check-in
 
 function setupCheckinForm() {
   const triggerBtn = document.getElementById('checkinTriggerBtn');
@@ -6,10 +6,6 @@ function setupCheckinForm() {
   const overlay = document.getElementById('checkinOverlay');
   const closeBtn = document.getElementById('checkinClose');
   const submitBtn = document.getElementById('checkinSubmit');
-  const addActivityBtn = document.getElementById('checkinAddActivity');
-  const dietToggle = document.getElementById('checkinDietToggle');
-  const dietField = document.getElementById('checkinDiet');
-
   const checkinDateInput = document.getElementById('checkinDate');
 
   if (!triggerBtn || !modal) return;
@@ -18,7 +14,6 @@ function setupCheckinForm() {
     modal.style.display = 'flex';
     overlay.style.display = 'block';
     document.body.style.overflow = 'hidden';
-    // Default date to today
     checkinDateInput.value = getTodayStr();
     loadExistingCheckin();
   }
@@ -33,22 +28,38 @@ function setupCheckinForm() {
   overlay.addEventListener('click', closeModal);
   closeBtn.addEventListener('click', closeModal);
 
-  // Diet toggle
-  dietToggle.addEventListener('click', () => {
-    const hidden = dietField.style.display === 'none';
-    dietField.style.display = hidden ? 'block' : 'none';
-    dietToggle.querySelector('.chevron').textContent = hidden ? '\u25B4' : '\u25BE';
-  });
-
-  // Add activity row
-  addActivityBtn.addEventListener('click', () => addActivityRow());
-
-  // Submit
+  // Submit: parse via AI then save
   submitBtn.addEventListener('click', async () => {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Saving...';
+    const statusEl = document.getElementById('checkinParseStatus');
+    const errorEl = document.getElementById('checkinParseError');
+    errorEl.style.display = 'none';
+
     try {
-      await submitCheckin();
+      const activitiesText = document.getElementById('checkinDictateActivities').value.trim();
+      if (!activitiesText) {
+        alert('Tell me what you did today!');
+        return;
+      }
+
+      // Show parsing spinner
+      statusEl.style.display = 'flex';
+
+      // Send free-form text to AI for parsing
+      const parsed = await parseCheckinViaAI({
+        activities: activitiesText,
+        winsObstaclesMood: document.getElementById('checkinDictateWOM').value.trim(),
+        diet: document.getElementById('checkinDictateDiet').value.trim(),
+        weight: document.getElementById('checkinDictateWeight').value.trim(),
+        tomorrowFocus: document.getElementById('checkinDictateFocus').value.trim(),
+      });
+
+      statusEl.style.display = 'none';
+
+      // Save the parsed structured data
+      await saveCheckin(parsed);
+
       closeModal();
       // Reload data and re-render dashboard
       appData = await db.loadAll();
@@ -56,7 +67,9 @@ function setupCheckinForm() {
       renderAll();
     } catch (err) {
       console.error('Check-in failed:', err);
-      alert('Check-in failed. Please try again.');
+      statusEl.style.display = 'none';
+      errorEl.textContent = 'Something went wrong: ' + err.message;
+      errorEl.style.display = 'block';
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Save Check-In';
@@ -67,115 +80,44 @@ function setupCheckinForm() {
   checkinDateInput.addEventListener('change', () => {
     loadExistingCheckin();
   });
-
-  // Add initial empty activity row
-  ensureActivityRows();
 }
 
-function ensureActivityRows() {
-  const container = document.getElementById('checkinActivities');
-  if (container.children.length === 0) {
-    addActivityRow();
-  }
-}
-
-function addActivityRow(category, text, hours) {
-  const container = document.getElementById('checkinActivities');
-  const row = document.createElement('div');
-  row.className = 'checkin-activity-row';
-  row.innerHTML = `
-    <select class="checkin-activity-cat">
-      <option value="Career"${category === 'Career' ? ' selected' : ''}>Career</option>
-      <option value="Self"${category === 'Self' ? ' selected' : ''}>Self</option>
-      <option value="Home Duties"${category === 'Home Duties' ? ' selected' : ''}>Home</option>
-      <option value="Family"${category === 'Family' ? ' selected' : ''}>Family</option>
-    </select>
-    <input type="text" class="checkin-activity-text" placeholder="What did you do?" value="${escapeHtml(text || '')}">
-    <input type="number" class="checkin-activity-hours" placeholder="hrs" step="0.5" min="0" max="24" value="${hours || ''}">
-    <button class="checkin-activity-remove" title="Remove">&times;</button>
-  `;
-  container.appendChild(row);
-
-  row.querySelector('.checkin-activity-remove').addEventListener('click', () => {
-    row.remove();
-    ensureActivityRows();
+async function parseCheckinViaAI(freeFormData) {
+  const resp = await fetch('/api/parse-checkin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(freeFormData),
   });
-}
 
-async function loadExistingCheckin() {
-  const container = document.getElementById('checkinActivities');
-  container.innerHTML = '';
-
-  const checkinDateInput = document.getElementById('checkinDate');
-  const dateToLoad = (checkinDateInput && checkinDateInput.value) ? checkinDateInput.value : getTodayStr();
-  const existing = await db.getCheckinByDate(dateToLoad);
-
-  if (existing) {
-    // Pre-fill from existing check-in
-    (existing.activities || []).forEach(a => addActivityRow(a.category, a.text, a.hours));
-    document.getElementById('checkinWins').value = existing.wins || '';
-    document.getElementById('checkinObstacles').value = existing.obstacles || '';
-    document.getElementById('checkinMood').value = existing.mood || '';
-    document.getElementById('checkinSummary').value = existing.summary || '';
-  } else {
-    addActivityRow();
-    document.getElementById('checkinWins').value = '';
-    document.getElementById('checkinObstacles').value = '';
-    document.getElementById('checkinMood').value = '';
-    document.getElementById('checkinSummary').value = '';
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error || 'Failed to parse check-in');
   }
 
-  // Pre-fill tomorrow's focus from current setting
-  document.getElementById('checkinFocus').value = '';
-  document.getElementById('checkinWeight').value = '';
-  document.getElementById('checkinDiet').value = '';
-  document.getElementById('checkinDiet').style.display = 'none';
-  document.getElementById('checkinDietToggle').querySelector('.chevron').textContent = '\u25BE';
+  return resp.json();
 }
 
-async function submitCheckin() {
+async function saveCheckin(parsed) {
   const checkinDateInput = document.getElementById('checkinDate');
   const today = (checkinDateInput && checkinDateInput.value) ? checkinDateInput.value : getTodayStr();
 
-  // Gather activities
-  const activityRows = document.querySelectorAll('.checkin-activity-row');
-  const activities = [];
-  activityRows.forEach(row => {
-    const text = row.querySelector('.checkin-activity-text').value.trim();
-    if (!text) return;
-    const category = row.querySelector('.checkin-activity-cat').value;
-    const hoursVal = row.querySelector('.checkin-activity-hours').value;
-    const hours = hoursVal ? parseFloat(hoursVal) : undefined;
-    activities.push({ category, text, hours });
-  });
-
+  const activities = parsed.activities || [];
   if (activities.length === 0) {
-    alert('Add at least one activity.');
-    throw new Error('No activities');
+    throw new Error('No activities parsed from your check-in');
   }
 
-  const wins = document.getElementById('checkinWins').value.trim();
-  const obstacles = document.getElementById('checkinObstacles').value.trim();
-  const mood = document.getElementById('checkinMood').value.trim();
-  const focus = document.getElementById('checkinFocus').value.trim();
-  const weightVal = document.getElementById('checkinWeight').value;
-  const dietNote = document.getElementById('checkinDiet').value.trim();
-  let summary = document.getElementById('checkinSummary').value.trim();
-
-  // Auto-generate summary if blank
-  if (!summary) {
-    const totalHours = activities.reduce((sum, a) => sum + (a.hours || 0), 0);
-    const parts = activities.slice(0, 3).map(a => a.text);
-    summary = totalHours > 0
-      ? `${totalHours} hours tracked — ${parts.join(', ')}`
-      : parts.join(', ');
-  }
+  const wins = parsed.wins || '';
+  const obstacles = parsed.obstacles || '';
+  const mood = parsed.mood || '';
+  const summary = parsed.summary || activities.slice(0, 3).map(a => a.text).join(', ');
+  const focus = parsed.tomorrowFocus || '';
+  const dietNote = parsed.diet || '';
+  const weightVal = parsed.weight;
 
   // 1. Upsert check-in
   await db.upsertCheckin({ date: today, activities, mood, obstacles, wins, summary });
 
   // 2. Insert completed items (one per activity)
-  // Delete existing completed items for today to prevent duplicates on re-submit
   await db.deleteCompletedItemsByDate(today);
   await db.insertCompletedItems(activities.map(a => ({
     category: a.category,
@@ -185,11 +127,8 @@ async function submitCheckin() {
   })));
 
   // 3. Weight log
-  if (weightVal) {
-    const lbs = parseFloat(weightVal);
-    if (lbs >= 100 && lbs <= 300) {
-      await db.insertWeight(today, lbs);
-    }
+  if (weightVal && weightVal >= 100 && weightVal <= 300) {
+    await db.insertWeight(today, weightVal);
   }
 
   // 4. Diet entry
@@ -201,6 +140,49 @@ async function submitCheckin() {
   if (focus) {
     await db.updateSettings({ yesterdayNotes: focus });
   }
+}
+
+async function loadExistingCheckin() {
+  const checkinDateInput = document.getElementById('checkinDate');
+  const dateToLoad = (checkinDateInput && checkinDateInput.value) ? checkinDateInput.value : getTodayStr();
+  const existing = await db.getCheckinByDate(dateToLoad);
+
+  // Get field references
+  const activitiesEl = document.getElementById('checkinDictateActivities');
+  const womEl = document.getElementById('checkinDictateWOM');
+  const dietEl = document.getElementById('checkinDictateDiet');
+  const weightEl = document.getElementById('checkinDictateWeight');
+  const focusEl = document.getElementById('checkinDictateFocus');
+
+  if (existing) {
+    // Reconstruct a readable summary from structured activities
+    const actText = (existing.activities || [])
+      .map(a => {
+        let line = a.text;
+        if (a.hours) line += ` (${a.hours}h)`;
+        return line;
+      })
+      .join(', ');
+    activitiesEl.value = actText;
+
+    // Combine wins/obstacles/mood into one field
+    const parts = [];
+    if (existing.wins) parts.push(existing.wins);
+    if (existing.obstacles) parts.push(existing.obstacles);
+    if (existing.mood) parts.push(existing.mood);
+    womEl.value = parts.join('. ');
+  } else {
+    activitiesEl.value = '';
+    womEl.value = '';
+  }
+
+  dietEl.value = '';
+  weightEl.value = '';
+  focusEl.value = '';
+
+  // Clear any previous parse status/errors
+  document.getElementById('checkinParseStatus').style.display = 'none';
+  document.getElementById('checkinParseError').style.display = 'none';
 }
 
 // renderAll is called after check-in to refresh the dashboard

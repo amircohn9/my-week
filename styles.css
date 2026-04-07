@@ -1859,9 +1859,46 @@ footer {
 }
 .checkin-add-activity:hover { border-color: #999; color: #666; }
 
-/* Collapsible diet section */
-.checkin-toggle-label { cursor: pointer; }
-.checkin-toggle-label .chevron { font-size: 0.7rem; margin-left: 4px; }
+/* Dictation-friendly check-in */
+.checkin-dictate {
+  font-size: 1rem;
+  line-height: 1.5;
+  min-height: 48px;
+}
+.checkin-optional-tag {
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: #aaa;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.checkin-parse-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+.checkin-parse-spinner {
+  width: 18px; height: 18px;
+  border: 2px solid #ddd;
+  border-top-color: #2d2d2d;
+  border-radius: 50%;
+  animation: checkin-spin 0.6s linear infinite;
+}
+@keyframes checkin-spin {
+  to { transform: rotate(360deg); }
+}
+.checkin-parse-error {
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
 
 /* ─── Week Toggle ─── */
 .week-toggle {
@@ -2732,4 +2769,163 @@ footer {
   font-style: italic;
   margin: 2px 0 8px;
   padding: 0;
+}
+
+/* ─── Drag & Drop ─── */
+.drag-handle {
+  cursor: grab;
+  color: #ddd;
+  font-size: 1rem;
+  padding: 0 2px;
+  user-select: none;
+  flex-shrink: 0;
+  line-height: 1;
+  touch-action: none;
+}
+.drag-handle:hover { color: #999; }
+.drag-handle:active { cursor: grabbing; }
+.sortable-ghost {
+  opacity: 0.25;
+  background: #e8f5e9;
+  border-radius: 6px;
+}
+.task-item-group { /* wrapper for Sortable — default block display */ }
+
+/* ─── Susie section ─── */
+.family-susie-section { border-left: 3px solid #f472b6; }
+
+/* ─── Job Applications Tab ─── */
+.jobs-container { max-width: 100%; padding: 20px 8px; }
+
+.job-app-form {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.job-form-field { display: flex; flex-direction: column; }
+.job-form-field label {
+  font-size: 0.7rem;
+  color: #999;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.job-app-form input,
+.job-app-form select {
+  border: 1px dashed #ddd;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: #fff;
+}
+.job-app-form input:focus,
+.job-app-form select:focus {
+  outline: none;
+  border-color: #7db87d;
+  border-style: solid;
+}
+.job-app-form button[type="submit"] {
+  background: #2d2d2d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.job-app-form button[type="submit"]:hover { background: #444; }
+
+.job-app-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #f5f4f1;
+  font-size: 0.9rem;
+}
+.job-app-row:last-child { border-bottom: none; }
+
+.job-col-company {
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
+.job-col-role {
+  flex: 1.5;
+  color: #555;
+  min-width: 0;
+}
+.job-col-date {
+  color: #888;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.job-col-method { flex-shrink: 0; }
+
+.method-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.method-linkedin {
+  background: #e8f4fd;
+  color: #0077b5;
+}
+.method-direct {
+  background: #f0f0ec;
+  color: #666;
+}
+.job-app-editable { cursor: pointer; }
+.job-app-editable:hover { color: #000; }
+
+.job-col-unemp {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.unemp-checkbox { cursor: pointer; }
+.unemp-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.unemp-checkbox:checked + .unemp-label { color: #e8a87c; }
+
+.job-col-actions { flex-shrink: 0; }
+.job-app-delete {
+  background: none;
+  border: none;
+  color: #ddd;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.job-app-row:hover .job-app-delete { color: #ccc; }
+.job-app-delete:hover { color: #ef4444 !important; }
+
+@media (max-width: 768px) {
+  .job-app-form { flex-direction: column; }
+  .job-form-field { width: 100%; }
+  .job-app-form input,
+  .job-app-form select { width: 100%; }
+  .job-app-row {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 4px;
+  }
+  .job-col-company { flex: 1 1 50%; }
+  .job-col-role { flex: 1 1 100%; order: 5; }
+  .job-col-date { flex-shrink: 0; }
 }

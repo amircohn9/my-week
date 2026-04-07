@@ -35,6 +35,10 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
       <span class="tab-rail-label">Ideas</span>
     </button>
+    <button class="tab-rail-btn" data-tab="jobs" title="Job Applications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      <span class="tab-rail-label">Jobs</span>
+    </button>
   </nav>
   <div class="tab-content">
   <div class="tab-pane active" id="tabDashboard">
@@ -177,6 +181,15 @@
         </div>
       </section>
 
+      <section class="card family-section family-susie-section" data-section="susie">
+        <h2 class="family-section-header">Susie</h2>
+        <div id="familySusie" class="family-items"></div>
+        <p class="empty-state family-empty" id="familySusieEmpty">Nothing here yet.</p>
+        <div class="family-add-row">
+          <input type="text" class="family-add-input" data-section="susie" placeholder="+ add">
+        </div>
+      </section>
+
       <section class="card family-section family-ahead-section">
         <h2 class="family-section-header">What's Ahead</h2>
         <div id="familyAhead" class="family-ahead"></div>
@@ -225,6 +238,43 @@
   </div>
   </div><!-- end tabWeekend -->
 
+  <div class="tab-pane" id="tabJobs">
+  <div class="container jobs-container">
+    <div class="family-header-row">
+      <div>
+        <h1>Job Applications</h1>
+        <p class="subtitle" id="jobAppsCount"></p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 16px;">
+      <form id="jobAppForm" class="job-app-form">
+        <div class="job-form-field">
+          <label for="jobAppCompany">Company</label>
+          <input type="text" id="jobAppCompany" placeholder="Company name" required>
+        </div>
+        <div class="job-form-field">
+          <label for="jobAppRole">Role</label>
+          <input type="text" id="jobAppRole" placeholder="Role title">
+        </div>
+        <div class="job-form-field">
+          <label for="jobAppDate">Date</label>
+          <input type="date" id="jobAppDate">
+        </div>
+        <div class="job-form-field">
+          <label for="jobAppMethod">Method</label>
+          <select id="jobAppMethod">
+            <option value="direct">Direct</option>
+            <option value="linkedin">LinkedIn</option>
+          </select>
+        </div>
+        <button type="submit">Add</button>
+      </form>
+      <div id="jobAppsList"></div>
+    </div>
+  </div>
+  </div><!-- end tabJobs -->
+
   </div><!-- end tab-content -->
   </div>
 
@@ -241,44 +291,39 @@
         <input type="date" id="checkinDate" class="checkin-input">
       </div>
       <div class="checkin-section">
-        <label>What did you do today?</label>
-        <div id="checkinActivities" class="checkin-activities"></div>
-        <button id="checkinAddActivity" class="checkin-add-activity">+ Add activity</button>
+        <label for="checkinDictateActivities">What did you do today?</label>
+        <textarea id="checkinDictateActivities" class="checkin-textarea checkin-dictate" placeholder="Just talk... e.g. &quot;Worked on my CV for about 2 hours, then went to the gym for an hour, spent the evening with the kids&quot;" rows="4"></textarea>
       </div>
       <div class="checkin-section">
-        <label for="checkinWins">Wins</label>
-        <textarea id="checkinWins" class="checkin-textarea" placeholder="What went well?" rows="2"></textarea>
+        <label for="checkinDictateWOM">Any wins, obstacles, or how you're feeling?</label>
+        <textarea id="checkinDictateWOM" class="checkin-textarea checkin-dictate" placeholder="e.g. &quot;Felt pretty good today, got a lot done. Was a bit distracted in the afternoon but pushed through&quot;" rows="3"></textarea>
       </div>
       <div class="checkin-section">
-        <label for="checkinObstacles">Obstacles</label>
-        <textarea id="checkinObstacles" class="checkin-textarea" placeholder="Any blockers?" rows="2"></textarea>
+        <label for="checkinDictateDiet">How was your eating? <span class="checkin-optional-tag">optional</span></label>
+        <textarea id="checkinDictateDiet" class="checkin-textarea checkin-dictate" placeholder="e.g. &quot;Had a salad for lunch, pasta for dinner, snacked a bit too much&quot;" rows="2"></textarea>
       </div>
       <div class="checkin-section">
-        <label for="checkinMood">Mood</label>
-        <input type="text" id="checkinMood" class="checkin-input" placeholder="How are you feeling?">
-      </div>
-      <div class="checkin-section checkin-collapsible">
-        <label class="checkin-toggle-label" id="checkinDietToggle">Diet note (optional) <span class="chevron">&#9662;</span></label>
-        <textarea id="checkinDiet" class="checkin-textarea" placeholder="What did you eat?" rows="2" style="display:none;"></textarea>
+        <label for="checkinDictateWeight">Weight? <span class="checkin-optional-tag">optional</span></label>
+        <input type="text" id="checkinDictateWeight" class="checkin-input" placeholder="e.g. &quot;198&quot; or &quot;about 200&quot;">
       </div>
       <div class="checkin-section">
-        <label for="checkinWeight">Weight (optional)</label>
-        <input type="number" id="checkinWeight" class="checkin-input" placeholder="lbs" step="0.1" min="100" max="300">
+        <label for="checkinDictateFocus">What's the #1 thing for tomorrow?</label>
+        <textarea id="checkinDictateFocus" class="checkin-textarea checkin-dictate" placeholder="e.g. &quot;Finish the cover letter and send it out&quot;" rows="2"></textarea>
       </div>
-      <div class="checkin-section">
-        <label for="checkinFocus">Tomorrow's focus</label>
-        <input type="text" id="checkinFocus" class="checkin-input" placeholder="What's the #1 thing for tomorrow?">
+      <div id="checkinParseStatus" class="checkin-parse-status" style="display:none;">
+        <div class="checkin-parse-spinner"></div>
+        <span>Parsing your check-in...</span>
       </div>
-      <div class="checkin-section">
-        <label for="checkinSummary">Summary</label>
-        <textarea id="checkinSummary" class="checkin-textarea" placeholder="Brief summary of the day (auto-generated if blank)" rows="2"></textarea>
-      </div>
+      <div id="checkinParseError" class="checkin-parse-error" style="display:none;"></div>
+      <!-- Hidden fields populated after AI parse, used by submitCheckin -->
+      <div id="checkinParsedPreview" style="display:none;"></div>
     </div>
     <div class="checkin-modal-footer">
       <button id="checkinSubmit" class="checkin-submit">Save Check-In</button>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="supabase-helpers.js"></script>
@@ -287,6 +332,7 @@
   <script src="tasks.js"></script>
   <script src="checkin-form.js"></script>
   <script src="weekend-ideas.js"></script>
+  <script src="job-applications.js"></script>
   <script src="app.js"></script>
 
   <script>
