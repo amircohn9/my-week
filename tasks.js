@@ -56,16 +56,18 @@ function renderTaskItem(item, cat, section, moveTarget) {
     </div>`;
 
     const toggleBtn = `<button class="subtask-toggle-btn" data-id="${item.id}" title="Show subtasks">${allSubs.length}</button>`;
-    return `<div class="task-item ${doneClass} ${urgentClass}" data-id="${item.id}">
+    return `<div class="task-item-group" data-group-id="${item.id}"><div class="task-item ${doneClass} ${urgentClass}" data-id="${item.id}">
+      <span class="drag-handle">\u2807</span>
       <input type="checkbox" class="task-checkbox parent-checkbox" data-id="${item.id}" ${item.done ? 'checked' : ''}>
       ${textHtml}${deadlineHtml}${toggleBtn}${moveBtn}${deleteBtn}
-    </div>${subtasksHtml}`;
+    </div>${subtasksHtml}</div>`;
   }
 
-  return `<div class="task-item ${doneClass} ${urgentClass}" data-id="${item.id}">
+  return `<div class="task-item-group" data-group-id="${item.id}"><div class="task-item ${doneClass} ${urgentClass}" data-id="${item.id}">
+    <span class="drag-handle">\u2807</span>
     <input type="checkbox" class="task-checkbox parent-checkbox" data-id="${item.id}" ${item.done ? 'checked' : ''}>
     ${textHtml}${deadlineHtml}${moveBtn}${deleteBtn}
-  </div>`;
+  </div></div>`;
 }
 
 // --- Backlog rendering ---
@@ -457,5 +459,37 @@ function renderBacklog(tasks) {
       if (e.key === 'Escape') { input.value = ''; input.style.display = 'none'; const trigger = input.closest('.add-task-row').querySelector('.add-task-trigger'); if (trigger) trigger.style.display = ''; }
     });
     input.addEventListener('blur', () => { if (!input.value.trim()) { input.style.display = 'none'; const trigger = input.closest('.add-task-row').querySelector('.add-task-trigger'); if (trigger) trigger.style.display = ''; } });
+  });
+
+  // Init drag-and-drop
+  initBacklogSortable(tasks);
+}
+
+// --- Drag-and-drop for backlog tasks ---
+
+function initBacklogSortable(tasks) {
+  if (typeof Sortable === 'undefined') return;
+  const container = document.getElementById('taskList');
+  if (!container) return;
+  container.querySelectorAll('.task-group-items').forEach(groupEl => {
+    const cat = groupEl.dataset.cat;
+    new Sortable(groupEl, {
+      animation: 150,
+      handle: '.drag-handle',
+      ghostClass: 'sortable-ghost',
+      filter: '.add-task-row',
+      draggable: '.task-item-group',
+      onEnd: async function () {
+        const group = tasks[cat];
+        if (!group) return;
+        const groups = groupEl.querySelectorAll('.task-item-group');
+        const newOrder = Array.from(groups).map(g => g.dataset.groupId);
+        const reordered = newOrder.map(id => group.backlog.find(t => t.id === id)).filter(Boolean);
+        group.backlog = reordered;
+        for (let i = 0; i < reordered.length; i++) {
+          db.updateTask(reordered[i].id, { sort_order: i });
+        }
+      }
+    });
   });
 }

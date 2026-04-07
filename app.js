@@ -7,6 +7,39 @@
 
 let appData = null;
 
+// Remove thisWeek flag from done items at the start of each new week
+function weeklyCleanup(tasks) {
+  const { weekStart } = getWeekRange();
+  const weekKey = formatDateStr(weekStart);
+  const lastCleanup = localStorage.getItem('last-weekly-cleanup');
+  if (lastCleanup === weekKey) return;
+
+  for (const cat of CATEGORY_ORDER) {
+    const group = tasks[cat];
+    if (!group) continue;
+    for (const item of (group.now || [])) {
+      let subtasksChanged = false;
+      if (item.subtasks) {
+        for (const sub of item.subtasks) {
+          if (sub.done && sub.thisWeek) {
+            sub.thisWeek = false;
+            subtasksChanged = true;
+          }
+        }
+        if (subtasksChanged) {
+          db.updateTask(item.id, { subtasks: item.subtasks });
+        }
+      }
+      if (item.done && item.thisWeek) {
+        item.thisWeek = false;
+        db.updateTask(item.id, { thisWeek: false });
+      }
+    }
+  }
+
+  localStorage.setItem('last-weekly-cleanup', weekKey);
+}
+
 async function initApp() {
   const session = await db.getSession();
   if (!session) {
@@ -26,6 +59,9 @@ async function initApp() {
     if (!appData.tasks.Family) appData.tasks.Family = { description: '', now: [], backlog: [], recurring: [] };
     appData.tasks.Family.now.push({ id: newTask.id, text: 'A&A', done: false, deadline: null, link: null, thisWeek: false, today: false, subtasks: [] });
   }
+
+  // Weekly cleanup: unstar done objectives from previous weeks
+  weeklyCleanup(appData.tasks);
 
   // Render all sections
   renderDateRange();
@@ -143,7 +179,7 @@ function setupCollapsibleSections() {
 // --- Tab Rail ---
 
 function setupTabRail() {
-  const tabMap = { dashboard: 'tabDashboard', family: 'tabFamily', weekend: 'tabWeekend' };
+  const tabMap = { dashboard: 'tabDashboard', family: 'tabFamily', weekend: 'tabWeekend', jobs: 'tabJobs' };
   document.querySelectorAll('.tab-rail-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-rail-btn').forEach(b => b.classList.remove('active'));
@@ -153,12 +189,13 @@ function setupTabRail() {
       document.getElementById(tabId).classList.add('active');
       if (btn.dataset.tab === 'family') { renderFamilyHub(); }
       if (btn.dataset.tab === 'weekend') { setupWeekendIdeas(); }
+      if (btn.dataset.tab === 'jobs') { renderJobApplications(); setupJobAppForm(); }
     });
   });
 }
 
-const FAMILY_SECTIONS = ['thisWeek', 'backlog', 'decisions', 'trips'];
-const FAMILY_LABELS = { thisWeek: 'This Week', backlog: 'Backlog', decisions: 'Decisions & Purchases', trips: 'Upcoming Trips' };
+const FAMILY_SECTIONS = ['thisWeek', 'backlog', 'decisions', 'trips', 'susie'];
+const FAMILY_LABELS = { thisWeek: 'This Week', backlog: 'Backlog', decisions: 'Decisions & Purchases', trips: 'Upcoming Trips', susie: 'Susie' };
 
 function getFamilyHub() {
   if (!appData.familyHub) appData.familyHub = {};
@@ -254,6 +291,7 @@ function renderFamilyHub() {
       ) : '';
 
       return `<div class="family-item-wrapper"><div class="family-item${item.done ? ' done' : ''}">
+        <span class="drag-handle">\u2807</span>
         <div class="family-item-check${isDecision ? ' decision' : ''}" data-id="${item.id}">${item.done ? '&#10003;' : ''}</div>
         <div class="family-item-body">
           <span class="family-item-text" data-id="${item.id}">${escapeHtml(item.text)}</span>
@@ -550,6 +588,41 @@ function renderFamilyHub() {
   // Render upcoming + ahead
   renderFamilyUpcoming();
   renderFamilyAhead();
+
+  // Init drag-and-drop on all family list sections
+  initFamilySortable();
+}
+
+// --- Drag-and-drop for family hub lists ---
+
+function initFamilySortable() {
+  if (typeof Sortable === 'undefined') return;
+  for (const section of FAMILY_SECTIONS) {
+    if (section === 'trips') continue;
+    const capSection = section.charAt(0).toUpperCase() + section.slice(1);
+    const container = document.getElementById('family' + capSection);
+    if (!container || container.children.length === 0) continue;
+    new Sortable(container, {
+      animation: 150,
+      handle: '.drag-handle',
+      ghostClass: 'sortable-ghost',
+      onEnd: async function () {
+        const hub = getFamilyHub();
+        const items = hub[section] || [];
+        const wrappers = container.querySelectorAll('.family-item-wrapper');
+        const newOrder = Array.from(wrappers).map(w => {
+          const check = w.querySelector('.family-item-check');
+          return check ? check.dataset.id : null;
+        }).filter(Boolean);
+        const reordered = newOrder.map(id => items.find(i => i.id === id)).filter(Boolean);
+        hub[section].length = 0;
+        reordered.forEach(item => hub[section].push(item));
+        for (let i = 0; i < reordered.length; i++) {
+          db.updateFamilyItem(reordered[i].id, { sort_order: i });
+        }
+      }
+    });
+  }
 }
 
 // --- Trips section ---
@@ -751,6 +824,26 @@ function renderFamilyTrips(hub) {
       await db.deleteFamilyItem(id);
     });
   });
+
+  // Init Sortable on trip cards
+  if (typeof Sortable !== 'undefined' && container.children.length > 0) {
+    new Sortable(container, {
+      animation: 150,
+      handle: '.trip-card-header',
+      ghostClass: 'sortable-ghost',
+      draggable: '.trip-card',
+      onEnd: async function () {
+        const cards = container.querySelectorAll('.trip-card');
+        const newOrder = Array.from(cards).map(c => c.dataset.id);
+        const reordered = newOrder.map(id => (hub.trips || []).find(i => i.id === id)).filter(Boolean);
+        hub.trips.length = 0;
+        reordered.forEach(item => hub.trips.push(item));
+        for (let i = 0; i < reordered.length; i++) {
+          db.updateFamilyItem(reordered[i].id, { sort_order: i });
+        }
+      }
+    });
+  }
 }
 
 // --- Upcoming events ---
