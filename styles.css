@@ -2074,6 +2074,25 @@ footer {
   text-align: center;
   color: #555;
 }
+.habit-hours-badge {
+  font-size: 0.65rem;
+  color: #bbb;
+  margin-top: 2px;
+  cursor: pointer;
+  text-align: center;
+}
+.habit-hours-badge:hover { color: #888; }
+.habit-hours-input {
+  font-size: 0.65rem;
+  font-family: inherit;
+  border: 1px solid #7db87d;
+  border-radius: 4px;
+  padding: 1px 2px;
+  outline: none;
+  width: 36px;
+  text-align: center;
+  color: #555;
+}
 
 .habit-add-area {
   grid-column: 1 / -1;

@@ -1804,6 +1804,7 @@ function renderRecurringHabits(tasks) {
         complete: thisWeekCount >= target,
         loggedToday,
         sessions: item.sessions || [],
+        defaultHours: item.defaultHours || null,
       });
     }
   }
@@ -1846,6 +1847,7 @@ function renderRecurringHabits(tasks) {
           </svg>
         </div>
         <div class="habit-name" data-habit-id="${h.id}">${escapeHtml(shortName)}</div>
+        <div class="habit-hours-badge" data-habit-id="${h.id}" title="Click to set default hours">${h.defaultHours ? h.defaultHours + 'h' : '—'}</div>
       </div>`;
     }).join('');
   }
@@ -1952,6 +1954,47 @@ function renderRecurringHabits(tasks) {
           await db.updateHabit(habitId, { text: newVal });
         }
         renderRecurringHabits(tasks);
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = current; input.blur(); }
+      });
+    });
+  });
+
+  // Click hours badge to edit default hours
+  container.querySelectorAll('.habit-hours-badge').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const habitId = el.dataset.habitId;
+      let item = null;
+      for (const cat of CATEGORY_ORDER) {
+        const group = tasks[cat];
+        if (!group || !group.recurring) continue;
+        item = group.recurring.find(r => r.id === habitId);
+        if (item) break;
+      }
+      if (!item) return;
+      const current = item.defaultHours || '';
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.value = current;
+      input.step = '0.5';
+      input.min = '0';
+      input.max = '24';
+      input.className = 'habit-hours-input';
+      input.placeholder = 'hrs';
+      el.textContent = '';
+      el.appendChild(input);
+      input.focus();
+      input.select();
+      const save = async () => {
+        const val = input.value.trim();
+        const newHours = val ? parseFloat(val) : null;
+        item.defaultHours = newHours;
+        renderRecurringHabits(tasks);
+        await db.updateHabit(habitId, { default_hours: newHours });
       };
       input.addEventListener('blur', save);
       input.addEventListener('keydown', (ev) => {

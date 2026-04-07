@@ -38,6 +38,7 @@ const db = {
       familyItemsRes,
       familyEventsRes,
       promptsRes,
+      jobAppsRes,
     ] = await Promise.all([
       supabaseClient.from('app_settings').select('*').limit(1).single(),
       supabaseClient.from('tasks').select('*').order('sort_order'),
@@ -50,6 +51,7 @@ const db = {
       supabaseClient.from('family_hub_items').select('*').order('sort_order'),
       supabaseClient.from('family_upcoming_events').select('*').order('date'),
       supabaseClient.from('prompts').select('*'),
+      supabaseClient.from('job_applications').select('*').order('sort_order'),
     ]);
 
     return this.reshapeForRenderers(
@@ -64,12 +66,13 @@ const db = {
       familyItemsRes.data || [],
       familyEventsRes.data || [],
       promptsRes.data || [],
+      jobAppsRes.data || [],
     );
   },
 
   // Transform flat Supabase rows into the nested appData structure
   // that existing renderers expect
-  reshapeForRenderers(settings, tasks, habits, checkins, completed, diet, weights, calendar, familyItems, familyEvents, prompts) {
+  reshapeForRenderers(settings, tasks, habits, checkins, completed, diet, weights, calendar, familyItems, familyEvents, prompts, jobApps) {
     const categories = (settings?.categories) || ['Career', 'Self', 'Home Duties', 'Family'];
 
     // Build tasks object: { Career: { description, now, backlog, recurring }, ... }
@@ -115,6 +118,7 @@ const db = {
           nextSession: h.next_session,
           hidden: h.hidden,
           sessions: h.sessions || [],
+          defaultHours: h.default_hours || null,
         })),
       };
     }
@@ -140,6 +144,7 @@ const db = {
       backlog: familyItems.filter(i => i.section === 'backlog').map(this._mapFamilyItem),
       decisions: familyItems.filter(i => i.section === 'decisions' || i.section === 'purchases').map(this._mapFamilyItem),
       trips: familyItems.filter(i => i.section === 'trips').map(this._mapFamilyItem),
+      susie: familyItems.filter(i => i.section === 'susie').map(this._mapFamilyItem),
       upcomingEvents: familyEvents.map(e => ({
         id: e.id,
         date: e.date,
@@ -195,6 +200,14 @@ const db = {
         date: c.date,
       })),
       tasks: tasksObj,
+      jobApplications: jobApps.map(a => ({
+        id: a.id,
+        company: a.company,
+        role: a.role,
+        date_applied: a.date_applied,
+        method: a.method,
+        unemployment: a.unemployment || false,
+      })),
       notes: [], // removed — kept for renderer compat
       prompts: prompts.map(p => ({
         id: p.id,
@@ -276,6 +289,7 @@ const db = {
     if ('next_session' in fields) mapped.next_session = fields.next_session;
     if ('text' in fields) mapped.text = fields.text;
     if ('recurring' in fields) mapped.recurring = fields.recurring;
+    if ('default_hours' in fields) mapped.default_hours = fields.default_hours;
     const { error } = await supabaseClient.from('habits').update(mapped).eq('id', id);
     if (error) throw error;
   },
@@ -515,6 +529,32 @@ const db = {
   async getCompletedPrompts() {
     const { data } = await supabaseClient.from('prompt_completions').select('prompt_id, year');
     return data || [];
+  },
+
+  // ============================================================
+  // JOB APPLICATIONS
+  // ============================================================
+  async updateJobApplication(id, fields) {
+    const { error } = await supabaseClient.from('job_applications').update(fields).eq('id', id);
+    if (error) throw error;
+  },
+
+  async insertJobApplication(app) {
+    const { data, error } = await supabaseClient.from('job_applications').insert({
+      user_id: (await this.getSession()).user.id,
+      company: app.company,
+      role: app.role || '',
+      date_applied: app.date_applied || new Date().toISOString().slice(0, 10),
+      method: app.method || 'direct',
+      sort_order: app.sort_order || 0,
+    }).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteJobApplication(id) {
+    const { error } = await supabaseClient.from('job_applications').delete().eq('id', id);
+    if (error) throw error;
   },
 
   onAuthStateChange(callback) {

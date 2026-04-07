@@ -46,6 +46,19 @@ function setupCheckinForm() {
       // Show parsing spinner
       statusEl.style.display = 'flex';
 
+      // Gather current habits and intentions to send for matching
+      const allHabits = [];
+      if (appData && appData.tasks) {
+        for (const cat of CATEGORY_ORDER) {
+          const group = appData.tasks[cat];
+          if (!group || !group.recurring) continue;
+          for (const h of group.recurring) {
+            if (h.recurring === 'ongoing' || h.hidden) continue;
+            allHabits.push({ id: h.id, text: h.text, category: cat, recurring: h.recurring });
+          }
+        }
+      }
+
       // Send free-form text to AI for parsing
       const parsed = await parseCheckinViaAI({
         activities: activitiesText,
@@ -53,6 +66,8 @@ function setupCheckinForm() {
         diet: document.getElementById('checkinDictateDiet').value.trim(),
         weight: document.getElementById('checkinDictateWeight').value.trim(),
         tomorrowFocus: document.getElementById('checkinDictateFocus').value.trim(),
+        habits: allHabits,
+        weeklyIntentions: appData ? appData.weeklyIntentions : [],
       });
 
       statusEl.style.display = 'none';
@@ -139,6 +154,45 @@ async function saveCheckin(parsed) {
   // 5. Tomorrow's focus
   if (focus) {
     await db.updateSettings({ yesterdayNotes: focus });
+  }
+
+  // 6. Auto-update habit sessions from AI matching + backfill default hours
+  const habitUpdates = parsed.habitUpdates || [];
+  if (habitUpdates.length > 0 && appData && appData.tasks) {
+    for (const update of habitUpdates) {
+      // Find the habit in appData
+      let habitItem = null;
+      for (const cat of CATEGORY_ORDER) {
+        const group = appData.tasks[cat];
+        if (!group || !group.recurring) continue;
+        habitItem = group.recurring.find(r => r.id === update.habitId);
+        if (habitItem) break;
+      }
+      if (!habitItem) continue;
+
+      // Check if already logged for this date
+      const alreadyLogged = (habitItem.sessions || []).some(s => s.date === today);
+      if (alreadyLogged) continue;
+
+      // Add session
+      if (!habitItem.sessions) habitItem.sessions = [];
+      habitItem.sessions.push({ date: today, note: update.note || '' });
+      await db.updateHabit(update.habitId, { sessions: habitItem.sessions });
+
+      // Backfill default hours on matching activities that have no hours
+      if (habitItem.defaultHours) {
+        for (const act of activities) {
+          if (act.hours == null && act.category === update.matchedCategory) {
+            // Fuzzy match: check if activity text relates to this habit
+            const habitWords = habitItem.text.toLowerCase();
+            const actWords = act.text.toLowerCase();
+            if (habitWords.includes(actWords.split(' ')[0]) || actWords.includes(habitWords.split(' ')[0])) {
+              act.hours = habitItem.defaultHours;
+            }
+          }
+        }
+      }
+    }
   }
 }
 
