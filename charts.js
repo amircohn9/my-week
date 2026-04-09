@@ -316,17 +316,6 @@ function renderWeeklyObjectives(tasks) {
 
   // Next week: show planning input plus existing thisWeek objectives
   if (viewWeekOffset === 1) {
-    // Build project options from all active (non-done) now items
-    let projectOptions = '<option value="">No project (standalone)</option>';
-    for (const cat of CATEGORY_ORDER) {
-      const group = tasks[cat];
-      if (!group) continue;
-      for (const item of (group.now || [])) {
-        if (item.done) continue;
-        projectOptions += `<option value="${item.id}">${escapeHtml(item.text)} (${cat})</option>`;
-      }
-    }
-
     // Gather existing thisWeek objectives for preview
     const existingObjs = [];
     const colors = { 'Career': '#34d399', 'Self': '#60a5fa', 'Home Duties': '#fbbf24', 'Family': '#f472b6' };
@@ -359,13 +348,8 @@ function renderWeeklyObjectives(tasks) {
 
     list.innerHTML = `<li class="obj-next-week-header" style="list-style:none;padding:0 0 8px;font-size:0.78rem;font-weight:600;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;">Planning next week</li>
       <li class="empty-state" style="list-style:none;color:#999;font-style:italic;padding:4px 0 8px;">Add objectives you want to tackle next week.</li>
-      <li style="list-style:none;padding:8px 0;">
-        <input type="text" class="obj-add-input" placeholder="+ add objective for next week" style="width:100%;border:1px dashed #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;">
-        <select class="obj-project-select" style="width:100%;margin-top:6px;border:1px solid #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;color:#666;">
-          ${projectOptions}
-        </select>
-      </li>${existingHtml}`;
-    _bindObjAddInput(list, tasks);
+      ${_buildAddInputHtml('+ add objective for next week', tasks)}${existingHtml}`;
+    _bindAddInput(list, tasks, 'week');
     return;
   }
 
@@ -411,7 +395,9 @@ function renderWeeklyObjectives(tasks) {
   });
 
   if (filtered.length === 0) {
-    list.innerHTML = '<li class="empty-state">Mark subtasks as "this week" in your projects to populate objectives.</li>';
+    list.innerHTML = '<li class="empty-state">Mark subtasks as "this week" in your projects, or add one below.</li>' +
+      _buildAddInputHtml('+ add objective', tasks);
+    _bindAddInput(list, tasks, 'week');
     return;
   }
 
@@ -441,7 +427,7 @@ function renderWeeklyObjectives(tasks) {
         <button class="obj-delete-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Delete task">&times;</button>
       </span>
     </li>`;
-  }).join('');
+  }).join('') + _buildAddInputHtml('+ add objective', tasks);
 
   // Wire up checkboxes — toggle done
   list.querySelectorAll('.obj-checkbox').forEach(cb => {
@@ -613,13 +599,62 @@ function renderWeeklyObjectives(tasks) {
       renderProjectsAgenda(appData.tasks);
     });
   });
+
+  // Bind add-objective input for current week
+  _bindAddInput(list, tasks, 'week');
 }
 
-// Helper: bind the "add objective" input for next week planning
-function _bindObjAddInput(container, tasks) {
+// Helper: build project <option> list including "New project..." option
+function _buildProjectOptions(tasks) {
+  let options = '<option value="">No project (standalone)</option>';
+  for (const cat of CATEGORY_ORDER) {
+    const group = tasks[cat];
+    if (!group) continue;
+    for (const item of (group.now || [])) {
+      if (item.done) continue;
+      options += `<option value="${item.id}">${escapeHtml(item.text)} (${cat})</option>`;
+    }
+  }
+  options += '<option value="__new__">+ New project...</option>';
+  return options;
+}
+
+// Helper: build the add-task input row HTML
+function _buildAddInputHtml(placeholder, tasks) {
+  return `<li class="obj-add-row" style="list-style:none;padding:8px 0 0;">
+    <input type="text" class="obj-add-input" placeholder="${placeholder}" style="width:100%;border:1px dashed #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;">
+    <select class="obj-project-select" style="width:100%;margin-top:6px;border:1px solid #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;color:#666;">
+      ${_buildProjectOptions(tasks)}
+    </select>
+    <div class="obj-new-project-fields" style="display:none;margin-top:6px;">
+      <input type="text" class="obj-new-project-name" placeholder="Project name" style="width:100%;border:1px solid #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;margin-bottom:6px;">
+      <select class="obj-new-project-cat" style="width:100%;border:1px solid #d0cdc8;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-family:inherit;background:#fafaf8;color:#666;">
+        <option value="Career">Career</option>
+        <option value="Self">Self</option>
+        <option value="Home Duties">Home Duties</option>
+        <option value="Family">Family</option>
+      </select>
+    </div>
+  </li>`;
+}
+
+// Helper: bind the "add" input for objectives/today — mode: 'week' | 'today'
+function _bindAddInput(container, tasks, mode) {
   const input = container.querySelector('.obj-add-input');
   const projectSelect = container.querySelector('.obj-project-select');
+  const newProjectFields = container.querySelector('.obj-new-project-fields');
   if (!input) return;
+
+  // Show/hide new project fields when "New project..." is selected
+  if (projectSelect && newProjectFields) {
+    projectSelect.addEventListener('change', () => {
+      newProjectFields.style.display = projectSelect.value === '__new__' ? 'block' : 'none';
+      if (projectSelect.value === '__new__') {
+        newProjectFields.querySelector('.obj-new-project-name').focus();
+      }
+    });
+  }
+
   input.addEventListener('keydown', async (e) => {
     if (e.key !== 'Enter') return;
     const text = input.value.trim();
@@ -627,36 +662,55 @@ function _bindObjAddInput(container, tasks) {
     input.value = '';
 
     const selectedProjectId = projectSelect ? projectSelect.value : '';
+    const thisWeek = true;
+    const today = mode === 'today';
+
+    // Handle "New project..." selection
+    if (selectedProjectId === '__new__') {
+      const projectName = newProjectFields.querySelector('.obj-new-project-name').value.trim();
+      const projectCat = newProjectFields.querySelector('.obj-new-project-cat').value;
+      if (!projectName) { input.placeholder = 'Enter a project name first'; return; }
+
+      // Create the new project with the task as its first subtask
+      const newSub = { text, done: false, thisWeek, today };
+      const newRow = await db.insertTask({ text: projectName, category: projectCat, list: 'now', subtasks: [newSub] });
+      if (!tasks[projectCat]) tasks[projectCat] = { description: '', now: [], backlog: [], recurring: [] };
+      tasks[projectCat].now.push({
+        id: newRow.id, text: projectName, done: false, deadline: null, link: null,
+        thisWeek: false, today: false, subtasks: [newSub],
+      });
+
+      // Reset new project fields
+      newProjectFields.querySelector('.obj-new-project-name').value = '';
+      newProjectFields.style.display = 'none';
+      projectSelect.value = '';
+
+      _reRenderAfterAdd(tasks);
+      return;
+    }
 
     if (selectedProjectId) {
       // Add as subtask of the selected project
       const found = findTaskById(tasks, selectedProjectId);
       if (found) {
-        const newSub = { text, done: false, thisWeek: true, today: false };
+        const newSub = { text, done: false, thisWeek, today };
         found.task.subtasks.push(newSub);
-        renderWeeklyObjectives(tasks);
-        renderProjectsAgenda(tasks);
+        _reRenderAfterAdd(tasks);
         await db.updateTask(selectedProjectId, { subtasks: found.task.subtasks });
         return;
       }
     }
 
-    // No project selected — create standalone task in Career with thisWeek=true
-    const newRow = await db.insertTask({ text, category: 'Career', list: 'now', thisWeek: true, subtasks: [] });
+    // No project selected — create standalone task in Career
+    const newRow = await db.insertTask({ text, category: 'Career', list: 'now', thisWeek, today, subtasks: [] });
     if (!tasks['Career']) tasks['Career'] = { description: '', now: [], backlog: [], recurring: [] };
     tasks['Career'].now.push({
-      id: newRow.id,
-      text: newRow.text,
-      done: false,
-      deadline: null,
-      link: null,
-      thisWeek: true,
-      today: false,
-      subtasks: [],
+      id: newRow.id, text: newRow.text, done: false, deadline: null, link: null,
+      thisWeek, today, subtasks: [],
     });
-    renderWeeklyObjectives(tasks);
-    renderProjectsAgenda(tasks);
+    _reRenderAfterAdd(tasks);
   });
+
   input.addEventListener('focus', () => {
     input.style.borderColor = '#60a5fa';
     input.style.borderStyle = 'solid';
@@ -668,6 +722,13 @@ function _bindObjAddInput(container, tasks) {
     input.style.borderStyle = 'dashed';
     input.style.background = '#fafaf8';
   });
+}
+
+// Helper: re-render all task views after adding
+function _reRenderAfterAdd(tasks) {
+  renderWeeklyObjectives(tasks);
+  renderTodayTasks(appData);
+  renderProjectsAgenda(tasks);
 }
 
 // ---------------------------------------------------------------------------
@@ -915,8 +976,10 @@ function renderTodayTasks(data) {
   }
 
   if (items.length === 0) {
-    container.innerHTML = '<p class="today-empty">Pull items from Weekly Objectives using the <strong>&uarr;</strong> button.</p>';
+    container.innerHTML = '<p class="today-empty">Pull items from Weekly Objectives using the <strong>&uarr;</strong> button, or add one below.</p>' +
+      '<ul class="today-list">' + _buildAddInputHtml('+ add task for today', tasks) + '</ul>';
     container.style.display = 'block';
+    _bindAddInput(container, tasks, 'today');
     return;
   }
   container.style.display = 'block';
@@ -940,7 +1003,7 @@ function renderTodayTasks(data) {
         <button class="today-remove-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Remove from week">&times;</button>
       </span>
     </li>`;
-  }).join('') + '</ul>';
+  }).join('') + _buildAddInputHtml('+ add task for today', tasks) + '</ul>';
 
   // Checkboxes — toggle done
   container.querySelectorAll('.today-checkbox').forEach(cb => {
@@ -1053,6 +1116,9 @@ function renderTodayTasks(data) {
       renderProjectsAgenda(appData.tasks);
     });
   });
+
+  // Bind add-task input for today
+  _bindAddInput(container, tasks, 'today');
 }
 
 // ---------------------------------------------------------------------------

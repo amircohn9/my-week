@@ -1717,6 +1717,12 @@ header h1 {
 .task-item:hover .delete-added-task-btn { opacity: 1; }
 .delete-added-task-btn:hover { color: #e74c3c; }
 
+/* Add-task inputs in objectives/today */
+.obj-add-row { border-top: 1px dashed #e8e6e1; margin-top: 8px; padding-top: 8px !important; }
+.obj-add-input::placeholder { color: #bbb; }
+.obj-project-select { appearance: none; -webkit-appearance: none; }
+.obj-new-project-fields input::placeholder { color: #bbb; }
+
 /* Subtask toggle */
 .subtask-toggle-btn {
   border: 1px solid #e0e0e0; background: #fafafa; color: #999; font-size: 0.7rem; font-family: inherit; min-width: 20px; height: 20px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; padding: 0 5px;
