@@ -452,7 +452,8 @@ function renderWeeklyObjectives(tasks) {
       animation: 150,
       handle: '.obj-drag-handle',
       ghostClass: 'sortable-ghost',
-      filter: '.obj-add-row, .obj-divider, .obj-done, .obj-in-progress-note',
+      draggable: 'li[data-obj-key]',
+      preventOnFilter: false,
       onEnd: function () {
         const items = list.querySelectorAll('li[data-obj-key]');
         const newOrder = Array.from(items).map(li => li.dataset.objKey).filter(Boolean);
@@ -1017,14 +1018,15 @@ function renderTodayTasks(data) {
           if (!sub.today) return;
           items.push({
             text: sub.text, project: item.text, category: cat, color: colors[cat],
-            done: sub.done, taskId: item.id, subtaskIndex: si
+            done: sub.done, priority: sub.priority || 'normal', taskId: item.id, subtaskIndex: si
           });
         });
       } else {
         if (!item.today) return;
+        const standaloneP = localStorage.getItem('task-priority-' + item.id);
         items.push({
           text: item.text, project: null, category: cat, color: colors[cat],
-          done: item.done, taskId: item.id, subtaskIndex: -1
+          done: item.done, priority: standaloneP === 'high' ? 'high' : 'normal', taskId: item.id, subtaskIndex: -1
         });
       }
     });
@@ -1039,43 +1041,87 @@ function renderTodayTasks(data) {
   }
   container.style.display = 'block';
 
-  // Sort: incomplete first, done items sink to bottom
-  const todayIncomplete = items.filter(o => !o.done);
+  // Split into priority tiers: important, less important, done
+  const important = items.filter(o => !o.done && o.priority === 'high');
+  const lessImportant = items.filter(o => !o.done && o.priority !== 'high');
   const todayComplete = items.filter(o => o.done);
 
-  // Apply saved sort order from localStorage
+  // Apply saved sort order from localStorage within each tier
   const savedTodayOrder = JSON.parse(localStorage.getItem('obj-today-order') || '[]');
   if (savedTodayOrder.length > 0) {
     const orderMap = {};
     savedTodayOrder.forEach((key, idx) => orderMap[key] = idx);
-    todayIncomplete.sort((a, b) => {
+    const applyOrder = (arr) => arr.sort((a, b) => {
       const ka = a.taskId + ':' + a.subtaskIndex;
       const kb = b.taskId + ':' + b.subtaskIndex;
       const oa = ka in orderMap ? orderMap[ka] : 9999;
       const ob = kb in orderMap ? orderMap[kb] : 9999;
       return oa - ob;
     });
+    applyOrder(important);
+    applyOrder(lessImportant);
   }
 
-  const todaySorted = [...todayIncomplete, ...todayComplete];
-  const todayHasBoth = todayIncomplete.length > 0 && todayComplete.length > 0;
-
-  container.innerHTML = '<div class="today-header">Today</div>' +
-    '<ul class="today-list">' + todaySorted.map((obj, i) => {
-    const divider = (todayHasBoth && i === todayIncomplete.length) ? '<li class="obj-divider"><span>completed</span></li>' : '';
+  const renderTodayItem = (obj) => {
     const objKey = obj.taskId + ':' + obj.subtaskIndex;
-    return divider + `<li class="${obj.done ? 'obj-done' : ''}" data-obj-key="${objKey}">
+    const isHigh = obj.priority === 'high';
+    return `<li class="${obj.done ? 'obj-done' : ''}" data-obj-key="${objKey}">
       <span class="drag-handle today-drag-handle">&#8942;</span>
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
       <input type="checkbox" class="today-checkbox" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" ${obj.done ? 'checked' : ''}>
       <span class="today-text" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}">${escapeHtml(obj.text)}</span>
       ${obj.project ? `<span class="obj-project-name">${escapeHtml(obj.project)}</span>` : ''}
+      <button class="today-priority-btn ${isHigh ? 'priority-high' : ''}" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="${isHigh ? 'Set normal priority' : 'Set high priority'}">!</button>
       <span class="today-actions">
         <button class="today-to-week-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Move back to weekly">&darr;</button>
         <button class="today-remove-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Remove from week">&times;</button>
       </span>
     </li>`;
-  }).join('') + _buildAddInputHtml('+ add task for today', tasks) + '</ul>';
+  };
+
+  let listHtml = '';
+  if (important.length > 0) {
+    listHtml += '<li class="today-tier-label today-tier-important"><span>Important</span></li>';
+    listHtml += important.map(renderTodayItem).join('');
+  }
+  if (lessImportant.length > 0) {
+    if (important.length > 0) {
+      listHtml += '<li class="today-tier-label today-tier-other"><span>Less Important</span></li>';
+    }
+    listHtml += lessImportant.map(renderTodayItem).join('');
+  }
+  if (todayComplete.length > 0) {
+    listHtml += '<li class="obj-divider"><span>completed</span></li>';
+    listHtml += todayComplete.map(renderTodayItem).join('');
+  }
+
+  container.innerHTML = '<div class="today-header">Today</div>' +
+    '<ul class="today-list">' + listHtml + _buildAddInputHtml('+ add task for today', tasks) + '</ul>';
+
+  // Priority toggle
+  container.querySelectorAll('.today-priority-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const task = found.task;
+
+      if (subIdx >= 0 && task.subtasks[subIdx]) {
+        task.subtasks[subIdx].priority = task.subtasks[subIdx].priority === 'high' ? 'normal' : 'high';
+        db.updateTask(taskId, { subtasks: task.subtasks });
+      } else {
+        // Standalone tasks: store priority in localStorage
+        const key = 'task-priority-' + taskId;
+        const current = localStorage.getItem(key) === 'high' ? 'high' : 'normal';
+        const newVal = current === 'high' ? 'normal' : 'high';
+        localStorage.setItem(key, newVal);
+      }
+
+      renderTodayTasks(data);
+    });
+  });
 
   // Checkboxes — toggle done
   container.querySelectorAll('.today-checkbox').forEach(cb => {
@@ -1199,7 +1245,8 @@ function renderTodayTasks(data) {
       animation: 150,
       handle: '.today-drag-handle',
       ghostClass: 'sortable-ghost',
-      filter: '.obj-add-row, .obj-divider, .obj-done',
+      draggable: 'li[data-obj-key]',
+      preventOnFilter: false,
       onEnd: function () {
         const items = todayList.querySelectorAll('li[data-obj-key]');
         const newOrder = Array.from(items).map(li => li.dataset.objKey).filter(Boolean);

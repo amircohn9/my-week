@@ -961,6 +961,45 @@ header h1 {
   transition: opacity 0.15s;
 }
 .today-list li:hover .today-actions { opacity: 1; }
+
+.today-priority-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #ddd;
+  line-height: 1;
+  transition: color 0.15s, opacity 0.15s;
+  opacity: 0;
+  flex-shrink: 0;
+}
+.today-list li:hover .today-priority-btn { opacity: 1; }
+.today-priority-btn:hover { color: #e74c3c; }
+.today-priority-btn.priority-high { color: #e74c3c; opacity: 1; }
+
+.today-tier-label {
+  list-style: none;
+  padding: 6px 0 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: none !important;
+}
+.today-tier-important span {
+  color: #c0392b;
+}
+.today-tier-other span {
+  color: #999;
+}
+.today-tier-other {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed #e8e8e8 !important;
+}
 .today-list li:hover .obj-project-name { display: none; }
 .today-to-week-btn, .today-remove-btn {
   background: none;
