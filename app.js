@@ -1,8 +1,8 @@
 // app.js — Init, data loading, collapsible sections (Supabase backend)
 //
-// SQL required for Trips + Susie features (run once in Supabase SQL editor):
+// SQL required for Trips + Susie + Notes features (run once in Supabase SQL editor):
 // ALTER TABLE family_hub_items DROP CONSTRAINT family_hub_items_section_check;
-// ALTER TABLE family_hub_items ADD CONSTRAINT family_hub_items_section_check CHECK (section IN ('thisWeek','backlog','decisions','purchases','trips','susie'));
+// ALTER TABLE family_hub_items ADD CONSTRAINT family_hub_items_section_check CHECK (section IN ('thisWeek','backlog','decisions','purchases','trips','susie','notes'));
 // Note: 'purchases' items are treated as 'decisions' in the app (merged into Decisions & Purchases)
 
 let appData = null;
@@ -58,6 +58,16 @@ async function initApp() {
     const newTask = await db.insertTask({ text: 'A&A', category: 'Family', list: 'now', subtasks: [] });
     if (!appData.tasks.Family) appData.tasks.Family = { description: '', now: [], backlog: [], recurring: [] };
     appData.tasks.Family.now.push({ id: newTask.id, text: 'A&A', done: false, deadline: null, link: null, thisWeek: false, today: false, subtasks: [] });
+  }
+
+  // Ensure an "Amir General" project exists (default bucket for quick tasks)
+  const hasAmirGeneral = Object.values(appData.tasks).some(cat =>
+    (cat.now || []).concat(cat.backlog || []).some(t => t.text === 'Amir General')
+  );
+  if (!hasAmirGeneral) {
+    const newTask = await db.insertTask({ text: 'Amir General', category: 'Career', list: 'now', subtasks: [] });
+    if (!appData.tasks.Career) appData.tasks.Career = { description: '', now: [], backlog: [], recurring: [] };
+    appData.tasks.Career.now.push({ id: newTask.id, text: 'Amir General', done: false, deadline: null, link: null, thisWeek: false, today: false, subtasks: [] });
   }
 
   // Weekly cleanup: unstar done objectives from previous weeks
@@ -179,7 +189,7 @@ function setupCollapsibleSections() {
 // --- Tab Rail ---
 
 function setupTabRail() {
-  const tabMap = { dashboard: 'tabDashboard', family: 'tabFamily', weekend: 'tabWeekend', jobs: 'tabJobs' };
+  const tabMap = { dashboard: 'tabDashboard', family: 'tabFamily', weekend: 'tabWeekend', jobs: 'tabJobs', contacts: 'tabContacts' };
   document.querySelectorAll('.tab-rail-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-rail-btn').forEach(b => b.classList.remove('active'));
@@ -190,12 +200,13 @@ function setupTabRail() {
       if (btn.dataset.tab === 'family') { renderFamilyHub(); }
       if (btn.dataset.tab === 'weekend') { setupWeekendIdeas(); }
       if (btn.dataset.tab === 'jobs') { renderJobApplications(); setupJobAppForm(); }
+      if (btn.dataset.tab === 'contacts') { initContacts(); }
     });
   });
 }
 
-const FAMILY_SECTIONS = ['thisWeek', 'backlog', 'decisions', 'trips', 'susie'];
-const FAMILY_LABELS = { thisWeek: 'This Week', backlog: 'Backlog', decisions: 'Decisions & Purchases', trips: 'Upcoming Trips', susie: 'Susie' };
+const FAMILY_SECTIONS = ['thisWeek', 'backlog', 'decisions', 'trips', 'susie', 'notes'];
+const FAMILY_LABELS = { thisWeek: 'This Week', backlog: 'Backlog', decisions: 'Decisions & Purchases', trips: 'Upcoming Trips', susie: 'Susie', notes: 'Notes for Amir' };
 
 function getFamilyHub() {
   if (!appData.familyHub) appData.familyHub = {};
@@ -302,6 +313,7 @@ function renderFamilyHub() {
           ${commentToggle}
           <span class="family-item-date-btn" data-id="${item.id}" title="Date">&#128197;</span>
           <span class="family-item-move-btn" data-id="${item.id}" title="Move">&#8596;</span>
+          <span class="family-item-delete-btn" data-id="${item.id}" data-section="${section}" title="Delete">&times;</span>
           <div class="family-move-menu" style="display:none;">
             ${moveOptions}
             <span class="family-move-option move-to-amir" data-to="_amirTasks" data-from="${section}" data-id="${item.id}">Amir's tasks</span>
@@ -472,24 +484,29 @@ function renderFamilyHub() {
             // Add as subtask of the A&A project
             const newSub = { text: item.text, done: false, thisWeek: true, today: false };
             aaProject.task.subtasks.push(newSub);
-            await db.updateTask(aaProject.task.id, { subtasks: aaProject.task.subtasks });
           } else {
             // No A&A project found — create one, then add subtask
             const newTask = await db.insertTask({ text: 'A&A', category: 'Family', list: 'now', subtasks: [{ text: item.text, done: false, thisWeek: true, today: false }] });
             if (!appData.tasks.Family) appData.tasks.Family = { now: [], backlog: [], recurring: [] };
-            appData.tasks.Family.now.push({ id: newTask.id, text: 'A&A', done: false, subtasks: newTask.subtasks || [{ text: item.text, done: false, thisWeek: true, today: false }], thisWeek: false, today: false });
+            appData.tasks.Family.now.push({ id: newTask.id, text: 'A&A', done: false, deadline: null, link: null, subtasks: newTask.subtasks || [{ text: item.text, done: false, thisWeek: true, today: false }], thisWeek: false, today: false });
           }
 
           // Mark the family item as moved (don't delete it)
           const todayStr = getTodayStr();
           item.comment = (item.comment ? item.comment + ' | ' : '') + 'Moved to dashboard ' + todayStr;
           item.assignee = 'Amir';
-          await db.updateFamilyItem(id, { assignee: 'Amir', comment: item.comment });
 
-          // Re-render both family hub and dashboard projects
+          // Re-render immediately (optimistic UI) before persisting
           renderFamilyHub();
           renderProjectsAgenda(appData.tasks);
           renderWeeklyObjectives(appData.tasks);
+          renderTodayTasks(appData);
+
+          // Persist to Supabase in background
+          if (aaProject) {
+            db.updateTask(aaProject.task.id, { subtasks: aaProject.task.subtasks });
+          }
+          db.updateFamilyItem(id, { assignee: 'Amir', comment: item.comment });
           return;
         }
 
@@ -513,6 +530,21 @@ function renderFamilyHub() {
         if (!item) return;
         item._showComment = !item._showComment;
         renderFamilyHub();
+      });
+    });
+
+    // Delete item
+    container.querySelectorAll('.family-item-delete-btn').forEach(el => {
+      el.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = el.dataset.id;
+        const sec = el.dataset.section;
+        if (!confirm('Delete this item?')) return;
+        const list = hub[sec] || [];
+        const idx = list.findIndex(i => i.id === id);
+        if (idx >= 0) list.splice(idx, 1);
+        renderFamilyHub();
+        await db.deleteFamilyItem(id);
       });
     });
 

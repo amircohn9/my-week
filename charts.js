@@ -413,9 +413,26 @@ function renderWeeklyObjectives(tasks) {
   const sorted = [...incomplete, ...complete];
   const hasBoth = incomplete.length > 0 && complete.length > 0;
 
-  list.innerHTML = subtitleHtml + sorted.map((obj, i) => {
+  // Apply saved sort order from localStorage
+  const savedWeekOrder = JSON.parse(localStorage.getItem('obj-week-order') || '[]');
+  if (savedWeekOrder.length > 0) {
+    const orderMap = {};
+    savedWeekOrder.forEach((key, idx) => orderMap[key] = idx);
+    incomplete.sort((a, b) => {
+      const ka = a.taskId + ':' + a.subtaskIndex;
+      const kb = b.taskId + ':' + b.subtaskIndex;
+      const oa = ka in orderMap ? orderMap[ka] : 9999;
+      const ob = kb in orderMap ? orderMap[kb] : 9999;
+      return oa - ob;
+    });
+  }
+
+  const allSorted = [...incomplete, ...complete];
+  list.innerHTML = subtitleHtml + allSorted.map((obj, i) => {
     const divider = (hasBoth && i === incomplete.length) ? '<li class="obj-divider"><span>completed</span></li>' : '';
-    return divider + `<li class="${obj.done ? 'obj-done' : ''}">
+    const objKey = obj.taskId + ':' + obj.subtaskIndex;
+    return divider + `<li class="${obj.done ? 'obj-done' : ''}" data-obj-key="${objKey}">
+      <span class="drag-handle obj-drag-handle">&#8942;</span>
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
       <input type="checkbox" class="obj-checkbox" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" ${obj.done ? 'checked' : ''}>
       <span class="obj-text" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}">${escapeHtml(obj.text)}</span>
@@ -428,6 +445,21 @@ function renderWeeklyObjectives(tasks) {
       </span>
     </li>`;
   }).join('') + _buildAddInputHtml('+ add objective', tasks);
+
+  // Init Sortable on weekly objectives
+  if (typeof Sortable !== 'undefined') {
+    new Sortable(list, {
+      animation: 150,
+      handle: '.obj-drag-handle',
+      ghostClass: 'sortable-ghost',
+      filter: '.obj-add-row, .obj-divider, .obj-done, .obj-in-progress-note',
+      onEnd: function () {
+        const items = list.querySelectorAll('li[data-obj-key]');
+        const newOrder = Array.from(items).map(li => li.dataset.objKey).filter(Boolean);
+        localStorage.setItem('obj-week-order', JSON.stringify(newOrder));
+      }
+    });
+  }
 
   // Wire up checkboxes — toggle done
   list.querySelectorAll('.obj-checkbox').forEach(cb => {
@@ -606,14 +638,23 @@ function renderWeeklyObjectives(tasks) {
 
 // Helper: build project <option> list including "New project..." option
 function _buildProjectOptions(tasks) {
-  let options = '<option value="">No project (standalone)</option>';
+  // Find or remember the "Amir General" project id for default selection
+  let amirGeneralId = '';
+  let options = '';
+  const projectEntries = [];
   for (const cat of CATEGORY_ORDER) {
     const group = tasks[cat];
     if (!group) continue;
     for (const item of (group.now || [])) {
       if (item.done) continue;
-      options += `<option value="${item.id}">${escapeHtml(item.text)} (${cat})</option>`;
+      projectEntries.push({ id: item.id, text: item.text, cat });
+      if (item.text === 'Amir General') amirGeneralId = item.id;
     }
+  }
+  options += `<option value=""${!amirGeneralId ? ' selected' : ''}>No project (standalone)</option>`;
+  for (const p of projectEntries) {
+    const sel = (p.id === amirGeneralId) ? ' selected' : '';
+    options += `<option value="${p.id}"${sel}>${escapeHtml(p.text)} (${p.cat})</option>`;
   }
   options += '<option value="__new__">+ New project...</option>';
   return options;
@@ -701,14 +742,28 @@ function _bindAddInput(container, tasks, mode) {
       }
     }
 
-    // No project selected — create standalone task in Career
-    const newRow = await db.insertTask({ text, category: 'Career', list: 'now', thisWeek, today, subtasks: [] });
-    if (!tasks['Career']) tasks['Career'] = { description: '', now: [], backlog: [], recurring: [] };
-    tasks['Career'].now.push({
-      id: newRow.id, text: newRow.text, done: false, deadline: null, link: null,
-      thisWeek, today, subtasks: [],
-    });
-    _reRenderAfterAdd(tasks);
+    // No project selected — try to add to "Amir General", else create standalone in Career
+    let amirGeneral = null;
+    for (const cat of CATEGORY_ORDER) {
+      const group = tasks[cat];
+      if (!group) continue;
+      const found = (group.now || []).find(t => t.text === 'Amir General' && !t.done);
+      if (found) { amirGeneral = { task: found, category: cat }; break; }
+    }
+    if (amirGeneral) {
+      const newSub = { text, done: false, thisWeek, today };
+      amirGeneral.task.subtasks.push(newSub);
+      _reRenderAfterAdd(tasks);
+      await db.updateTask(amirGeneral.task.id, { subtasks: amirGeneral.task.subtasks });
+    } else {
+      const newRow = await db.insertTask({ text, category: 'Career', list: 'now', thisWeek, today, subtasks: [] });
+      if (!tasks['Career']) tasks['Career'] = { description: '', now: [], backlog: [], recurring: [] };
+      tasks['Career'].now.push({
+        id: newRow.id, text: newRow.text, done: false, deadline: null, link: null,
+        thisWeek, today, subtasks: [],
+      });
+      _reRenderAfterAdd(tasks);
+    }
   });
 
   input.addEventListener('focus', () => {
@@ -987,13 +1042,30 @@ function renderTodayTasks(data) {
   // Sort: incomplete first, done items sink to bottom
   const todayIncomplete = items.filter(o => !o.done);
   const todayComplete = items.filter(o => o.done);
+
+  // Apply saved sort order from localStorage
+  const savedTodayOrder = JSON.parse(localStorage.getItem('obj-today-order') || '[]');
+  if (savedTodayOrder.length > 0) {
+    const orderMap = {};
+    savedTodayOrder.forEach((key, idx) => orderMap[key] = idx);
+    todayIncomplete.sort((a, b) => {
+      const ka = a.taskId + ':' + a.subtaskIndex;
+      const kb = b.taskId + ':' + b.subtaskIndex;
+      const oa = ka in orderMap ? orderMap[ka] : 9999;
+      const ob = kb in orderMap ? orderMap[kb] : 9999;
+      return oa - ob;
+    });
+  }
+
   const todaySorted = [...todayIncomplete, ...todayComplete];
   const todayHasBoth = todayIncomplete.length > 0 && todayComplete.length > 0;
 
   container.innerHTML = '<div class="today-header">Today</div>' +
     '<ul class="today-list">' + todaySorted.map((obj, i) => {
     const divider = (todayHasBoth && i === todayIncomplete.length) ? '<li class="obj-divider"><span>completed</span></li>' : '';
-    return divider + `<li class="${obj.done ? 'obj-done' : ''}">
+    const objKey = obj.taskId + ':' + obj.subtaskIndex;
+    return divider + `<li class="${obj.done ? 'obj-done' : ''}" data-obj-key="${objKey}">
+      <span class="drag-handle today-drag-handle">&#8942;</span>
       <span class="obj-cat-dot" style="background:${obj.color}"></span>
       <input type="checkbox" class="today-checkbox" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" ${obj.done ? 'checked' : ''}>
       <span class="today-text" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}">${escapeHtml(obj.text)}</span>
@@ -1119,6 +1191,22 @@ function renderTodayTasks(data) {
 
   // Bind add-task input for today
   _bindAddInput(container, tasks, 'today');
+
+  // Init Sortable on today list
+  const todayList = container.querySelector('.today-list');
+  if (todayList && typeof Sortable !== 'undefined') {
+    new Sortable(todayList, {
+      animation: 150,
+      handle: '.today-drag-handle',
+      ghostClass: 'sortable-ghost',
+      filter: '.obj-add-row, .obj-divider, .obj-done',
+      onEnd: function () {
+        const items = todayList.querySelectorAll('li[data-obj-key]');
+        const newOrder = Array.from(items).map(li => li.dataset.objKey).filter(Boolean);
+        localStorage.setItem('obj-today-order', JSON.stringify(newOrder));
+      }
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1264,6 +1352,7 @@ function renderProjectsAgenda(tasks) {
         category: cat,
         color: colors[cat],
         deadline: item.deadline || null,
+        description: item.description || '',
         subtasks: item.subtasks || [],
         thisWeek: item.thisWeek || false,
         today: item.today || false,
@@ -1339,6 +1428,7 @@ function renderProjectsAgenda(tasks) {
         <div class="proj-bar-fill" style="width:${pct}%;background:${barColor}"></div>
       </div>
       <div class="proj-expanded-content">
+        <div class="proj-description${proj.description ? '' : ' proj-description-empty'}" data-task-id="${proj.id}" title="Click to add description">${proj.description ? escapeHtml(proj.description).replace(/\n/g, '<br>') : '<span class="proj-desc-placeholder">+ add description, links, or notes</span>'}</div>
         ${subtasksHtml}
         <div class="proj-add-subtask-row">
           <span class="proj-add-trigger" data-task-id="${proj.id}">+ add subtask</span>
@@ -1463,6 +1553,37 @@ function renderProjectsAgenda(tasks) {
       input.addEventListener('keydown', (ev) => {
         if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
         if (ev.key === 'Escape') { input.value = current; input.blur(); }
+      });
+    });
+  });
+
+  // Click description to edit
+  container.querySelectorAll('.proj-description').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (el.querySelector('textarea')) return;
+      const taskId = el.dataset.taskId;
+      const found = findTaskById(tasks, taskId);
+      if (!found) return;
+      const current = found.task.description || '';
+      const ta = document.createElement('textarea');
+      ta.className = 'proj-description-edit';
+      ta.value = current;
+      ta.rows = 4;
+      ta.placeholder = 'Add description, links, action items...';
+      el.innerHTML = '';
+      el.appendChild(ta);
+      ta.focus();
+      const save = async () => {
+        const newVal = ta.value.trim();
+        found.task.description = newVal;
+        renderProjectsAgenda(tasks);
+        await db.updateTask(taskId, { description: newVal });
+      };
+      ta.addEventListener('blur', save);
+      ta.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' && ev.ctrlKey) { ev.preventDefault(); ta.blur(); }
+        if (ev.key === 'Escape') { renderProjectsAgenda(tasks); }
       });
     });
   });

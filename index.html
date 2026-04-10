@@ -39,6 +39,10 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
       <span class="tab-rail-label">Jobs</span>
     </button>
+    <button class="tab-rail-btn" data-tab="contacts" title="People & Services">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      <span class="tab-rail-label">People</span>
+    </button>
   </nav>
   <div class="tab-content">
   <div class="tab-pane active" id="tabDashboard">
@@ -190,6 +194,16 @@
         </div>
       </section>
 
+      <section class="card family-section family-notes-section" data-section="notes">
+        <h2 class="family-section-header">Notes for Amir</h2>
+        <p class="family-notes-hint">Arielle — add notes, requests, or changes here. Amir will review.</p>
+        <div id="familyNotes" class="family-items"></div>
+        <p class="empty-state family-empty" id="familyNotesEmpty">No notes yet.</p>
+        <div class="family-add-row">
+          <input type="text" class="family-add-input" data-section="notes" placeholder="+ add a note">
+        </div>
+      </section>
+
       <section class="card family-section family-ahead-section">
         <h2 class="family-section-header">What's Ahead</h2>
         <div id="familyAhead" class="family-ahead"></div>
@@ -275,6 +289,32 @@
   </div>
   </div><!-- end tabJobs -->
 
+  <div class="tab-pane" id="tabContacts">
+  <div class="container contacts-container">
+    <div class="family-header-row">
+      <div>
+        <h1>People & Services</h1>
+        <p class="subtitle" id="contactsCount">0 contacts</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 16px;">
+      <input type="text" id="contactsSearch" class="contacts-search" placeholder="Search by name, role, or tag...">
+
+      <form id="contactForm" class="contact-form">
+        <input type="text" id="contactName" placeholder="Name" required>
+        <input type="text" id="contactRole" placeholder="Role (plumber, babysitter...)">
+        <input type="tel" id="contactPhone" placeholder="Phone">
+        <input type="email" id="contactEmail" placeholder="Email">
+        <input type="text" id="contactTags" placeholder="Tags (comma separated)">
+        <button type="submit">Add</button>
+      </form>
+
+      <div id="contactsList"></div>
+    </div>
+  </div>
+  </div><!-- end tabContacts -->
+
   </div><!-- end tab-content -->
   </div>
 
@@ -333,6 +373,7 @@
   <script src="checkin-form.js"></script>
   <script src="weekend-ideas.js"></script>
   <script src="job-applications.js"></script>
+  <script src="contacts.js"></script>
   <script src="app.js"></script>
 
   <script>

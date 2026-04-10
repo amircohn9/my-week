@@ -87,6 +87,7 @@ const db = {
           done: t.done,
           deadline: t.deadline,
           link: t.link,
+          description: t.description || '',
           thisWeek: t.this_week,
           today: t.today,
           subtasks: (t.subtasks || []).map(s => ({
@@ -102,6 +103,7 @@ const db = {
           done: t.done,
           deadline: t.deadline,
           link: t.link,
+          description: t.description || '',
           thisWeek: t.this_week,
           today: t.today,
           subtasks: (t.subtasks || []).map(s => ({
@@ -145,6 +147,7 @@ const db = {
       decisions: familyItems.filter(i => i.section === 'decisions' || i.section === 'purchases').map(this._mapFamilyItem),
       trips: familyItems.filter(i => i.section === 'trips').map(this._mapFamilyItem),
       susie: familyItems.filter(i => i.section === 'susie').map(this._mapFamilyItem),
+      notes: familyItems.filter(i => i.section === 'notes').map(this._mapFamilyItem),
       upcomingEvents: familyEvents.map(e => ({
         id: e.id,
         date: e.date,
@@ -253,6 +256,7 @@ const db = {
     if ('deadline' in fields) mapped.deadline = fields.deadline;
     if ('subtasks' in fields) mapped.subtasks = fields.subtasks;
     if ('sort_order' in fields) mapped.sort_order = fields.sort_order;
+    if ('description' in fields) mapped.description = fields.description;
     const { error } = await supabaseClient.from('tasks').update(mapped).eq('id', id);
     if (error) throw error;
   },

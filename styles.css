@@ -176,6 +176,25 @@ body {
   margin-bottom: 12px;
   font-style: italic;
 }
+/* This Week — prioritized look */
+.family-section[data-section="thisWeek"] {
+  border-left: 4px solid #e74c3c;
+  background: linear-gradient(135deg, #fff8f6 0%, #fff 100%);
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.08);
+}
+.family-section[data-section="thisWeek"] .family-section-header {
+  color: #c0392b;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.family-section[data-section="thisWeek"] .family-section-header::before {
+  content: "\25CF  ";
+  font-size: 0.7rem;
+  color: #e74c3c;
+  vertical-align: middle;
+}
+
 .family-section-decisions { border-left: 3px solid #e8a87c; }
 .family-section-someday { border-left: 3px solid #d0cdc8; }
 .family-items {
@@ -307,6 +326,16 @@ body {
   border-radius: 4px;
   transition: color 0.15s;
 }
+.family-item-delete-btn {
+  font-size: 0.85rem;
+  color: #ddd;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  line-height: 1;
+}
+.family-item-delete-btn:hover { color: #e74c3c; }
 .family-item-date-btn:hover,
 .family-item-move-btn:hover { color: #888; }
 .family-move-menu {
@@ -852,6 +881,20 @@ header h1 {
 .weekly-objectives li:hover .obj-actions { opacity: 1; }
 .weekly-objectives li:hover .obj-project-name { display: none; }
 
+.obj-drag-handle, .today-drag-handle {
+  cursor: grab;
+  color: #d0cdc8;
+  font-size: 0.85rem;
+  padding: 0 2px;
+  user-select: none;
+  flex-shrink: 0;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.weekly-objectives li:hover .obj-drag-handle,
+.today-list li:hover .today-drag-handle { opacity: 1; }
+
 .obj-today-btn, .obj-unstar-btn, .obj-delete-btn {
   background: none;
   border: none;
@@ -1088,6 +1131,33 @@ header h1 {
 }
 .proj-subtask:hover .proj-subtask-delete { opacity: 1; }
 .proj-subtask-delete:hover { color: #e74c3c; }
+
+.proj-description {
+  font-size: 0.8rem;
+  color: #666;
+  padding: 6px 0;
+  line-height: 1.5;
+  cursor: pointer;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.proj-description-empty { padding: 4px 0; }
+.proj-desc-placeholder {
+  color: #ccc;
+  font-style: italic;
+  font-size: 0.75rem;
+}
+.proj-description-edit {
+  width: 100%;
+  border: 1px solid #d0cdc8;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  line-height: 1.5;
+}
 
 .proj-add-subtask-row { padding: 4px 0; margin-top: 4px; }
 
@@ -2819,6 +2889,15 @@ footer {
 /* ─── Susie section ─── */
 .family-susie-section { border-left: 3px solid #f472b6; }
 
+/* ─── Notes for Amir section ─── */
+.family-notes-section { border-left: 3px solid #60a5fa; background: #f0f7ff; }
+.family-notes-hint {
+  font-size: 0.75rem;
+  color: #8ab4f8;
+  margin: 0 0 8px;
+  font-style: italic;
+}
+
 /* ─── Job Applications Tab ─── */
 .jobs-container { max-width: 100%; padding: 20px 8px; }
 
@@ -2953,4 +3032,170 @@ footer {
   .job-col-company { flex: 1 1 50%; }
   .job-col-role { flex: 1 1 100%; order: 5; }
   .job-col-date { flex-shrink: 0; }
+}
+
+/* ─── Contacts / People Tab ─── */
+.contacts-container { max-width: 700px; }
+
+.contacts-search {
+  width: 100%;
+  border: 1px solid #d0cdc8;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  margin-bottom: 12px;
+  outline: none;
+}
+.contacts-search:focus { border-color: #60a5fa; }
+
+.contact-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+.contact-form input {
+  flex: 1 1 140px;
+  border: 1px solid #d0cdc8;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+.contact-form button {
+  background: #2d2d2d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.contacts-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.contacts-tag-chip {
+  background: #f0f0ee;
+  border: 1px solid #e0e0dc;
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-family: inherit;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.15s;
+}
+.contacts-tag-chip:hover { background: #e4e4e0; }
+.contacts-tag-chip.active { background: #2d2d2d; color: #fff; border-color: #2d2d2d; }
+
+.contact-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.contact-card:hover { border-color: #bbb; }
+
+.contact-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.contact-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #222;
+}
+.contact-role {
+  font-size: 0.78rem;
+  color: #999;
+}
+.contact-delete-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #ddd;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.15s;
+}
+.contact-delete-btn:hover { color: #e74c3c; }
+
+.contact-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.78rem;
+}
+.contact-phone, .contact-email {
+  color: #60a5fa;
+  text-decoration: none;
+}
+.contact-phone:hover, .contact-email:hover { text-decoration: underline; }
+.contact-notes {
+  color: #888;
+  font-style: italic;
+  width: 100%;
+}
+
+.contact-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.contact-tag {
+  background: #f0f0ee;
+  border-radius: 8px;
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  color: #888;
+}
+
+.contact-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.contact-edit-form input,
+.contact-edit-form textarea {
+  border: 1px solid #d0cdc8;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+.contact-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+.contact-edit-save {
+  background: #2d2d2d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.contact-edit-cancel {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #888;
 }
