@@ -55,7 +55,7 @@ body {
 .tab-pane { display: none; }
 .tab-pane.active { display: block; }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .tab-rail {
     position: fixed;
     top: auto;
@@ -2617,11 +2617,21 @@ footer {
   .upcoming-row-actions { display: flex; }
   .obj-actions { opacity: 1; }
   .today-actions { opacity: 1; }
+  .today-priority-btn { opacity: 1; }
+  .obj-drag-handle, .today-drag-handle { opacity: 0.5; }
   .habit-hide-btn { opacity: 1; }
   .habit-delete-btn { opacity: 1; }
   .proj-subtask-delete { opacity: 1; }
   .delete-added-task-btn { opacity: 1; }
   .delete-task-btn { opacity: 1; }
+
+  /* ─── Contacts mobile ─── */
+  .contact-form { flex-direction: column; }
+  .contact-form input { flex: 1 1 100%; font-size: 16px; }
+  .contacts-search { font-size: 16px; }
+  .contact-card-header { flex-wrap: wrap; }
+  .family-completed-meta { font-size: 0.6rem; }
+  .family-completed-item { flex-wrap: wrap; gap: 4px; }
 
   /* ─── Backlog task list → single column ─── */
   #taskList { grid-template-columns: 1fr; }
@@ -2927,6 +2937,74 @@ footer {
 
 /* ─── Susie section ─── */
 .family-susie-section { border-left: 3px solid #f472b6; }
+
+/* ─── Family Completed section ─── */
+.family-completed-section {
+  margin-top: 16px;
+  border-left: 3px solid #d0cdc8;
+  background: #fafaf8;
+}
+.family-completed-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+.family-completed-arrow {
+  font-size: 0.75rem;
+  color: #999;
+}
+.family-completed-count {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #999;
+  margin-left: 4px;
+}
+.family-completed-body {
+  padding-top: 8px;
+}
+.family-completed-week {
+  margin-bottom: 12px;
+}
+.family-completed-week-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 4px 0;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 6px;
+}
+.family-completed-week-count {
+  font-weight: 500;
+  color: #bbb;
+}
+.family-completed-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 0.8rem;
+}
+.family-completed-check {
+  color: #7db87d;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+.family-completed-text {
+  color: #888;
+  text-decoration: line-through;
+  text-decoration-color: #ddd;
+}
+.family-completed-meta {
+  margin-left: auto;
+  font-size: 0.68rem;
+  color: #bbb;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 /* ─── Notes for Amir section ─── */
 .family-notes-section { border-left: 3px solid #60a5fa; background: #f0f7ff; }

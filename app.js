@@ -241,6 +241,84 @@ function renderFamilyHandled(hub) {
   ).join('')}</div>`;
 }
 
+function renderFamilyCompleted(hub) {
+  const container = document.getElementById('familyCompleted');
+  const countEl = document.getElementById('familyCompletedCount');
+  const toggle = document.getElementById('familyCompletedToggle');
+  if (!container || !toggle) return;
+
+  // Collect all done items across all sections
+  const allDone = [];
+  for (const s of FAMILY_SECTIONS) {
+    for (const item of (hub[s] || [])) {
+      if (item.done && item.doneDate) {
+        allDone.push({ ...item, _section: s });
+      }
+    }
+  }
+
+  if (countEl) countEl.textContent = allDone.length > 0 ? allDone.length : '';
+
+  if (allDone.length === 0) {
+    container.innerHTML = '<p class="empty-state family-empty">No completed items yet.</p>';
+    return;
+  }
+
+  // Group by week (Mon-Sun)
+  const weekGroups = {};
+  for (const item of allDone) {
+    const d = new Date(item.doneDate + 'T12:00:00');
+    const day = d.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+    const ws = new Date(d);
+    ws.setDate(d.getDate() - diff);
+    const weekKey = formatDateStr(ws);
+    if (!weekGroups[weekKey]) weekGroups[weekKey] = [];
+    weekGroups[weekKey].push(item);
+  }
+
+  // Sort weeks newest first
+  const weekKeys = Object.keys(weekGroups).sort((a, b) => b.localeCompare(a));
+  const { weekStart } = getWeekRange();
+  const thisWeekKey = formatDateStr(weekStart);
+
+  container.innerHTML = weekKeys.map(weekKey => {
+    const ws = new Date(weekKey + 'T12:00:00');
+    const we = new Date(ws);
+    we.setDate(ws.getDate() + 6);
+    const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const isThisWeek = weekKey === thisWeekKey;
+    const label = isThisWeek ? 'This Week' : `${fmt(ws)} – ${fmt(we)}`;
+    const items = weekGroups[weekKey];
+
+    const itemsHtml = items.map(item => {
+      const sectionLabel = FAMILY_LABELS[item._section] || item._section;
+      const doneDate = new Date(item.doneDate + 'T12:00:00');
+      const dayLabel = doneDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      return `<div class="family-completed-item">
+        <span class="family-completed-check">&#10003;</span>
+        <span class="family-completed-text">${escapeHtml(item.text)}</span>
+        <span class="family-completed-meta">${sectionLabel} &middot; ${dayLabel}</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="family-completed-week">
+      <div class="family-completed-week-label">${label} <span class="family-completed-week-count">(${items.length})</span></div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+
+  // Toggle expand/collapse
+  if (!toggle._bound) {
+    toggle._bound = true;
+    toggle.addEventListener('click', () => {
+      const isHidden = container.style.display === 'none';
+      container.style.display = isHidden ? 'block' : 'none';
+      toggle.querySelector('.family-completed-arrow').innerHTML = isHidden ? '&#9662;' : '&#9656;';
+    });
+  }
+}
+
 function renderFamilyHub() {
   const hub = getFamilyHub();
   const { weekStart } = getWeekRange();
@@ -617,9 +695,10 @@ function renderFamilyHub() {
     });
   }
 
-  // Render upcoming + ahead
+  // Render upcoming + ahead + completed archive
   renderFamilyUpcoming();
   renderFamilyAhead();
+  renderFamilyCompleted(hub);
 
   // Init drag-and-drop on all family list sections
   initFamilySortable();
