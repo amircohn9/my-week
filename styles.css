@@ -2602,11 +2602,57 @@ footer {
     font-size: 16px;
   }
 
-  /* ─── Tap targets — 44px minimum ─── */
-  .tab-rail-btn, button, .family-item-check, .family-owner,
-  .upcoming-star, .upcoming-hide, .obj-checkbox {
+  /* ─── Tap targets — 44px minimum on all interactive elements ─── */
+  .tab-rail-btn, .family-item-check, .family-owner,
+  .upcoming-star, .upcoming-hide {
     min-height: 44px;
     min-width: 44px;
+  }
+
+  /* Checkboxes bigger on mobile */
+  input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+  }
+
+  /* Action buttons — generous tap area */
+  .obj-today-btn, .obj-defer-btn, .obj-unstar-btn, .obj-delete-btn,
+  .today-priority-btn, .today-to-week-btn, .today-remove-btn,
+  .family-item-delete-btn, .family-item-move-btn, .family-item-date-btn,
+  .family-comment-toggle, .move-btn, .delete-task-btn, .delete-sub-btn,
+  .this-week-toggle, .today-toggle, .proj-subtask-delete, .proj-subtask-move,
+  .habit-hide-btn, .habit-delete-btn, .trip-delete-btn, .trip-cl-delete,
+  .contact-delete-btn, .proj-close-btn {
+    min-height: 36px;
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  /* Priority button bigger on mobile */
+  .today-priority-btn { font-size: 1.2rem; font-weight: 800; }
+
+  /* Drag handles bigger */
+  .drag-handle, .obj-drag-handle, .today-drag-handle {
+    font-size: 1.1rem;
+    padding: 4px;
+    min-width: 28px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Star toggles in project cards */
+  .this-week-toggle, .today-toggle {
+    font-size: 1.2rem;
+  }
+
+  /* Family item actions — spread out more */
+  .family-item-actions {
+    gap: 2px;
   }
 
   /* ─── Week toggle ─── */
@@ -3241,11 +3287,12 @@ footer {
   margin-left: auto;
   background: none;
   border: none;
-  color: #ddd;
-  font-size: 1rem;
+  color: #bbb;
+  font-size: 1.1rem;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 4px 8px;
   transition: color 0.15s;
+  flex-shrink: 0;
 }
 .contact-delete-btn:hover { color: #e74c3c; }
 

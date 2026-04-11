@@ -100,7 +100,7 @@ function renderContacts(filter) {
         <div class="contact-card-header">
           <span class="contact-name">${escapeHtml(c.name)}</span>
           <span class="contact-role">${escapeHtml(c.role || '')}</span>
-          <button class="contact-delete-btn" data-id="${c.id}" title="Delete">&times;</button>
+          <button class="contact-delete-btn" data-id="${c.id}" title="Delete">&#128465;</button>
         </div>
         <div class="contact-details">
           ${phoneLink}${emailLink}
