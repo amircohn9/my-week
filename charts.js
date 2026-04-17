@@ -438,6 +438,7 @@ function renderWeeklyObjectives(tasks) {
       <span class="obj-text" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}">${escapeHtml(obj.text)}</span>
       ${obj.project ? `<span class="obj-project-name obj-project-editable" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Tap to change project">${escapeHtml(obj.project)}</span>` : ''}
       <span class="obj-actions">
+        ${obj.project ? `<button class="obj-move-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Change project">&#128193;</button>` : ''}
         <button class="obj-today-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Move to today">&#9650;</button>
         <button class="obj-defer-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Defer (remove from this week, keep in project)">&#8595;</button>
         <button class="obj-unstar-btn" data-task-id="${obj.taskId}" data-sub-idx="${obj.subtaskIndex}" title="Remove from this week">&#9734;</button>
@@ -633,20 +634,18 @@ function renderWeeklyObjectives(tasks) {
     });
   });
 
-  // Click project name to change project
-  list.querySelectorAll('.obj-project-editable').forEach(span => {
-    span.addEventListener('click', (e) => {
+  // Change project button — shows dropdown to move subtask to a different project
+  list.querySelectorAll('.obj-move-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (span.querySelector('select')) return;
-      const taskId = span.dataset.taskId;
-      const subIdx = parseInt(span.dataset.subIdx);
+      const taskId = btn.dataset.taskId;
+      const subIdx = parseInt(btn.dataset.subIdx);
       const found = findTaskById(tasks, taskId);
       if (!found || subIdx < 0) return;
 
-      const currentText = span.textContent;
+      // Replace the button with a select dropdown
       const select = document.createElement('select');
       select.className = 'obj-project-picker';
-      // Build options from available projects
       for (const cat of CATEGORY_ORDER) {
         const group = tasks[cat];
         if (!group) continue;
@@ -659,19 +658,16 @@ function renderWeeklyObjectives(tasks) {
           select.appendChild(opt);
         }
       }
-      span.textContent = '';
-      span.appendChild(select);
+      btn.replaceWith(select);
       select.focus();
 
       const finish = async (newParentId) => {
         if (newParentId && newParentId !== taskId) {
           const newParent = findTaskById(tasks, newParentId);
           if (newParent) {
-            // Move subtask from old parent to new parent
             const sub = found.task.subtasks.splice(subIdx, 1)[0];
             if (!newParent.task.subtasks) newParent.task.subtasks = [];
             newParent.task.subtasks.push(sub);
-            // Persist both
             await Promise.all([
               db.updateTask(taskId, { subtasks: found.task.subtasks }),
               db.updateTask(newParentId, { subtasks: newParent.task.subtasks }),
