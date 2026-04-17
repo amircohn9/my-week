@@ -178,6 +178,16 @@ CREATE TABLE job_applications (
 );
 
 
+CREATE TABLE user_notes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) NOT NULL,
+  title text DEFAULT '',
+  content text DEFAULT '',
+  pinned boolean DEFAULT false,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
 -- ============================================================
 -- INDEXES
 -- ============================================================

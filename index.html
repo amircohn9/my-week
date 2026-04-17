@@ -43,6 +43,10 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
       <span class="tab-rail-label">People</span>
     </button>
+    <button class="tab-rail-btn" data-tab="notes" title="Notes">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <span class="tab-rail-label">Notes</span>
+    </button>
   </nav>
   <div class="tab-content">
   <div class="tab-pane active" id="tabDashboard">
@@ -150,6 +154,7 @@
         <p class="empty-state family-empty" id="familyThisWeekEmpty">Clear week.</p>
         <div class="family-add-row">
           <input type="text" class="family-add-input" data-section="thisWeek" placeholder="+ add">
+          <button class="family-add-btn" type="button">Add</button>
         </div>
       </section>
 
@@ -159,6 +164,7 @@
         <p class="empty-state family-empty" id="familyBacklogEmpty">Nothing queued.</p>
         <div class="family-add-row">
           <input type="text" class="family-add-input" data-section="backlog" placeholder="+ add">
+          <button class="family-add-btn" type="button">Add</button>
         </div>
       </section>
 
@@ -168,11 +174,12 @@
         <p class="empty-state family-empty" id="familyDecisionsEmpty">Nothing to decide.</p>
         <div class="family-add-row">
           <input type="text" class="family-add-input" data-section="decisions" placeholder="+ add">
+          <button class="family-add-btn" type="button">Add</button>
         </div>
       </section>
 
       <section class="card family-section family-upcoming-section">
-        <h2 class="family-section-header">Upcoming</h2>
+        <h2 class="family-section-header">Upcoming <button class="calendar-sync-btn" id="calendarSyncBtn" title="Sync Google Calendar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M21.12 8A9 9 0 0 0 5.64 5.64L2.5 8"/><path d="M2.88 16A9 9 0 0 0 18.36 18.36L21.5 16"/></svg></button></h2>
         <div id="familyUpcoming" class="family-upcoming"></div>
       </section>
 
@@ -182,6 +189,7 @@
         <p class="empty-state family-empty" id="familyTripsEmpty">No trips planned.</p>
         <div class="family-add-row">
           <input type="text" class="family-add-input" data-section="trips" placeholder="+ add trip">
+          <button class="family-add-btn" type="button">Add</button>
         </div>
       </section>
 
@@ -191,6 +199,7 @@
         <p class="empty-state family-empty" id="familySusieEmpty">Nothing here yet.</p>
         <div class="family-add-row">
           <input type="text" class="family-add-input" data-section="susie" placeholder="+ add">
+          <button class="family-add-btn" type="button">Add</button>
         </div>
       </section>
 
@@ -201,6 +210,7 @@
         <p class="empty-state family-empty" id="familyNotesEmpty">No notes yet.</p>
         <div class="family-add-row">
           <input type="text" class="family-add-input" data-section="notes" placeholder="+ add a note">
+          <button class="family-add-btn" type="button">Add</button>
         </div>
       </section>
 
@@ -324,6 +334,20 @@
   </div>
   </div><!-- end tabContacts -->
 
+  <div class="tab-pane" id="tabNotes">
+  <div class="container notes-container">
+    <div class="family-header-row">
+      <div>
+        <h1>Notes</h1>
+        <p class="subtitle">Quick notes, ideas, and things to remember</p>
+      </div>
+      <button class="notes-new-btn" id="notesNewBtn">+ New Note</button>
+    </div>
+    <div id="notesList" class="notes-list"></div>
+    <p class="empty-state" id="notesEmpty" style="display:none;">No notes yet. Create one to get started.</p>
+  </div>
+  </div><!-- end tabNotes -->
+
   </div><!-- end tab-content -->
   </div>
 
@@ -383,6 +407,7 @@
   <script src="weekend-ideas.js"></script>
   <script src="job-applications.js"></script>
   <script src="contacts.js"></script>
+  <script src="notes.js"></script>
   <script src="app.js"></script>
 
   <script>

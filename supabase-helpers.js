@@ -563,6 +563,40 @@ const db = {
     if (error) throw error;
   },
 
+  // ============================================================
+  // NOTES
+  // ============================================================
+  async loadNotes() {
+    const { data, error } = await supabaseClient
+      .from('user_notes')
+      .select('*')
+      .order('pinned', { ascending: false })
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async insertNote(note) {
+    const { data, error } = await supabaseClient.from('user_notes').insert({
+      user_id: (await this.getSession()).user.id,
+      title: note.title || '',
+      content: note.content || '',
+      pinned: note.pinned || false,
+    }).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateNote(id, fields) {
+    const { error } = await supabaseClient.from('user_notes').update(fields).eq('id', id);
+    if (error) throw error;
+  },
+
+  async deleteNote(id) {
+    const { error } = await supabaseClient.from('user_notes').delete().eq('id', id);
+    if (error) throw error;
+  },
+
   onAuthStateChange(callback) {
     supabaseClient.auth.onAuthStateChange(callback);
   },

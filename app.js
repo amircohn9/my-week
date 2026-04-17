@@ -189,7 +189,7 @@ function setupCollapsibleSections() {
 // --- Tab Rail ---
 
 function setupTabRail() {
-  const tabMap = { dashboard: 'tabDashboard', family: 'tabFamily', weekend: 'tabWeekend', jobs: 'tabJobs', contacts: 'tabContacts' };
+  const tabMap = { dashboard: 'tabDashboard', family: 'tabFamily', weekend: 'tabWeekend', jobs: 'tabJobs', contacts: 'tabContacts', notes: 'tabNotes' };
   document.querySelectorAll('.tab-rail-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-rail-btn').forEach(b => b.classList.remove('active'));
@@ -201,6 +201,7 @@ function setupTabRail() {
       if (btn.dataset.tab === 'weekend') { setupWeekendIdeas(); }
       if (btn.dataset.tab === 'jobs') { renderJobApplications(); setupJobAppForm(); }
       if (btn.dataset.tab === 'contacts') { initContacts(); }
+      if (btn.dataset.tab === 'notes') { initNotes(); }
     });
   });
 }
@@ -659,15 +660,14 @@ function renderFamilyHub() {
   document.querySelectorAll('.family-add-input').forEach(input => {
     if (input._bound) return;
     input._bound = true;
-    input.addEventListener('keydown', async (e) => {
-      if (e.key !== 'Enter') return;
+
+    const addItem = async () => {
       const text = input.value.trim();
       if (!text) return;
       const section = input.dataset.section;
       input.value = '';
-      // Insert into Supabase
+      input.blur();
       const returned = await db.insertFamilyItem({ text, section, addedBy: 'Amir' });
-      // Add returned item (with id) to in-memory hub
       const hub = getFamilyHub();
       if (!hub[section]) hub[section] = [];
       hub[section].push({
@@ -682,7 +682,29 @@ function renderFamilyHub() {
         comment: returned.comment || '',
       });
       renderFamilyHub();
+    };
+
+    // Desktop: Enter key
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); addItem(); }
     });
+
+    // Android fallback: detect newline inserted by virtual keyboard
+    input.addEventListener('input', () => {
+      if (input.value.includes('\n')) {
+        input.value = input.value.replace(/\n/g, '');
+        addItem();
+      }
+    });
+
+    // Wire up the "Add" button next to the input
+    const addBtn = input.parentElement.querySelector('.family-add-btn');
+    if (addBtn) {
+      addBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        addItem();
+      });
+    }
   });
 
   // Close move menus on outside click
@@ -1127,6 +1149,37 @@ function renderFamilyUpcoming() {
       await db.updateFamilyEvent(id, { hidden: true });
     });
   });
+
+  // Calendar sync button
+  const syncBtn = document.getElementById('calendarSyncBtn');
+  if (syncBtn && !syncBtn._bound) {
+    syncBtn._bound = true;
+    syncBtn.addEventListener('click', async () => {
+      syncBtn.classList.add('syncing');
+      syncBtn.disabled = true;
+      try {
+        const resp = await fetch('/api/sync-calendar', { method: 'POST' });
+        const result = await resp.json();
+        if (!resp.ok) throw new Error(result.error || 'Sync failed');
+        // Reload data from Supabase and re-render
+        appData = await db.loadAll();
+        renderFamilyUpcoming();
+        renderFamilyHub();
+        // Flash success
+        syncBtn.classList.remove('syncing');
+        syncBtn.classList.add('sync-done');
+        setTimeout(() => syncBtn.classList.remove('sync-done'), 2000);
+      } catch (err) {
+        console.error('Calendar sync error:', err);
+        syncBtn.classList.remove('syncing');
+        syncBtn.classList.add('sync-error');
+        syncBtn.title = `Sync failed: ${err.message}`;
+        setTimeout(() => { syncBtn.classList.remove('sync-error'); syncBtn.title = 'Sync Google Calendar'; }, 3000);
+      } finally {
+        syncBtn.disabled = false;
+      }
+    });
+  }
 }
 
 // --- Anticipation Engine ---
