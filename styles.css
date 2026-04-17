@@ -2661,6 +2661,93 @@ footer {
   background: transparent;
 }
 
+/* Format toggle */
+.note-format-toggle {
+  display: flex;
+  gap: 4px;
+  background: #f5f4f1;
+  border-radius: 8px;
+  padding: 3px;
+}
+.note-format-btn {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  color: #888;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.note-format-btn:hover { color: #555; }
+.note-format-btn.active {
+  background: #fff;
+  color: #2d2d2d;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* Checklist items */
+.cl-list { margin-top: 8px; }
+.cl-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f5f4f1;
+}
+.cl-item:last-child { border-bottom: none; }
+.cl-check {
+  width: 20px;
+  height: 20px;
+  accent-color: #7db87d;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.cl-text {
+  flex: 1;
+  border: none;
+  font-size: 0.92rem;
+  font-family: inherit;
+  color: #444;
+  padding: 6px 4px;
+  outline: none;
+  background: transparent;
+}
+.cl-text.cl-done {
+  text-decoration: line-through;
+  color: #bbb;
+}
+.cl-text::placeholder { color: #ccc; }
+.cl-delete {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #ddd;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.cl-item:hover .cl-delete { opacity: 1; }
+.cl-delete:hover { color: #e74c3c; }
+.cl-add-btn {
+  background: none;
+  border: 1px dashed #d0cdc8;
+  border-radius: 8px;
+  padding: 10px;
+  width: 100%;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: #bbb;
+  cursor: pointer;
+  margin-top: 8px;
+  text-align: left;
+}
+.cl-add-btn:hover { border-color: #7db87d; color: #7db87d; }
+
 /* ═══════════════════════════════════════════════════
    RESPONSIVE MOBILE — max-width: 767px
    Only ADD rules here. No desktop overrides above.

@@ -2183,18 +2183,32 @@ function renderRecurringHabits(tasks) {
       if (!item) return;
       const todayStr = getTodayStr();
       const alreadyLogged = (item.sessions || []).some(s => s.date === todayStr);
-      if (alreadyLogged) {
-        // Show brief "Already logged" tooltip instead of toggling
+
+      // Figure out this week's count and target
+      let target = 1;
+      if (item.text.match(/2x/i)) target = 2;
+      else if (item.text.match(/3x/i)) target = 3;
+      const { weekStart, weekEnd } = getWeekRange();
+      const thisWeekCount = (item.sessions || []).filter(s => {
+        const d = new Date(s.date + 'T12:00:00');
+        return d >= weekStart && d <= weekEnd;
+      }).length;
+
+      if (alreadyLogged && thisWeekCount >= target) {
+        // Target met and already logged today — show undo option
         const card = el.closest('.habit-card');
         if (card && !card.querySelector('.habit-undo-tooltip')) {
           const tip = document.createElement('div');
           tip.className = 'habit-undo-tooltip';
-          tip.innerHTML = 'Already logged. <span class="habit-undo-link">Undo?</span>';
+          tip.innerHTML = 'Done this week! <span class="habit-undo-link">Undo last?</span>';
           card.appendChild(tip);
           const undoLink = tip.querySelector('.habit-undo-link');
           undoLink.addEventListener('click', async (ev) => {
             ev.stopPropagation();
-            item.sessions = (item.sessions || []).filter(s => s.date !== todayStr);
+            // Remove most recent session
+            if (item.sessions && item.sessions.length > 0) {
+              item.sessions.pop();
+            }
             renderRecurringHabits(tasks);
             await db.updateHabit(habitId, { sessions: item.sessions });
           });
@@ -2202,6 +2216,7 @@ function renderRecurringHabits(tasks) {
         }
         return;
       }
+      // Allow logging — even if logged today, if target not met yet
       if (!item.sessions) item.sessions = [];
       item.sessions.push({ date: todayStr, note: '' });
       renderRecurringHabits(tasks);
