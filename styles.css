@@ -2709,40 +2709,47 @@ footer {
   margin-bottom: 8px;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
-  position: relative;
 }
 .note-card:hover { border-color: #d0cdc8; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.note-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.note-card-title { font-weight: 600; font-size: 0.9rem; color: #2d2d2d; flex: 1; }
-.note-card-date { font-size: 0.72rem; color: #bbb; flex-shrink: 0; }
+.note-card-pinned { border-left: 3px solid #f59e0b; }
+.note-card-body { pointer-events: none; }
+.note-card-title { font-weight: 600; font-size: 0.9rem; color: #2d2d2d; margin-bottom: 3px; }
 .note-card-preview { font-size: 0.82rem; color: #888; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.note-card-actions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.note-card:hover .note-card-actions { opacity: 1; }
-.note-pin-btn, .note-delete-btn {
-  background: none;
-  border: none;
-  font-size: 0.85rem;
-  color: #ccc;
-  cursor: pointer;
-  padding: 4px;
+.note-card-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.note-card-date { font-size: 0.7rem; color: #bbb; }
+.note-pinned-badge, .note-type-badge {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
   border-radius: 4px;
-  min-height: 32px;
-  min-width: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  font-weight: 600;
 }
-.note-pin-btn:hover { color: #f59e0b; }
-.note-pin-btn.pinned { color: #f59e0b; }
-.note-delete-btn:hover { color: #e74c3c; }
+.note-pinned-badge { background: #fef3c7; color: #b45309; }
+.note-type-badge { background: #eff6ff; color: #3b82f6; }
+.note-card-actions {
+  display: none;
+  gap: 4px;
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px solid #f5f4f1;
+}
+.note-card:hover .note-card-actions { display: flex; }
+.note-pin-btn, .note-archive-btn, .note-delete-btn {
+  background: #f9f8f6;
+  border: 1px solid #e8e5e0;
+  font-size: 0.72rem;
+  font-family: inherit;
+  color: #888;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 6px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.note-pin-btn:hover { color: #b45309; border-color: #f59e0b; }
+.note-pin-btn.pinned { color: #b45309; border-color: #f59e0b; background: #fef3c7; }
+.note-archive-btn:hover { color: #7db87d; border-color: #7db87d; }
+.note-delete-btn:hover { color: #e74c3c; border-color: #e74c3c; }
 
 /* Note editor */
 .note-editor { margin-top: 8px; }
@@ -3167,11 +3174,11 @@ footer {
     font-size: 1.3rem;
     padding: 8px;
   }
-  .note-card-actions { opacity: 1; }
-  .note-pin-btn, .note-delete-btn {
-    min-height: 44px;
-    min-width: 44px;
-    font-size: 1.1rem;
+  .note-card-actions { display: flex !important; }
+  .note-pin-btn, .note-archive-btn, .note-delete-btn {
+    min-height: 40px;
+    padding: 8px 14px;
+    font-size: 0.78rem;
   }
 
   /* ─── Week toggle ─── */

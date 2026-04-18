@@ -275,22 +275,26 @@ function renderNoteCard(note) {
     preview = (note.content || '').slice(0, 100).replace(/\n/g, ' ');
   }
 
-  const formatIcon = format === 'checklist' ? '<span class="note-card-icon">&#9745;</span>' : '';
   const tagsHtml = (note.tags || []).length > 0
     ? `<div class="note-card-tags">${note.tags.map(t => `<span class="note-card-tag">${escapeHtml(t)}</span>`).join('')}</div>`
     : '';
 
-  return `<div class="note-card" data-id="${note.id}">
-    <div class="note-card-header">
-      ${formatIcon}<span class="note-card-title">${escapeHtml(title)}</span>
-      <span class="note-card-date">${dateStr}</span>
+  const pinnedBadge = note.pinned ? '<span class="note-pinned-badge">pinned</span>' : '';
+  const checklistBadge = format === 'checklist' ? '<span class="note-type-badge">checklist</span>' : '';
+
+  return `<div class="note-card${note.pinned ? ' note-card-pinned' : ''}" data-id="${note.id}">
+    <div class="note-card-body">
+      <div class="note-card-title">${escapeHtml(title)}</div>
+      <div class="note-card-preview">${escapeHtml(preview) || 'Empty note'}</div>
+      <div class="note-card-meta">
+        <span class="note-card-date">${dateStr}</span>
+        ${pinnedBadge}${checklistBadge}${tagsHtml}
+      </div>
     </div>
-    <div class="note-card-preview">${escapeHtml(preview) || 'Empty note'}</div>
-    ${tagsHtml}
     <div class="note-card-actions">
-      ${!archived ? `<button class="note-pin-btn${note.pinned ? ' pinned' : ''}" data-id="${note.id}" title="${note.pinned ? 'Unpin' : 'Pin'}">&#128204;</button>` : ''}
-      <button class="note-archive-btn" data-id="${note.id}" title="${archived ? 'Restore' : 'Archive'}">${archived ? '&#8634;' : '&#128230;'}</button>
-      <button class="note-delete-btn" data-id="${note.id}" title="Delete">&times;</button>
+      ${!archived ? `<button class="note-pin-btn${note.pinned ? ' pinned' : ''}" data-id="${note.id}" title="${note.pinned ? 'Unpin' : 'Pin'}">Pin</button>` : ''}
+      <button class="note-archive-btn" data-id="${note.id}" title="${archived ? 'Restore' : 'Archive'}">${archived ? 'Restore' : 'Archive'}</button>
+      <button class="note-delete-btn" data-id="${note.id}" title="Delete">Delete</button>
     </div>
   </div>`;
 }
