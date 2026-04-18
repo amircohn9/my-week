@@ -3087,9 +3087,17 @@ footer {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* ─── Form inputs — prevent iOS zoom ─── */
-  .checkin-input, .checkin-textarea, .family-add-input {
-    font-size: 16px;
+  /* ─── Form inputs — prevent iOS zoom (ALL inputs) ─── */
+  .checkin-input, .checkin-textarea, .family-add-input,
+  .add-task-input, .add-subtask-input, .checkin-activity-text,
+  .notes-quick-input, .note-editor-title, .note-editor-tags,
+  .note-editor-content, .cl-text,
+  .job-app-form input, .job-app-form select,
+  .contacts-search, .contact-form input,
+  .obj-add-input, .obj-new-project-name, .obj-new-project-cat,
+  .obj-project-picker, .task-edit-input, .habit-edit-input,
+  .family-inline-edit {
+    font-size: 16px !important;
   }
 
   /* ─── Tap targets — 44px minimum on all interactive elements ─── */
@@ -3097,25 +3105,30 @@ footer {
   .upcoming-star, .upcoming-hide {
     min-height: 44px;
     min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* Checkboxes bigger on mobile */
   input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
   }
 
-  /* Action buttons — generous tap area */
+  /* Action buttons — 44px tap area */
   .obj-today-btn, .obj-defer-btn, .obj-unstar-btn, .obj-delete-btn,
+  .obj-move-btn,
   .today-priority-btn, .today-to-week-btn, .today-remove-btn,
   .family-item-delete-btn, .family-item-move-btn, .family-item-date-btn,
   .family-comment-toggle, .move-btn, .delete-task-btn, .delete-sub-btn,
   .this-week-toggle, .today-toggle, .proj-subtask-delete, .proj-subtask-move,
   .habit-hide-btn, .habit-delete-btn, .trip-delete-btn, .trip-cl-delete,
-  .contact-delete-btn, .proj-close-btn {
-    min-height: 36px;
-    min-width: 36px;
+  .contact-delete-btn, .proj-close-btn,
+  .weekend-like-btn, .weekend-dismiss-btn {
+    min-height: 44px;
+    min-width: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -3127,12 +3140,14 @@ footer {
 
   /* Drag handles bigger */
   .drag-handle, .obj-drag-handle, .today-drag-handle {
-    font-size: 1.1rem;
-    padding: 4px;
-    min-width: 28px;
-    min-height: 36px;
+    font-size: 1.2rem;
+    padding: 6px 4px;
+    min-width: 32px;
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
 
   /* Star toggles in project cards */
@@ -3140,9 +3155,9 @@ footer {
     font-size: 1.2rem;
   }
 
-  /* Family item actions — spread out more, bigger */
+  /* Family item actions — spread out, bigger */
   .family-item-actions {
-    gap: 4px;
+    gap: 8px;
   }
   .family-item-date-btn,
   .family-item-move-btn {
@@ -3158,13 +3173,13 @@ footer {
     padding: 6px;
   }
   .family-item-check {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     font-size: 1rem;
   }
   .family-owner {
     font-size: 0.85rem;
-    padding: 4px 8px;
+    padding: 6px 10px;
   }
   .upcoming-star {
     font-size: 1.2rem;
@@ -3174,12 +3189,39 @@ footer {
     font-size: 1.3rem;
     padding: 8px;
   }
+
+  /* Notes — cards and editor */
   .note-card-actions { display: flex !important; }
   .note-pin-btn, .note-archive-btn, .note-delete-btn {
-    min-height: 40px;
+    min-height: 44px;
     padding: 8px 14px;
-    font-size: 0.78rem;
+    font-size: 0.82rem;
   }
+  .notes-tag-chip {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    min-height: 36px;
+  }
+  .note-editor-content { min-height: 200px; }
+  .notes-quick-btn { min-height: 44px; }
+
+  /* ─── Text readability — minimum 12px on mobile ─── */
+  .obj-project-name { font-size: 0.78rem; }
+  .upcoming-row { font-size: 0.85rem; }
+  .upcoming-row-date { font-size: 0.82rem; }
+  .completed-day-header { font-size: 0.85rem; }
+  .weekend-card-location { font-size: 0.85rem; }
+  .weekend-card-meta { font-size: 0.82rem; }
+
+  /* ─── Momentum dots — wrap on small screens ─── */
+  .momentum-dots { flex-wrap: wrap; gap: 8px; }
+
+  /* ─── Weight stats — stack on mobile ─── */
+  .weight-stats-row { flex-wrap: wrap; gap: 12px; }
+
+  /* ─── Footer breathing room above tab bar ─── */
+  footer { margin-bottom: 16px; }
+  .card:last-child { margin-bottom: 12px; }
 
   /* ─── Week toggle ─── */
   .week-toggle { flex-wrap: wrap; }
@@ -3201,11 +3243,23 @@ footer {
 
   /* ─── Contacts mobile ─── */
   .contact-form { flex-direction: column; }
-  .contact-form input { flex: 1 1 100%; font-size: 16px; }
-  .contacts-search { font-size: 16px; }
+  .contact-form input { flex: 1 1 100%; }
   .contact-card-header { flex-wrap: wrap; }
-  .family-completed-meta { font-size: 0.6rem; }
+  .contact-delete-btn { padding: 8px 12px; }
+  .family-completed-meta { font-size: 0.7rem; }
   .family-completed-item { flex-wrap: wrap; gap: 4px; }
+
+  /* ─── Jobs mobile ─── */
+  .job-app-form { flex-direction: column; }
+  .job-app-form input, .job-app-form select { width: 100%; }
+  .job-col-role { font-size: 0.82rem; }
+  .job-app-row { flex-wrap: wrap; gap: 6px; }
+
+  /* ─── Weekend card buttons ─── */
+  .weekend-like-btn, .weekend-dismiss-btn {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
 
   /* ─── Backlog task list → single column ─── */
   #taskList { grid-template-columns: 1fr; }
