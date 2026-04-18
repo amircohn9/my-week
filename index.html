@@ -343,8 +343,18 @@
       </div>
       <button class="notes-new-btn" id="notesNewBtn">+ New Note</button>
     </div>
+    <div class="notes-quick-capture">
+      <input type="text" class="notes-quick-input" id="notesQuickInput" placeholder="Quick note... press Enter">
+      <button class="notes-quick-btn" id="notesQuickBtn">Add</button>
+    </div>
+    <div class="notes-tag-bar" id="notesTagBar"></div>
+    <div class="notes-view-toggle" id="notesViewToggle">
+      <button class="notes-view-btn active" data-view="active">Notes</button>
+      <button class="notes-view-btn" data-view="archived">Archived</button>
+    </div>
     <div id="notesList" class="notes-list"></div>
-    <p class="empty-state" id="notesEmpty" style="display:none;">No notes yet. Create one to get started.</p>
+    <div id="notesUndoToast" class="notes-undo-toast" style="display:none;"></div>
+    <p class="empty-state" id="notesEmpty" style="display:none;">No notes yet. Type above to capture one.</p>
   </div>
   </div><!-- end tabNotes -->
 

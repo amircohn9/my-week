@@ -573,7 +573,10 @@ const db = {
       .order('pinned', { ascending: false })
       .order('updated_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    return (data || []).map(n => ({
+      ...n,
+      tags: n.tags || [],
+    }));
   },
 
   async insertNote(note) {
@@ -582,9 +585,11 @@ const db = {
       title: note.title || '',
       content: note.content || '',
       pinned: note.pinned || false,
+      tags: note.tags || [],
+      archived_at: note.archived_at || null,
     }).select().single();
     if (error) throw error;
-    return data;
+    return { ...data, tags: data.tags || [] };
   },
 
   async updateNote(id, fields) {
