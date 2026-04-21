@@ -97,8 +97,8 @@ const db = {
           description: t.description || '',
           thisWeek: t.this_week,
           today: t.today,
-          subtasks: (t.subtasks || []).map(s => ({
-            text: s.text,
+          subtasks: (t.subtasks || []).filter(s => s != null).map(s => ({
+            text: s.text || '',
             done: s.done,
             thisWeek: s.thisWeek || false,
             today: s.today || false,
@@ -113,8 +113,8 @@ const db = {
           description: t.description || '',
           thisWeek: t.this_week,
           today: t.today,
-          subtasks: (t.subtasks || []).map(s => ({
-            text: s.text,
+          subtasks: (t.subtasks || []).filter(s => s != null).map(s => ({
+            text: s.text || '',
             done: s.done,
             thisWeek: s.thisWeek || false,
             today: s.today || false,
