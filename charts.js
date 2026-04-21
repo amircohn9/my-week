@@ -449,6 +449,8 @@ function renderWeeklyObjectives(tasks) {
 
   // Init Sortable on weekly objectives
   if (typeof Sortable !== 'undefined') {
+    const objCard = list.closest('.card');
+    const focusCard = document.querySelector('.daily-focus');
     new Sortable(list, {
       animation: 150,
       handle: '.obj-drag-handle',
@@ -457,11 +459,16 @@ function renderWeeklyObjectives(tasks) {
       preventOnFilter: false,
       forceFallback: true,
       fallbackClass: 'sortable-fallback',
+      fallbackOnBody: false,
       onStart: function () {
-        // Lock the list height so the grid row doesn't collapse during drag
+        // Lock BOTH cards in the grid row so nothing shifts during drag
+        if (objCard) { objCard.style.height = objCard.offsetHeight + 'px'; objCard.style.overflow = 'hidden'; }
+        if (focusCard) { focusCard.style.height = focusCard.offsetHeight + 'px'; }
         list.style.minHeight = list.offsetHeight + 'px';
       },
       onEnd: function () {
+        if (objCard) { objCard.style.height = ''; objCard.style.overflow = ''; }
+        if (focusCard) { focusCard.style.height = ''; }
         list.style.minHeight = '';
         const items = list.querySelectorAll('li[data-obj-key]');
         const newOrder = Array.from(items).map(li => li.dataset.objKey).filter(Boolean);

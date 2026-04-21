@@ -662,6 +662,7 @@ header h1 {
     "backlog backlog"
     "daybyday daybyday";
   gap: 16px;
+  align-items: start;
 }
 
 /* ─── Cards ─── */
