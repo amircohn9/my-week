@@ -41,58 +41,71 @@ function weeklyCleanup(tasks) {
 }
 
 async function initApp() {
-  const session = await db.getSession();
-  if (!session) {
-    window.addEventListener('authenticated', initApp, { once: true });
-    return;
+  try {
+    const session = await db.getSession();
+    if (!session) {
+      window.addEventListener('authenticated', initApp, { once: true });
+      return;
+    }
+
+    appData = await db.loadAll();
+    appData._completedPrompts = await db.getCompletedPrompts();
+
+    // Ensure an A&A project exists
+    const hasAA = Object.values(appData.tasks).some(cat =>
+      (cat.now || []).concat(cat.backlog || []).some(t => t.text === 'A&A' || t.text === 'Amir & Arielle')
+    );
+    if (!hasAA) {
+      try {
+        const newTask = await db.insertTask({ text: 'A&A', category: 'Family', list: 'now', subtasks: [] });
+        if (!appData.tasks.Family) appData.tasks.Family = { description: '', now: [], backlog: [], recurring: [] };
+        appData.tasks.Family.now.push({ id: newTask.id, text: 'A&A', done: false, deadline: null, link: null, thisWeek: false, today: false, subtasks: [] });
+      } catch (e) { console.warn('Could not create A&A project:', e); }
+    }
+
+    // Ensure an "Amir General" project exists (default bucket for quick tasks)
+    const hasAmirGeneral = Object.values(appData.tasks).some(cat =>
+      (cat.now || []).concat(cat.backlog || []).some(t => t.text === 'Amir General')
+    );
+    if (!hasAmirGeneral) {
+      try {
+        const newTask = await db.insertTask({ text: 'Amir General', category: 'Career', list: 'now', subtasks: [] });
+        if (!appData.tasks.Career) appData.tasks.Career = { description: '', now: [], backlog: [], recurring: [] };
+        appData.tasks.Career.now.push({ id: newTask.id, text: 'Amir General', done: false, deadline: null, link: null, thisWeek: false, today: false, subtasks: [] });
+      } catch (e) { console.warn('Could not create Amir General project:', e); }
+    }
+
+    // Weekly cleanup: unstar done objectives from previous weeks
+    weeklyCleanup(appData.tasks);
+
+    // Render all sections
+    renderDateRange();
+    renderMomentumDots(appData.checkins);
+    renderEncouragement(appData);
+    renderLastUpdated(appData);
+    renderKPIStrip(appData);
+    renderDailyFocus(appData);
+    renderWeeklyObjectives(appData.tasks);
+    renderWinsAndTime(appData, 'today');
+    renderWeightCard(appData.diet);
+    renderProjectsAgenda(appData.tasks);
+    renderRecurringHabits(appData.tasks);
+    renderBacklog(appData.tasks);
+    renderDayByDay(appData.checkins, appData.diet ? appData.diet.entries : []);
+    renderIdentityVotes(appData);
+    setupToggle();
+    setupWeekToggle();
+    setupCollapsibleSections();
+    setupTabRail();
+    setupCheckinForm();
+  } catch (err) {
+    console.error('initApp failed:', err);
+    // Show error on page so user can report it
+    const el = document.getElementById('encouragement');
+    if (el) el.textContent = 'Error loading dashboard: ' + err.message + '. Try refreshing or clearing your browser cache.';
+    // Still set up tab rail so navigation works
+    try { setupTabRail(); } catch (_) {}
   }
-
-  appData = await db.loadAll();
-  appData._completedPrompts = await db.getCompletedPrompts();
-
-  // Ensure an A&A project exists
-  const hasAA = Object.values(appData.tasks).some(cat =>
-    (cat.now || []).concat(cat.backlog || []).some(t => t.text === 'A&A' || t.text === 'Amir & Arielle')
-  );
-  if (!hasAA) {
-    const newTask = await db.insertTask({ text: 'A&A', category: 'Family', list: 'now', subtasks: [] });
-    if (!appData.tasks.Family) appData.tasks.Family = { description: '', now: [], backlog: [], recurring: [] };
-    appData.tasks.Family.now.push({ id: newTask.id, text: 'A&A', done: false, deadline: null, link: null, thisWeek: false, today: false, subtasks: [] });
-  }
-
-  // Ensure an "Amir General" project exists (default bucket for quick tasks)
-  const hasAmirGeneral = Object.values(appData.tasks).some(cat =>
-    (cat.now || []).concat(cat.backlog || []).some(t => t.text === 'Amir General')
-  );
-  if (!hasAmirGeneral) {
-    const newTask = await db.insertTask({ text: 'Amir General', category: 'Career', list: 'now', subtasks: [] });
-    if (!appData.tasks.Career) appData.tasks.Career = { description: '', now: [], backlog: [], recurring: [] };
-    appData.tasks.Career.now.push({ id: newTask.id, text: 'Amir General', done: false, deadline: null, link: null, thisWeek: false, today: false, subtasks: [] });
-  }
-
-  // Weekly cleanup: unstar done objectives from previous weeks
-  weeklyCleanup(appData.tasks);
-
-  // Render all sections
-  renderDateRange();
-  renderMomentumDots(appData.checkins);
-  renderEncouragement(appData);
-  renderLastUpdated(appData);
-  renderKPIStrip(appData);
-  renderDailyFocus(appData);
-  renderWeeklyObjectives(appData.tasks);
-  renderWinsAndTime(appData, 'today');
-  renderWeightCard(appData.diet);
-  renderProjectsAgenda(appData.tasks);
-  renderRecurringHabits(appData.tasks);
-  renderBacklog(appData.tasks);
-  renderDayByDay(appData.checkins, appData.diet ? appData.diet.entries : []);
-  renderIdentityVotes(appData);
-  setupToggle();
-  setupWeekToggle();
-  setupCollapsibleSections();
-  setupTabRail();
-  setupCheckinForm();
 }
 
 // --- Weekend Week Toggle ---

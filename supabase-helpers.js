@@ -54,6 +54,13 @@ const db = {
       supabaseClient.from('job_applications').select('*').order('sort_order'),
     ]);
 
+    // Log any Supabase errors to help diagnose issues
+    const results = [settingsRes, tasksRes, habitsRes, checkinsRes, completedRes, dietRes, weightsRes, calendarRes, familyItemsRes, familyEventsRes, promptsRes, jobAppsRes];
+    const names = ['settings', 'tasks', 'habits', 'checkins', 'completed', 'diet', 'weights', 'calendar', 'familyItems', 'familyEvents', 'prompts', 'jobApps'];
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].error) console.error(`Supabase error loading ${names[i]}:`, results[i].error);
+    }
+
     return this.reshapeForRenderers(
       settingsRes.data,
       tasksRes.data || [],
