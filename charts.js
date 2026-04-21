@@ -455,7 +455,14 @@ function renderWeeklyObjectives(tasks) {
       ghostClass: 'sortable-ghost',
       draggable: 'li[data-obj-key]',
       preventOnFilter: false,
+      forceFallback: true,
+      fallbackClass: 'sortable-fallback',
+      onStart: function () {
+        // Lock the list height so the grid row doesn't collapse during drag
+        list.style.minHeight = list.offsetHeight + 'px';
+      },
       onEnd: function () {
+        list.style.minHeight = '';
         const items = list.querySelectorAll('li[data-obj-key]');
         const newOrder = Array.from(items).map(li => li.dataset.objKey).filter(Boolean);
         localStorage.setItem('obj-week-order', JSON.stringify(newOrder));

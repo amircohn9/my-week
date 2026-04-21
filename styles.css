@@ -3561,6 +3561,12 @@ footer {
   background: #e8f5e9;
   border-radius: 6px;
 }
+.sortable-fallback {
+  opacity: 0.9 !important;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-radius: 6px;
+}
 .task-item-group { /* wrapper for Sortable — default block display */ }
 
 /* ─── Susie section ─── */
