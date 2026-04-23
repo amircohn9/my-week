@@ -124,6 +124,7 @@ const db = {
           id: h.id,
           text: h.text,
           recurring: h.recurring,
+          target: h.target || null,
           nextSession: h.next_session,
           hidden: h.hidden,
           sessions: h.sessions || [],
@@ -301,6 +302,7 @@ const db = {
     if ('next_session' in fields) mapped.next_session = fields.next_session;
     if ('text' in fields) mapped.text = fields.text;
     if ('recurring' in fields) mapped.recurring = fields.recurring;
+    if ('target' in fields) mapped.target = fields.target;
     if ('default_hours' in fields) mapped.default_hours = fields.default_hours;
     const { error } = await supabaseClient.from('habits').update(mapped).eq('id', id);
     if (error) throw error;
@@ -312,6 +314,7 @@ const db = {
       text: habit.text,
       category: habit.category,
       recurring: habit.recurring || 'weekly',
+      target: habit.target || 1,
       hidden: false,
       sessions: [],
       sort_order: habit.sort_order || 0,

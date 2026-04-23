@@ -2077,9 +2077,11 @@ function renderRecurringHabits(tasks) {
       if (item.recurring === 'ongoing') continue;
       if (item.hidden) continue;
 
-      let target = 1;
-      if (item.text.match(/2x/i)) target = 2;
-      else if (item.text.match(/3x/i)) target = 3;
+      let target = item.target || 1;
+      if (!item.target) {
+        if (item.text.match(/2x/i)) target = 2;
+        else if (item.text.match(/3x/i)) target = 3;
+      }
 
       let thisWeekCount = 0;
       if (item.sessions) {
@@ -2170,7 +2172,17 @@ function renderRecurringHabits(tasks) {
       </select>
       <select class="habit-add-freq" id="habitAddFreq">
         <option value="weekly">Weekly</option>
+        <option value="weekdays">Weekdays</option>
         <option value="daily">Daily</option>
+      </select>
+      <select class="habit-add-target" id="habitAddTarget">
+        <option value="1">1x/week</option>
+        <option value="2">2x/week</option>
+        <option value="3">3x/week</option>
+        <option value="4">4x/week</option>
+        <option value="5">5x/week</option>
+        <option value="6">6x/week</option>
+        <option value="7">7x/week</option>
       </select>
       <button class="habit-add-submit" id="habitAddSubmit">Add</button>
       <button class="habit-add-cancel" id="habitAddCancel">&times;</button>
@@ -2199,9 +2211,11 @@ function renderRecurringHabits(tasks) {
       const alreadyLogged = (item.sessions || []).some(s => s.date === todayStr);
 
       // Figure out this week's count and target
-      let target = 1;
-      if (item.text.match(/2x/i)) target = 2;
-      else if (item.text.match(/3x/i)) target = 3;
+      let target = item.target || 1;
+      if (!item.target) {
+        if (item.text.match(/2x/i)) target = 2;
+        else if (item.text.match(/3x/i)) target = 3;
+      }
       const { weekStart, weekEnd } = getWeekRange();
       const thisWeekCount = (item.sessions || []).filter(s => {
         const d = new Date(s.date + 'T12:00:00');
@@ -2380,8 +2394,24 @@ function renderRecurringHabits(tasks) {
   const addInput = container.querySelector('#habitAddInput');
   const addCat = container.querySelector('#habitAddCat');
   const addFreq = container.querySelector('#habitAddFreq');
+  const addTarget = container.querySelector('#habitAddTarget');
   const addSubmit = container.querySelector('#habitAddSubmit');
   const addCancel = container.querySelector('#habitAddCancel');
+
+  // Show/hide target selector based on frequency
+  if (addFreq) {
+    const updateTargetVisibility = () => {
+      if (addFreq.value === 'daily') {
+        addTarget.style.display = 'none';
+      } else if (addFreq.value === 'weekdays') {
+        addTarget.style.display = 'none';
+      } else {
+        addTarget.style.display = '';
+      }
+    };
+    addFreq.addEventListener('change', updateTargetVisibility);
+    updateTargetVisibility();
+  }
 
   if (addBtn) {
     addBtn.addEventListener('click', () => {
@@ -2402,15 +2432,18 @@ function renderRecurringHabits(tasks) {
     const text = addInput.value.trim();
     if (!text) return;
     const category = addCat.value;
-    const recurring = addFreq.value;
+    const freq = addFreq.value;
+    const recurring = freq === 'weekdays' ? 'weekdays' : freq;
+    const target = freq === 'daily' ? 7 : freq === 'weekdays' ? 5 : parseInt(addTarget.value) || 1;
     try {
-      const newHabit = await db.insertHabit({ text, category, recurring });
+      const newHabit = await db.insertHabit({ text, category, recurring, target });
       if (!tasks[category]) tasks[category] = { now: [], backlog: [], recurring: [] };
       if (!tasks[category].recurring) tasks[category].recurring = [];
       tasks[category].recurring.push({
         id: newHabit.id,
         text: newHabit.text,
         recurring: newHabit.recurring,
+        target: newHabit.target,
         nextSession: newHabit.next_session,
         hidden: false,
         sessions: [],

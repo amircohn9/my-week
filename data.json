@@ -873,8 +873,9 @@
       "description": "Get ready for my next role.",
       "recurring": [
         {
-          "text": "Post 2 LinkedIn posts a week",
+          "text": "Post LinkedIn post",
           "recurring": "weekly",
+          "target": 1,
           "sessions": [
             {
               "date": "2026-03-17",
@@ -1206,7 +1207,7 @@
     "Theme: Application mode \u2014 ramp up applications, start GEN HQ AI course",
     "GEN HQ AI course",
     "Apply to 5 jobs",
-    "Write 2 LinkedIn posts",
+    "Write 1 LinkedIn post",
     "Photo all the shoes for Spring Clean Up"
   ]
 }
