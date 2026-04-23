@@ -2083,12 +2083,22 @@ function renderRecurringHabits(tasks) {
         else if (item.text.match(/3x/i)) target = 3;
       }
 
-      let thisWeekCount = 0;
+      let periodCount = 0;
       if (item.sessions) {
-        thisWeekCount = item.sessions.filter(s => {
-          const d = new Date(s.date + 'T12:00:00');
-          return d >= weekStart && d <= weekEnd;
-        }).length;
+        if (item.recurring === 'monthly') {
+          const now = new Date();
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+          periodCount = item.sessions.filter(s => {
+            const d = new Date(s.date + 'T12:00:00');
+            return d >= monthStart && d <= monthEnd;
+          }).length;
+        } else {
+          periodCount = item.sessions.filter(s => {
+            const d = new Date(s.date + 'T12:00:00');
+            return d >= weekStart && d <= weekEnd;
+          }).length;
+        }
       }
 
       // Check if already logged today
@@ -2099,9 +2109,10 @@ function renderRecurringHabits(tasks) {
         id: item.id,
         text: item.text,
         category: cat,
+        recurring: item.recurring,
         target,
-        count: thisWeekCount,
-        complete: thisWeekCount >= target,
+        count: periodCount,
+        complete: periodCount >= target,
         loggedToday,
         sessions: item.sessions || [],
         defaultHours: item.defaultHours || null,
@@ -2174,15 +2185,16 @@ function renderRecurringHabits(tasks) {
         <option value="weekly">Weekly</option>
         <option value="weekdays">Weekdays</option>
         <option value="daily">Daily</option>
+        <option value="monthly">Monthly</option>
       </select>
       <select class="habit-add-target" id="habitAddTarget">
-        <option value="1">1x/week</option>
-        <option value="2">2x/week</option>
-        <option value="3">3x/week</option>
-        <option value="4">4x/week</option>
-        <option value="5">5x/week</option>
-        <option value="6">6x/week</option>
-        <option value="7">7x/week</option>
+        <option value="1">1x</option>
+        <option value="2">2x</option>
+        <option value="3">3x</option>
+        <option value="4">4x</option>
+        <option value="5">5x</option>
+        <option value="6">6x</option>
+        <option value="7">7x</option>
       </select>
       <button class="habit-add-submit" id="habitAddSubmit">Add</button>
       <button class="habit-add-cancel" id="habitAddCancel">&times;</button>
@@ -2210,25 +2222,37 @@ function renderRecurringHabits(tasks) {
       const todayStr = getTodayStr();
       const alreadyLogged = (item.sessions || []).some(s => s.date === todayStr);
 
-      // Figure out this week's count and target
+      // Figure out this period's count and target
       let target = item.target || 1;
       if (!item.target) {
         if (item.text.match(/2x/i)) target = 2;
         else if (item.text.match(/3x/i)) target = 3;
       }
-      const { weekStart, weekEnd } = getWeekRange();
-      const thisWeekCount = (item.sessions || []).filter(s => {
-        const d = new Date(s.date + 'T12:00:00');
-        return d >= weekStart && d <= weekEnd;
-      }).length;
+      let periodCount;
+      if (item.recurring === 'monthly') {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        periodCount = (item.sessions || []).filter(s => {
+          const d = new Date(s.date + 'T12:00:00');
+          return d >= monthStart && d <= monthEnd;
+        }).length;
+      } else {
+        const { weekStart, weekEnd } = getWeekRange();
+        periodCount = (item.sessions || []).filter(s => {
+          const d = new Date(s.date + 'T12:00:00');
+          return d >= weekStart && d <= weekEnd;
+        }).length;
+      }
 
-      if (alreadyLogged && thisWeekCount >= target) {
-        // Target met and already logged today — show undo option
+      if (alreadyLogged && periodCount >= target) {
+        // Target met and already logged — show undo option
         const card = el.closest('.habit-card');
         if (card && !card.querySelector('.habit-undo-tooltip')) {
           const tip = document.createElement('div');
           tip.className = 'habit-undo-tooltip';
-          tip.innerHTML = 'Done this week! <span class="habit-undo-link">Undo last?</span>';
+          const periodLabel = item.recurring === 'monthly' ? 'this month' : 'this week';
+          tip.innerHTML = `Done ${periodLabel}! <span class="habit-undo-link">Undo last?</span>`;
           card.appendChild(tip);
           const undoLink = tip.querySelector('.habit-undo-link');
           undoLink.addEventListener('click', async (ev) => {
@@ -2401,9 +2425,7 @@ function renderRecurringHabits(tasks) {
   // Show/hide target selector based on frequency
   if (addFreq) {
     const updateTargetVisibility = () => {
-      if (addFreq.value === 'daily') {
-        addTarget.style.display = 'none';
-      } else if (addFreq.value === 'weekdays') {
+      if (addFreq.value === 'daily' || addFreq.value === 'weekdays') {
         addTarget.style.display = 'none';
       } else {
         addTarget.style.display = '';
