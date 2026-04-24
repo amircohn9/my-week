@@ -236,13 +236,16 @@ body {
   color: #fff;
 }
 .family-item.in-progress { opacity: 1; }
-.family-item.in-progress .family-item-text { font-style: italic; color: #666; }
+.family-item.in-progress .family-item-text { color: #555; }
+.family-item.in-progress .family-item-check,
 .family-item-check.in-progress {
-  background: #fff7ed;
+  background: #fef3c7;
   border-color: #f59e0b;
+  border-style: solid;
   color: #f59e0b;
-  font-size: 0.5rem;
+  font-size: 0.65rem;
 }
+.family-item.in-progress .family-item-check:hover,
 .family-item-check.in-progress:hover { border-color: #d97706; }
 .family-item-body {
   flex: 1;
