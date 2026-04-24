@@ -540,7 +540,7 @@ body {
 .ahead-done-btn:hover { border-color: #7db87d; color: #7db87d; }
 
 @media (max-width: 768px) {
-  .family-item-actions { opacity: 1; }
+  /* Actions shown via tap on mobile (JS toggles .actions-open) */
 }
 
 .container {
@@ -3177,31 +3177,61 @@ footer {
     font-size: 1.2rem;
   }
 
-  /* Family item actions — spread out, bigger */
-  .family-item-actions {
-    gap: 8px;
+  /* Family items — compact mobile layout */
+  .family-item {
+    gap: 6px;
+    padding: 10px 2px;
   }
-  .family-item-date-btn,
-  .family-item-move-btn {
-    font-size: 1.2rem;
-    padding: 8px;
-  }
-  .family-item-delete-btn {
-    font-size: 1.3rem;
-    padding: 6px 8px;
-  }
-  .family-comment-toggle {
-    font-size: 1rem;
-    padding: 6px;
+  .family-item .drag-handle {
+    display: none;
   }
   .family-item-check {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+  .family-item-body {
+    gap: 4px;
+  }
+  .family-item-text {
+    font-size: 0.85rem;
+    word-break: break-word;
   }
   .family-owner {
-    font-size: 0.85rem;
-    padding: 6px 10px;
+    font-size: 0.72rem;
+    padding: 3px 6px;
+  }
+  /* Hide action buttons by default on mobile — show on tap */
+  .family-item-actions {
+    gap: 2px;
+    opacity: 0 !important;
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    padding: 4px;
+    z-index: 5;
+  }
+  .family-item-wrapper {
+    position: relative;
+  }
+  .family-item.actions-open .family-item-actions {
+    opacity: 1 !important;
+  }
+  .family-item-date-btn,
+  .family-item-move-btn,
+  .family-item-delete-btn {
+    font-size: 1rem;
+    padding: 6px;
+    min-height: 36px;
+    min-width: 36px;
+  }
+  .family-comment-toggle {
+    font-size: 0.9rem;
+    padding: 6px;
   }
   .upcoming-star {
     font-size: 1.2rem;
@@ -3248,8 +3278,7 @@ footer {
   /* ─── Week toggle ─── */
   .week-toggle { flex-wrap: wrap; }
 
-  /* ─── Always show action buttons on mobile (no hover) ─── */
-  .family-item-actions { opacity: 1; }
+  /* Family item actions handled via tap in 767px block */
   .upcoming-row-actions { display: flex; }
   .obj-actions { opacity: 1; }
   .today-actions { opacity: 1; }

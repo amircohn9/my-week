@@ -735,12 +735,29 @@ function renderFamilyHub() {
     }
   });
 
-  // Close move menus on outside click
+  // Mobile: tap item body to toggle action buttons
+  if (window.innerWidth <= 767) {
+    document.querySelectorAll('.family-item-body').forEach(body => {
+      body.addEventListener('click', (e) => {
+        // Don't toggle if clicking an input (inline edit)
+        if (e.target.tagName === 'INPUT') return;
+        const item = body.closest('.family-item');
+        if (!item) return;
+        const wasOpen = item.classList.contains('actions-open');
+        // Close all others first
+        document.querySelectorAll('.family-item.actions-open').forEach(el => el.classList.remove('actions-open'));
+        if (!wasOpen) item.classList.add('actions-open');
+      });
+    });
+  }
+
+  // Close move menus & action panels on outside click
   if (!document._familyClickBound) {
     document._familyClickBound = true;
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.family-item-actions')) {
+      if (!e.target.closest('.family-item-actions') && !e.target.closest('.family-item-body')) {
         document.querySelectorAll('.family-move-menu').forEach(m => m.style.display = 'none');
+        document.querySelectorAll('.family-item.actions-open').forEach(el => el.classList.remove('actions-open'));
       }
     });
   }
