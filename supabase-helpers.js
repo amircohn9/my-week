@@ -244,6 +244,7 @@ const db = {
       addedBy: item.added_by,
       assignee: item.assignee,
       done: item.done,
+      inProgress: item.in_progress || false,
       doneDate: item.done_date,
       deadline: item.deadline,
       comment: item.comment,
@@ -476,6 +477,7 @@ const db = {
     if ('comment' in fields) mapped.comment = fields.comment;
     if ('section' in fields) mapped.section = fields.section;
     if ('sort_order' in fields) mapped.sort_order = fields.sort_order;
+    if ('inProgress' in fields) mapped.in_progress = fields.inProgress;
     const { error } = await supabaseClient.from('family_hub_items').update(mapped).eq('id', id);
     if (error) throw error;
   },

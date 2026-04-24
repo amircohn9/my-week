@@ -362,7 +362,8 @@ function renderFamilyHub() {
       const doneTime = new Date(i.doneDate + 'T12:00:00');
       return doneTime >= weekStart;
     });
-    const active = visible.filter(i => !i.done);
+    const open = visible.filter(i => !i.done && !i.inProgress);
+    const inProg = visible.filter(i => i.inProgress && !i.done);
     const done = visible.filter(i => i.done);
 
     if (visible.length === 0) {
@@ -374,7 +375,7 @@ function renderFamilyHub() {
     }
 
     const otherSections = FAMILY_SECTIONS.filter(s => s !== section);
-    const sorted = [...active, ...done];
+    const sorted = [...open, ...inProg, ...done];
     container.innerHTML = sorted.map(item => {
       const isDecision = section === 'decisions';
       const assignee = item.assignee || '';
@@ -393,9 +394,11 @@ function renderFamilyHub() {
         `<div class="family-item-comment" data-id="${item.id}">${escapeHtml(item.comment || '')}</div>`
       ) : '';
 
-      return `<div class="family-item-wrapper"><div class="family-item${item.done ? ' done' : ''}">
+      const statusClass = item.done ? ' done' : item.inProgress ? ' in-progress' : '';
+      const checkIcon = item.done ? '&#10003;' : item.inProgress ? '&#9679;' : '';
+      return `<div class="family-item-wrapper"><div class="family-item${statusClass}">
         <span class="drag-handle">\u2807</span>
-        <div class="family-item-check${isDecision ? ' decision' : ''}" data-id="${item.id}">${item.done ? '&#10003;' : ''}</div>
+        <div class="family-item-check${isDecision ? ' decision' : ''}${item.inProgress ? ' in-progress' : ''}" data-id="${item.id}">${checkIcon}</div>
         <div class="family-item-body">
           <span class="family-item-text" data-id="${item.id}">${escapeHtml(item.text)}</span>
           <span class="family-owner ${ownerClass}" data-id="${item.id}">${ownerLabel}</span>
@@ -417,18 +420,30 @@ function renderFamilyHub() {
 
     // --- Events ---
 
-    // Toggle done
+    // Cycle status: open → in-progress → done → open
     container.querySelectorAll('.family-item-check').forEach(el => {
       el.addEventListener('click', async () => {
         const id = el.dataset.id;
         const item = (hub[section] || []).find(i => i.id === id);
         if (!item) return;
-        // Optimistic UI update
-        item.done = !item.done;
-        item.doneDate = item.done ? getTodayStr() : null;
+        if (!item.done && !item.inProgress) {
+          // open → in-progress
+          item.inProgress = true;
+          item.done = false;
+          item.doneDate = null;
+        } else if (item.inProgress && !item.done) {
+          // in-progress → done
+          item.inProgress = false;
+          item.done = true;
+          item.doneDate = getTodayStr();
+        } else {
+          // done → open
+          item.done = false;
+          item.inProgress = false;
+          item.doneDate = null;
+        }
         renderFamilyHub();
-        // Write to Supabase
-        await db.updateFamilyItem(id, { done: item.done, doneDate: item.doneDate });
+        await db.updateFamilyItem(id, { done: item.done, inProgress: item.inProgress, doneDate: item.doneDate });
       });
     });
 
@@ -741,17 +756,26 @@ function renderFamilyHub() {
 
 // --- Drag-and-drop for family hub lists ---
 
+const _familySortables = {};
 function initFamilySortable() {
   if (typeof Sortable === 'undefined') return;
   for (const section of FAMILY_SECTIONS) {
     if (section === 'trips') continue;
+    // Destroy previous instance to avoid stacking
+    if (_familySortables[section]) {
+      _familySortables[section].destroy();
+      delete _familySortables[section];
+    }
     const capSection = section.charAt(0).toUpperCase() + section.slice(1);
     const container = document.getElementById('family' + capSection);
     if (!container || container.children.length === 0) continue;
-    new Sortable(container, {
+    _familySortables[section] = new Sortable(container, {
       animation: 150,
       handle: '.drag-handle',
       ghostClass: 'sortable-ghost',
+      forceFallback: true,
+      fallbackClass: 'sortable-fallback',
+      fallbackOnBody: true,
       onEnd: async function () {
         const hub = getFamilyHub();
         const items = hub[section] || [];
@@ -778,7 +802,13 @@ function renderFamilyTrips(hub) {
   const empty = document.getElementById('familyTripsEmpty');
   if (!container) return;
 
-  const items = hub.trips || [];
+  const items = (hub.trips || []).slice().sort((a, b) => {
+    // Sort by closest date first; items without dates go to the end
+    if (!a.deadline && !b.deadline) return 0;
+    if (!a.deadline) return 1;
+    if (!b.deadline) return -1;
+    return a.deadline.localeCompare(b.deadline);
+  });
 
   if (items.length === 0) {
     container.style.display = 'none';
@@ -972,12 +1002,19 @@ function renderFamilyTrips(hub) {
   });
 
   // Init Sortable on trip cards
+  if (_familySortables['trips']) {
+    _familySortables['trips'].destroy();
+    delete _familySortables['trips'];
+  }
   if (typeof Sortable !== 'undefined' && container.children.length > 0) {
-    new Sortable(container, {
+    _familySortables['trips'] = new Sortable(container, {
       animation: 150,
       handle: '.trip-card-header',
       ghostClass: 'sortable-ghost',
       draggable: '.trip-card',
+      forceFallback: true,
+      fallbackClass: 'sortable-fallback',
+      fallbackOnBody: true,
       onEnd: async function () {
         const cards = container.querySelectorAll('.trip-card');
         const newOrder = Array.from(cards).map(c => c.dataset.id);

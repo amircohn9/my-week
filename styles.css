@@ -235,6 +235,15 @@ body {
   border-color: #7db87d;
   color: #fff;
 }
+.family-item.in-progress { opacity: 1; }
+.family-item.in-progress .family-item-text { font-style: italic; color: #666; }
+.family-item-check.in-progress {
+  background: #fff7ed;
+  border-color: #f59e0b;
+  color: #f59e0b;
+  font-size: 0.5rem;
+}
+.family-item-check.in-progress:hover { border-color: #d97706; }
 .family-item-body {
   flex: 1;
   min-width: 0;
