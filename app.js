@@ -97,6 +97,7 @@ async function initApp() {
     setupWeekToggle();
     setupCollapsibleSections();
     setupTabRail();
+    setupQuickCapture();
     setupCheckinForm();
   } catch (err) {
     console.error('initApp failed:', err);
@@ -217,6 +218,206 @@ function setupTabRail() {
       if (btn.dataset.tab === 'notes') { initNotes(); }
     });
   });
+}
+
+// --- Quick Capture (brain dump) ---
+
+function setupQuickCapture() {
+  const fab = document.getElementById('captureBtn');
+  const overlay = document.getElementById('captureOverlay');
+  const modal = document.getElementById('captureModal');
+  const closeBtn = document.getElementById('captureClose');
+  const titleInput = document.getElementById('captureTitle');
+  const detailsToggle = document.getElementById('captureDetailsToggle');
+  const descInput = document.getElementById('captureDescription');
+  const chipsContainer = document.getElementById('captureProjectChips');
+  const moreBtn = document.getElementById('captureMoreProjects');
+  const projectSelect = document.getElementById('captureProjectSelect');
+  const deadlineInput = document.getElementById('captureDeadline');
+  const thisWeekCheck = document.getElementById('captureThisWeek');
+  const saveBtn = document.getElementById('captureSave');
+
+  if (!fab || !modal) return;
+
+  let selectedProjectId = '';
+
+  function openCapture() {
+    // Reset form
+    titleInput.value = '';
+    descInput.value = '';
+    descInput.style.display = 'none';
+    detailsToggle.style.display = 'block';
+    detailsToggle.textContent = '+ Add details';
+    deadlineInput.value = '';
+    thisWeekCheck.checked = false;
+    selectedProjectId = '';
+    projectSelect.style.display = 'none';
+    moreBtn.style.display = '';
+
+    // Build project chips — show 4 most recently used / important projects
+    buildProjectChips();
+
+    overlay.style.display = 'block';
+    modal.style.display = 'block';
+    setTimeout(() => titleInput.focus(), 100);
+  }
+
+  function closeCapture() {
+    overlay.style.display = 'none';
+    modal.style.display = 'none';
+  }
+
+  function buildProjectChips() {
+    if (!appData || !appData.tasks) return;
+    const projects = [];
+    for (const cat of CATEGORY_ORDER) {
+      const group = appData.tasks[cat];
+      if (!group) continue;
+      for (const item of (group.now || [])) {
+        if (item.done) continue;
+        // Count active subtasks as a proxy for "recently used"
+        const activeCount = (item.subtasks || []).filter(s => !s.done).length;
+        projects.push({ id: item.id, text: item.text, cat, activeCount });
+      }
+    }
+    // Sort: most active first, then alphabetical
+    projects.sort((a, b) => b.activeCount - a.activeCount || a.text.localeCompare(b.text));
+    const topProjects = projects.slice(0, 4);
+
+    chipsContainer.innerHTML = topProjects.map(p =>
+      `<button class="capture-chip" data-id="${p.id}" title="${p.cat}">${escapeHtml(p.text)}</button>`
+    ).join('');
+
+    // Wire up chip clicks
+    chipsContainer.querySelectorAll('.capture-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const wasActive = chip.classList.contains('active');
+        chipsContainer.querySelectorAll('.capture-chip').forEach(c => c.classList.remove('active'));
+        projectSelect.style.display = 'none';
+        moreBtn.style.display = '';
+        if (wasActive) {
+          selectedProjectId = '';
+        } else {
+          chip.classList.add('active');
+          selectedProjectId = chip.dataset.id;
+        }
+      });
+    });
+
+    // Build full project dropdown (hidden until "More..." is clicked)
+    let options = '<option value="">No project (inbox)</option>';
+    for (const p of projects) {
+      options += `<option value="${p.id}">${escapeHtml(p.text)} (${p.cat})</option>`;
+    }
+    options += '<option value="__new__">+ New project...</option>';
+    projectSelect.innerHTML = options;
+  }
+
+  fab.addEventListener('click', openCapture);
+  closeBtn.addEventListener('click', closeCapture);
+  overlay.addEventListener('click', closeCapture);
+
+  // Details toggle
+  detailsToggle.addEventListener('click', () => {
+    if (descInput.style.display === 'none') {
+      descInput.style.display = 'block';
+      detailsToggle.style.display = 'none';
+      descInput.focus();
+    }
+  });
+
+  // "More..." button shows full project select
+  moreBtn.addEventListener('click', () => {
+    chipsContainer.querySelectorAll('.capture-chip').forEach(c => c.classList.remove('active'));
+    selectedProjectId = '';
+    projectSelect.style.display = 'block';
+    moreBtn.style.display = 'none';
+  });
+
+  projectSelect.addEventListener('change', () => {
+    selectedProjectId = projectSelect.value;
+  });
+
+  // Save — Enter key on title also triggers save
+  titleInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && titleInput.value.trim()) {
+      e.preventDefault();
+      doSave();
+    }
+  });
+
+  saveBtn.addEventListener('click', doSave);
+
+  async function doSave() {
+    const text = titleInput.value.trim();
+    if (!text) { titleInput.focus(); return; }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
+    try {
+      const tasks = appData.tasks;
+      const description = descInput.value.trim();
+      const deadline = deadlineInput.value || null;
+      const thisWeek = thisWeekCheck.checked;
+      const projId = selectedProjectId;
+
+      if (projId && projId !== '__new__') {
+        // Add as subtask to selected project
+        const found = findTaskById(tasks, projId);
+        if (found) {
+          const newSub = { text, done: false, thisWeek, today: false };
+          found.task.subtasks.push(newSub);
+          await db.updateTask(projId, { subtasks: found.task.subtasks });
+          if (description) {
+            // Store description as part of the subtask text for now
+          }
+        }
+      } else {
+        // No project — add to "Amir General" as default inbox
+        let amirGeneral = null;
+        for (const cat of CATEGORY_ORDER) {
+          const group = tasks[cat];
+          if (!group) continue;
+          const found = (group.now || []).find(t => t.text === 'Amir General' && !t.done);
+          if (found) { amirGeneral = { task: found, category: cat }; break; }
+        }
+        if (amirGeneral) {
+          const newSub = { text, done: false, thisWeek, today: false };
+          amirGeneral.task.subtasks.push(newSub);
+          await db.updateTask(amirGeneral.task.id, { subtasks: amirGeneral.task.subtasks });
+        } else {
+          // Fallback: create standalone task in Career
+          const newRow = await db.insertTask({
+            text, category: 'Career', list: 'now',
+            thisWeek, today: false, subtasks: [],
+            description: description || '',
+            deadline,
+          });
+          if (!tasks['Career']) tasks['Career'] = { description: '', now: [], backlog: [], recurring: [] };
+          tasks['Career'].now.push({
+            id: newRow.id, text, done: false, deadline, link: null,
+            thisWeek, today: false, subtasks: [], description: description || '',
+          });
+        }
+      }
+
+      // Re-render affected views
+      renderWeeklyObjectives(appData.tasks);
+      renderTodayTasks(appData);
+      renderProjectsAgenda(appData.tasks);
+
+      closeCapture();
+    } catch (err) {
+      console.error('Quick capture save error:', err);
+      saveBtn.textContent = 'Error — try again';
+      setTimeout(() => { saveBtn.textContent = 'Save'; saveBtn.disabled = false; }, 2000);
+      return;
+    }
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save';
+  }
 }
 
 const FAMILY_SECTIONS = ['thisWeek', 'backlog', 'decisions', 'trips', 'susie', 'notes'];

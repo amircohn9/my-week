@@ -697,6 +697,29 @@ function renderWeeklyObjectives(tasks) {
     });
   });
 
+  // Mobile: tap to reveal/hide action buttons (like family hub)
+  list.querySelectorAll('li[data-obj-key]').forEach(li => {
+    li.addEventListener('click', (e) => {
+      // Don't toggle if clicking a button, checkbox, or input
+      if (e.target.closest('.obj-actions') || e.target.closest('.obj-checkbox') || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      const wasOpen = li.classList.contains('obj-actions-open');
+      // Close all open items first
+      list.querySelectorAll('li.obj-actions-open').forEach(el => el.classList.remove('obj-actions-open'));
+      document.querySelectorAll('.today-list li.obj-actions-open').forEach(el => el.classList.remove('obj-actions-open'));
+      if (!wasOpen) li.classList.add('obj-actions-open');
+    });
+  });
+
+  // Close objective actions on outside click (mobile)
+  if (!list._objClickBound) {
+    list._objClickBound = true;
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.weekly-objectives') && !e.target.closest('.today-list')) {
+        document.querySelectorAll('li.obj-actions-open').forEach(el => el.classList.remove('obj-actions-open'));
+      }
+    });
+  }
+
   // Bind add-objective input for current week
   _bindAddInput(list, tasks, 'week');
 }
@@ -1301,6 +1324,16 @@ function renderTodayTasks(data) {
 
   // Bind add-task input for today
   _bindAddInput(container, tasks, 'today');
+
+  // Mobile: tap to reveal/hide action buttons for today items
+  container.querySelectorAll('.today-list li[data-obj-key]').forEach(li => {
+    li.addEventListener('click', (e) => {
+      if (e.target.closest('.today-actions') || e.target.closest('.today-checkbox') || e.target.closest('.today-priority-btn') || e.target.tagName === 'INPUT') return;
+      const wasOpen = li.classList.contains('obj-actions-open');
+      document.querySelectorAll('li.obj-actions-open').forEach(el => el.classList.remove('obj-actions-open'));
+      if (!wasOpen) li.classList.add('obj-actions-open');
+    });
+  });
 
   // Init Sortable on today list
   const todayList = container.querySelector('.today-list');

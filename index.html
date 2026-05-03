@@ -359,6 +359,48 @@
   </div><!-- end tabNotes -->
 
   </div><!-- end tab-content -->
+
+  <!-- Quick Capture FAB -->
+  <button id="captureBtn" class="capture-fab" title="Quick capture">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+
+  <!-- Quick Capture Modal -->
+  <div id="captureOverlay" class="capture-overlay" style="display:none;"></div>
+  <div id="captureModal" class="capture-modal" style="display:none;">
+    <div class="capture-modal-header">
+      <span class="capture-modal-title">Quick Capture</span>
+      <button id="captureClose" class="capture-close">&times;</button>
+    </div>
+    <div class="capture-modal-body">
+      <input type="text" id="captureTitle" class="capture-title-input" placeholder="What's on your mind?" autofocus>
+      <div class="capture-details-toggle" id="captureDetailsToggle">+ Add details</div>
+      <textarea id="captureDescription" class="capture-description" placeholder="Add more context..." rows="3" style="display:none;"></textarea>
+      <div class="capture-options">
+        <div class="capture-option-row">
+          <span class="capture-option-label">Project</span>
+          <div id="captureProjectChips" class="capture-project-chips"></div>
+          <button class="capture-more-projects-btn" id="captureMoreProjects">More...</button>
+          <select id="captureProjectSelect" class="capture-project-select" style="display:none;"></select>
+        </div>
+        <div class="capture-option-row">
+          <span class="capture-option-label">Deadline</span>
+          <input type="date" id="captureDeadline" class="capture-deadline-input">
+        </div>
+        <div class="capture-option-row">
+          <span class="capture-option-label">This week?</span>
+          <label class="capture-toggle">
+            <input type="checkbox" id="captureThisWeek">
+            <span class="capture-toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="capture-modal-footer">
+      <button id="captureSave" class="capture-save-btn">Save</button>
+    </div>
+  </div>
+
   </div>
 
   <!-- Check-in Modal -->

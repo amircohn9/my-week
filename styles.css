@@ -3280,8 +3280,46 @@ footer {
 
   /* Family item actions handled via tap in 767px block */
   .upcoming-row-actions { display: flex; }
-  .obj-actions { opacity: 1; }
-  .today-actions { opacity: 1; }
+  /* Hide objective action buttons by default on mobile — show on tap */
+  .obj-actions {
+    opacity: 0 !important;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    padding: 4px;
+    z-index: 5;
+  }
+  .weekly-objectives li.obj-actions-open .obj-actions {
+    opacity: 1 !important;
+    pointer-events: auto;
+  }
+  .weekly-objectives li.obj-actions-open .obj-project-name { visibility: hidden; }
+  .weekly-objectives li { position: relative; }
+
+  /* Same for today actions */
+  .today-actions {
+    opacity: 0 !important;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    padding: 4px;
+    z-index: 5;
+  }
+  .today-list li.obj-actions-open .today-actions {
+    opacity: 1 !important;
+    pointer-events: auto;
+  }
+  .today-list li { position: relative; }
   .today-priority-btn { color: #ddd; }
   .obj-drag-handle, .today-drag-handle { opacity: 0.5; }
   .habit-hide-btn { opacity: 1; top: -2px; right: -2px; z-index: 1; }
@@ -4001,4 +4039,330 @@ footer {
   font-size: 0.8rem;
   cursor: pointer;
   color: #888;
+}
+
+/* ─── Quick Capture FAB ─── */
+.capture-fab {
+  display: none; /* shown only on mobile */
+  position: fixed;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0) + 12px);
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #2d2d2d;
+  color: #fff;
+  cursor: pointer;
+  z-index: 999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, background 0.15s;
+}
+.capture-fab:active { transform: scale(0.92); background: #444; }
+.capture-fab svg { display: block; }
+
+/* ─── Quick Capture Modal (bottom sheet) ─── */
+.capture-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 2000;
+  backdrop-filter: blur(2px);
+}
+.capture-modal {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  z-index: 2001;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+  animation: captureSlideUp 0.25s ease-out;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+@keyframes captureSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.capture-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.capture-modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+.capture-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #aaa;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+.capture-close:hover { color: #666; }
+.capture-modal-body {
+  padding: 16px 20px;
+}
+.capture-title-input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid #e5e5e5;
+  padding: 12px 0;
+  font-size: 1.1rem;
+  font-family: inherit;
+  color: #333;
+  outline: none;
+  background: transparent;
+}
+.capture-title-input:focus { border-bottom-color: #2d2d2d; }
+.capture-title-input::placeholder { color: #bbb; }
+.capture-details-toggle {
+  font-size: 0.82rem;
+  color: #999;
+  cursor: pointer;
+  padding: 8px 0;
+  user-select: none;
+}
+.capture-details-toggle:hover { color: #666; }
+.capture-description {
+  width: 100%;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #555;
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+  background: #fafaf8;
+}
+.capture-description:focus { border-color: #aaa; }
+.capture-options {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.capture-option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.capture-option-label {
+  font-size: 0.82rem;
+  color: #888;
+  min-width: 70px;
+  flex-shrink: 0;
+}
+.capture-project-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.capture-chip {
+  font-size: 0.78rem;
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid #e0ddd8;
+  background: #fafaf8;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s, border-color 0.1s;
+}
+.capture-chip:hover { background: #f0efec; }
+.capture-chip.active {
+  background: #2d2d2d;
+  color: #fff;
+  border-color: #2d2d2d;
+}
+.capture-more-projects-btn {
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border: 1px dashed #d0cdc8;
+  border-radius: 16px;
+  background: none;
+  color: #999;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.capture-more-projects-btn:hover { color: #666; border-color: #aaa; }
+.capture-project-select {
+  width: 100%;
+  margin-top: 6px;
+  border: 1px solid #e0ddd8;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: #fafaf8;
+  color: #555;
+}
+.capture-deadline-input {
+  border: 1px solid #e0ddd8;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #555;
+  background: #fafaf8;
+}
+.capture-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  display: inline-block;
+}
+.capture-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.capture-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #ddd;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.capture-toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.capture-toggle input:checked + .capture-toggle-slider {
+  background: #7db87d;
+}
+.capture-toggle input:checked + .capture-toggle-slider::before {
+  transform: translateX(20px);
+}
+.capture-modal-footer {
+  padding: 12px 20px 16px;
+  border-top: 1px solid #f0f0f0;
+}
+.capture-save-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: #2d2d2d;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.capture-save-btn:hover { background: #444; }
+.capture-save-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+/* ─── Inbox badge on dashboard ─── */
+.inbox-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #e8e6e1;
+}
+.inbox-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.inbox-header h3 {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.inbox-badge {
+  font-size: 0.7rem;
+  background: #f59e0b;
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-weight: 600;
+}
+.inbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 0.85rem;
+  color: #555;
+  border-bottom: 1px solid #f5f5f5;
+}
+.inbox-item:last-child { border-bottom: none; }
+.inbox-item-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.inbox-sort-btn {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border: 1px solid #e0ddd8;
+  border-radius: 6px;
+  background: #fafaf8;
+  color: #888;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.inbox-sort-btn:hover { background: #f0efec; color: #555; }
+
+/* Desktop: show FAB too (wider placement) */
+@media (min-width: 768px) {
+  .capture-fab {
+    display: flex;
+    bottom: 24px;
+    right: 24px;
+  }
+  .capture-modal {
+    max-width: 480px;
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    border-radius: 16px;
+  }
+}
+
+/* Mobile: show FAB above tab bar */
+@media (max-width: 767px) {
+  .capture-fab {
+    display: flex;
+  }
+  .capture-title-input,
+  .capture-description,
+  .capture-deadline-input,
+  .capture-project-select {
+    font-size: 16px !important;
+  }
+  .capture-chip {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
 }
